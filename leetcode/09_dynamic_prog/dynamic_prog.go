@@ -173,3 +173,164 @@ func LongestCommonSubsequence(text1 string, text2 string) int {
 	}
 	return dp[m][n]
 }
+
+// ============================================================
+// PROBLEM 6: Min Cost Climbing Stairs (LeetCode #746) — EASY
+// ============================================================
+// Each step has a cost. You can start from step 0 or 1, and can climb
+// 1 or 2 steps at a time. Find the minimum cost to reach the top.
+//
+// Example: cost=[10,15,20] → 15
+//
+// dp[i] = min cost to reach step i
+// dp[i] = cost[i] + min(dp[i-1], dp[i-2])
+
+// MinCostClimbingStairs returns minimum cost to reach the top.
+// Time: O(n)  Space: O(1)
+func MinCostClimbingStairs(cost []int) int {
+	n := len(cost)
+	prev2, prev1 := cost[0], cost[1]
+	for i := 2; i < n; i++ {
+		curr := cost[i] + min2(prev1, prev2)
+		prev2 = prev1
+		prev1 = curr
+	}
+	return min2(prev1, prev2)
+}
+
+func min2(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// ============================================================
+// PROBLEM 7: Longest Increasing Subsequence (LeetCode #300) — MEDIUM
+// ============================================================
+// Return the length of the longest strictly increasing subsequence.
+//
+// Example: nums=[10,9,2,5,3,7,101,18] → 4  ([2,3,7,101])
+//
+// Approach: dp[i] = length of LIS ending at index i.
+// dp[i] = max(dp[j] + 1) for all j < i where nums[j] < nums[i]
+//
+// O(n log n) approach: maintain a "tails" array using binary search.
+
+// LengthOfLIS returns the length of the longest increasing subsequence.
+// Time: O(n log n)  Space: O(n)
+func LengthOfLIS(nums []int) int {
+	tails := []int{} // tails[i] = smallest tail of all increasing subsequences of length i+1
+
+	for _, num := range nums {
+		// Binary search for first tail >= num
+		left, right := 0, len(tails)
+		for left < right {
+			mid := left + (right-left)/2
+			if tails[mid] < num {
+				left = mid + 1
+			} else {
+				right = mid
+			}
+		}
+		if left == len(tails) {
+			tails = append(tails, num) // extend
+		} else {
+			tails[left] = num // replace
+		}
+	}
+	return len(tails)
+}
+
+// ============================================================
+// PROBLEM 8: Word Break (LeetCode #139) — MEDIUM
+// ============================================================
+// Given a string s and a word dictionary, return true if s can be
+// segmented into dictionary words.
+//
+// Example: s="leetcode", wordDict=["leet","code"] → true
+//
+// dp[i] = true if s[0..i-1] can be segmented
+// dp[i] = dp[j] && s[j..i-1] in wordDict for some j
+
+// WordBreak returns true if s can be segmented into dictionary words.
+// Time: O(n² * m) where m = avg word length  Space: O(n)
+func WordBreak(s string, wordDict []string) bool {
+	wordSet := make(map[string]bool)
+	for _, w := range wordDict {
+		wordSet[w] = true
+	}
+	n := len(s)
+	dp := make([]bool, n+1)
+	dp[0] = true // empty string is always segmentable
+
+	for i := 1; i <= n; i++ {
+		for j := 0; j < i; j++ {
+			if dp[j] && wordSet[s[j:i]] {
+				dp[i] = true
+				break
+			}
+		}
+	}
+	return dp[n]
+}
+
+// ============================================================
+// PROBLEM 9: Jump Game (LeetCode #55) — MEDIUM
+// ============================================================
+// You are at index 0. Each element is the max jump length at that position.
+// Return true if you can reach the last index.
+//
+// Example: nums=[2,3,1,1,4] → true
+// Example: nums=[3,2,1,0,4] → false
+//
+// Greedy: track the furthest index reachable. If i > furthest, stuck.
+
+// CanJump returns true if you can reach the last index.
+// Time: O(n)  Space: O(1)
+func CanJump(nums []int) bool {
+	furthest := 0
+	for i, jump := range nums {
+		if i > furthest {
+			return false // can't reach this index
+		}
+		if i+jump > furthest {
+			furthest = i + jump
+		}
+	}
+	return true
+}
+
+// ============================================================
+// PROBLEM 10: Partition Equal Subset Sum (LeetCode #416) — MEDIUM
+// ============================================================
+// Determine if the array can be partitioned into two subsets with equal sum.
+//
+// Example: nums=[1,5,11,5] → true ([1,5,5] and [11])
+//
+// This is a 0/1 Knapsack problem.
+// Target = totalSum / 2. Can we pick elements summing to target?
+// dp[j] = true if sum j is achievable using some subset.
+
+// CanPartition returns true if the array can be split into two equal-sum subsets.
+// Time: O(n * sum)  Space: O(sum)
+func CanPartition(nums []int) bool {
+	total := 0
+	for _, n := range nums {
+		total += n
+	}
+	if total%2 != 0 {
+		return false // odd total can't be split evenly
+	}
+	target := total / 2
+	dp := make([]bool, target+1)
+	dp[0] = true
+
+	for _, num := range nums {
+		// Traverse backwards to avoid using same element twice
+		for j := target; j >= num; j-- {
+			dp[j] = dp[j] || dp[j-num]
+		}
+	}
+	return dp[target]
+}

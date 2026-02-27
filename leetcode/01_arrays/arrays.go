@@ -144,3 +144,147 @@ func MaxSubArray(nums []int) int {
 	}
 	return best
 }
+
+// ============================================================
+// PROBLEM 6: Merge Sorted Array (LeetCode #88) — EASY
+// ============================================================
+// Merge nums2 into nums1 in-place. nums1 has extra space at the end.
+// m = valid elements in nums1, n = valid elements in nums2.
+//
+// Example: nums1=[1,2,3,0,0,0], m=3, nums2=[2,5,6], n=3 → [1,2,2,3,5,6]
+//
+// Key insight: fill from the BACK to avoid overwriting elements we still need.
+// Compare from the largest ends and place the bigger element at the back.
+
+// Merge merges nums2 into nums1 in-place (fills from the back).
+// Time: O(m+n)  Space: O(1)
+func Merge(nums1 []int, m int, nums2 []int, n int) {
+	i, j, k := m-1, n-1, m+n-1 // i=last of nums1, j=last of nums2, k=write position
+	for j >= 0 {
+		if i >= 0 && nums1[i] > nums2[j] {
+			nums1[k] = nums1[i]
+			i--
+		} else {
+			nums1[k] = nums2[j]
+			j--
+		}
+		k--
+	}
+}
+
+// ============================================================
+// PROBLEM 7: Find All Numbers Disappeared in an Array (LeetCode #448) — EASY
+// ============================================================
+// Given n integers where each is in [1, n], return all numbers in [1, n]
+// that do NOT appear in the array.
+//
+// Example: nums=[4,3,2,7,8,2,3,1] → [5,6]
+//
+// Key insight: use the array itself as a hash map.
+// For each value v, mark index (|v|-1) negative.
+// Then indices still positive correspond to missing numbers.
+
+// FindDisappearedNumbers returns missing numbers using O(1) extra space.
+// Time: O(n)  Space: O(1) extra
+func FindDisappearedNumbers(nums []int) []int {
+	// Mark visited indices negative
+	for _, v := range nums {
+		if v < 0 {
+			v = -v
+		}
+		idx := v - 1
+		if nums[idx] > 0 {
+			nums[idx] = -nums[idx]
+		}
+	}
+	// Indices still positive are missing numbers
+	var result []int
+	for i, v := range nums {
+		if v > 0 {
+			result = append(result, i+1)
+		}
+	}
+	return result
+}
+
+// ============================================================
+// PROBLEM 8: Rotate Array (LeetCode #189) — MEDIUM
+// ============================================================
+// Rotate array to the right by k steps in-place.
+//
+// Example: nums=[1,2,3,4,5,6,7], k=3 → [5,6,7,1,2,3,4]
+//
+// Key insight: reverse the whole array, then reverse first k, then rest.
+// Reverse all:    [7,6,5,4,3,2,1]
+// Reverse [0..k): [5,6,7,4,3,2,1]
+// Reverse [k..n): [5,6,7,1,2,3,4]  ✓
+
+// Rotate rotates the array to the right by k positions in-place.
+// Time: O(n)  Space: O(1)
+func Rotate(nums []int, k int) {
+	n := len(nums)
+	k = k % n // handle k >= n
+	reverse(nums, 0, n-1)
+	reverse(nums, 0, k-1)
+	reverse(nums, k, n-1)
+}
+
+func reverse(nums []int, left, right int) {
+	for left < right {
+		nums[left], nums[right] = nums[right], nums[left]
+		left++
+		right--
+	}
+}
+
+// ============================================================
+// PROBLEM 9: Find Minimum in Rotated Sorted Array (LeetCode #153) — MEDIUM
+// ============================================================
+// (Also in binary_search — here for completeness in arrays track)
+// Array was sorted then rotated. Find the minimum element.
+//
+// Example: nums=[3,4,5,1,2] → 1
+
+// FindMinRotated returns the minimum of a rotated sorted array.
+// Time: O(log n)  Space: O(1)
+func FindMinRotated(nums []int) int {
+	left, right := 0, len(nums)-1
+	for left < right {
+		mid := left + (right-left)/2
+		if nums[mid] > nums[right] {
+			left = mid + 1
+		} else {
+			right = mid
+		}
+	}
+	return nums[left]
+}
+
+// ============================================================
+// PROBLEM 10: Subarray Sum Equals K (LeetCode #560) — MEDIUM
+// ============================================================
+// Given an array of integers and k, return the total number of continuous
+// subarrays whose sum equals k.
+//
+// Example: nums=[1,1,1], k=2 → 2
+//
+// Key insight: prefix sums. If prefixSum[j] - prefixSum[i] == k,
+// then subarray [i+1..j] has sum k.
+// Use a map: count how many times each prefix sum has been seen.
+
+// SubarraySum returns the number of subarrays with sum equal to k.
+// Time: O(n)  Space: O(n)
+func SubarraySum(nums []int, k int) int {
+	// prefixCount[s] = how many times prefix sum s has occurred
+	prefixCount := map[int]int{0: 1} // empty prefix has sum 0
+	sum := 0
+	count := 0
+
+	for _, num := range nums {
+		sum += num
+		// If (sum - k) was seen before, those subarrays end here with sum k
+		count += prefixCount[sum-k]
+		prefixCount[sum]++
+	}
+	return count
+}

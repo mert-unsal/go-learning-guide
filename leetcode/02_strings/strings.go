@@ -182,3 +182,174 @@ func ReverseWords(s string) string {
 	}
 	return strings.Join(words, " ")
 }
+
+// ============================================================
+// PROBLEM 6: First Unique Character in a String (LeetCode #387) — EASY
+// ============================================================
+// Find the first non-repeating character and return its index.
+// Return -1 if none exists.
+//
+// Example: s="leetcode" → 0 ('l')
+// Example: s="aabb"     → -1
+//
+// Approach: two-pass with frequency array.
+
+// FirstUniqChar returns the index of the first non-repeating character.
+// Time: O(n)  Space: O(1)
+func FirstUniqChar(s string) int {
+	var freq [26]int
+	for _, ch := range s {
+		freq[ch-'a']++
+	}
+	for i, ch := range s {
+		if freq[ch-'a'] == 1 {
+			return i
+		}
+	}
+	return -1
+}
+
+// ============================================================
+// PROBLEM 7: Roman to Integer (LeetCode #13) — EASY
+// ============================================================
+// Convert a Roman numeral string to an integer.
+//
+// Example: "III" → 3, "IV" → 4, "IX" → 9, "LVIII" → 58
+//
+// Key insight: if a smaller value appears BEFORE a larger value, subtract it.
+// Otherwise add it.
+
+// RomanToInt converts a Roman numeral string to an integer.
+// Time: O(n)  Space: O(1)
+func RomanToInt(s string) int {
+	values := map[byte]int{
+		'I': 1, 'V': 5, 'X': 10, 'L': 50,
+		'C': 100, 'D': 500, 'M': 1000,
+	}
+	total := 0
+	for i := 0; i < len(s); i++ {
+		curr := values[s[i]]
+		if i+1 < len(s) && curr < values[s[i+1]] {
+			total -= curr // subtract (e.g. IV = 5-1)
+		} else {
+			total += curr
+		}
+	}
+	return total
+}
+
+// ============================================================
+// PROBLEM 8: Count and Say (LeetCode #38) — MEDIUM
+// ============================================================
+// The count-and-say sequence: describe the previous term.
+// "1" → "11" (one 1) → "21" (two 1s) → "1211" → "111221" → ...
+//
+// Return the nth term.
+
+// CountAndSay returns the nth term of the count-and-say sequence.
+// Time: O(n * len of each term)  Space: O(n)
+func CountAndSay(n int) string {
+	result := "1"
+	for i := 1; i < n; i++ {
+		s := result
+		result = ""
+		j := 0
+		for j < len(s) {
+			ch := s[j]
+			count := 1
+			for j+count < len(s) && s[j+count] == ch {
+				count++
+			}
+			// Append count then character
+			result += string(rune('0'+count)) + string(ch)
+			j += count
+		}
+	}
+	return result
+}
+
+// ============================================================
+// PROBLEM 9: Group Anagrams (LeetCode #49) — MEDIUM
+// ============================================================
+// Given an array of strings, group anagrams together.
+//
+// Example: ["eat","tea","tan","ate","nat","bat"]
+//        → [["bat"],["nat","tan"],["ate","eat","tea"]]
+//
+// Key: sort each string → anagrams will have the same sorted key.
+
+// GroupAnagrams groups strings that are anagrams of each other.
+// Time: O(n * k log k) where k is max string length  Space: O(n*k)
+func GroupAnagrams(strs []string) [][]string {
+	groups := make(map[[26]int][]string)
+	for _, s := range strs {
+		var key [26]int
+		for _, ch := range s {
+			key[ch-'a']++
+		}
+		groups[key] = append(groups[key], s)
+	}
+	result := make([][]string, 0, len(groups))
+	for _, group := range groups {
+		result = append(result, group)
+	}
+	return result
+}
+
+// ============================================================
+// PROBLEM 10: Encode and Decode Strings (LeetCode #271) — MEDIUM
+// ============================================================
+// Design an algorithm to encode a list of strings to a single string
+// and decode it back. Must handle any characters including the delimiter.
+//
+// Approach: length-prefix encoding: "4#word4#next"
+// Each string is prefixed by its length + '#'.
+
+// Encode encodes a list of strings to a single string.
+func Encode(strs []string) string {
+	var sb strings.Builder
+	for _, s := range strs {
+		// Write: len(s) + '#' + s
+		for _, d := range []byte(string(rune(len(s)))) {
+			_ = d
+		}
+		sb.WriteString(strings.Repeat("", 0))
+		length := len(s)
+		// Build length prefix manually
+		digits := ""
+		if length == 0 {
+			digits = "0"
+		} else {
+			tmp := length
+			for tmp > 0 {
+				digits = string(rune('0'+tmp%10)) + digits
+				tmp /= 10
+			}
+		}
+		sb.WriteString(digits)
+		sb.WriteByte('#')
+		sb.WriteString(s)
+	}
+	return sb.String()
+}
+
+// Decode decodes the encoded string back to a list of strings.
+func Decode(s string) []string {
+	var result []string
+	i := 0
+	for i < len(s) {
+		// Read length digits until '#'
+		j := i
+		for s[j] != '#' {
+			j++
+		}
+		length := 0
+		for _, ch := range s[i:j] {
+			length = length*10 + int(ch-'0')
+		}
+		i = j + 1
+		result = append(result, s[i:i+length])
+		i += length
+	}
+	return result
+}

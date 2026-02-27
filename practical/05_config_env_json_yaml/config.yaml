@@ -1,0 +1,27 @@
+app:
+  name: go-interview-prep
+  environment: development
+  port: 8080
+  debug: true
+  log_level: debug
+
+database:
+  host: localhost
+  port: 5432
+  name: mydb
+  user: postgres
+  password: secret        # Override with DATABASE_URL env var in production
+  ssl_mode: disable
+
+cache:
+  host: localhost
+  port: 6379
+  password: ""
+  db: 0
+  ttl_seconds: 300
+
+features:
+  enable_new_ui: true
+  enable_beta_search: false
+  rate_limit: true
+

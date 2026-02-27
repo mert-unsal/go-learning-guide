@@ -192,3 +192,116 @@ func TotalFruit(fruits []int) int {
 	}
 	return maxFruits
 }
+
+// ============================================================
+// PROBLEM 5: Longest Repeating Character Replacement (LeetCode #424) — MEDIUM
+// ============================================================
+// You can replace at most k characters in a string. Find the length of
+// the longest substring containing the same letter after replacements.
+//
+// Example: s="AABABBA", k=1 → 4
+//
+// Key insight: window is valid when (windowSize - maxFreq) <= k.
+// We only care about the maximum frequency character in the window.
+// We don't need to decrease maxFreq when shrinking — a smaller maxFreq
+// only leads to smaller valid windows, which we don't care about.
+
+// CharacterReplacement returns the longest valid substring length after k replacements.
+// Time: O(n)  Space: O(1) — 26-char array
+func CharacterReplacement(s string, k int) int {
+	var freq [26]int
+	maxFreq := 0
+	left := 0
+	maxLen := 0
+
+	for right := 0; right < len(s); right++ {
+		freq[s[right]-'A']++
+		if freq[s[right]-'A'] > maxFreq {
+			maxFreq = freq[s[right]-'A']
+		}
+
+		// Shrink window if too many replacements needed
+		windowSize := right - left + 1
+		if windowSize-maxFreq > k {
+			freq[s[left]-'A']--
+			left++
+		}
+
+		if right-left+1 > maxLen {
+			maxLen = right - left + 1
+		}
+	}
+	return maxLen
+}
+
+// ============================================================
+// PROBLEM 6: Maximum Points You Can Obtain from Cards (LeetCode #1423) — MEDIUM
+// ============================================================
+// From an array of card points, pick exactly k cards from either end.
+// Maximize the total points.
+//
+// Example: cardPoints=[1,2,3,4,5,6,1], k=3 → 12  (pick 1,6,5)
+//
+// Key insight: total points = sum of all - minimum subarray of length (n-k).
+// Find the minimum window of size n-k using a sliding window.
+
+// MaxScore returns the maximum score by picking k cards from the ends.
+// Time: O(n)  Space: O(1)
+func MaxScore(cardPoints []int, k int) int {
+	n := len(cardPoints)
+	total := 0
+	for _, p := range cardPoints {
+		total += p
+	}
+
+	windowSize := n - k // size of the minimum window we want to exclude
+	if windowSize == 0 {
+		return total
+	}
+
+	// Find minimum window sum of size windowSize
+	windowSum := 0
+	for i := 0; i < windowSize; i++ {
+		windowSum += cardPoints[i]
+	}
+	minWindowSum := windowSum
+
+	for i := windowSize; i < n; i++ {
+		windowSum += cardPoints[i] - cardPoints[i-windowSize]
+		if windowSum < minWindowSum {
+			minWindowSum = windowSum
+		}
+	}
+	return total - minWindowSum
+}
+
+// ============================================================
+// PROBLEM 7: Minimum Size Subarray Sum (LeetCode #209) — MEDIUM
+// ============================================================
+// Find the minimum length contiguous subarray with sum >= target.
+// Return 0 if no such subarray exists.
+//
+// Example: target=7, nums=[2,3,1,2,4,3] → 2  ([4,3])
+
+// MinSubArrayLen returns the minimum length subarray with sum >= target.
+// Time: O(n)  Space: O(1)
+func MinSubArrayLen(target int, nums []int) int {
+	left := 0
+	sum := 0
+	minLen := len(nums) + 1
+
+	for right := 0; right < len(nums); right++ {
+		sum += nums[right]
+		for sum >= target {
+			if right-left+1 < minLen {
+				minLen = right - left + 1
+			}
+			sum -= nums[left]
+			left++
+		}
+	}
+	if minLen == len(nums)+1 {
+		return 0
+	}
+	return minLen
+}

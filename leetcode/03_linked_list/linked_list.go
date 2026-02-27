@@ -188,3 +188,195 @@ func MiddleNode(head *ListNode) *ListNode {
 	}
 	return slow
 }
+
+// ============================================================
+// PROBLEM 6: Palindrome Linked List (LeetCode #234) — EASY
+// ============================================================
+// Return true if the linked list is a palindrome.
+//
+// Example: 1→2→2→1 → true
+//
+// Approach: find middle, reverse second half, compare with first half.
+
+// IsPalindrome returns true if the linked list is a palindrome.
+// Time: O(n)  Space: O(1)
+func IsPalindrome(head *ListNode) bool {
+	if head == nil || head.Next == nil {
+		return true
+	}
+	// Find middle
+	slow, fast := head, head
+	for fast.Next != nil && fast.Next.Next != nil {
+		slow = slow.Next
+		fast = fast.Next.Next
+	}
+	// Reverse second half
+	secondHalf := reverseList(slow.Next)
+	// Compare
+	p1, p2 := head, secondHalf
+	result := true
+	for p2 != nil {
+		if p1.Val != p2.Val {
+			result = false
+			break
+		}
+		p1 = p1.Next
+		p2 = p2.Next
+	}
+	// Restore list (optional but good practice)
+	slow.Next = reverseList(secondHalf)
+	return result
+}
+
+func reverseList(head *ListNode) *ListNode {
+	var prev *ListNode
+	cur := head
+	for cur != nil {
+		next := cur.Next
+		cur.Next = prev
+		prev = cur
+		cur = next
+	}
+	return prev
+}
+
+// ============================================================
+// PROBLEM 7: Intersection of Two Linked Lists (LeetCode #160) — EASY
+// ============================================================
+// Find the node at which two linked lists intersect. Return nil if no intersection.
+//
+// Example: A: a1→a2→c1→c2→c3, B: b1→b2→b3→c1→c2→c3 → c1
+//
+// Key insight: two pointers. When pointer A reaches end, restart at head of B.
+// When pointer B reaches end, restart at head of A.
+// They will meet at the intersection (or both reach nil if no intersection).
+
+// GetIntersectionNode returns the intersection node of two lists.
+// Time: O(m+n)  Space: O(1)
+func GetIntersectionNode(headA, headB *ListNode) *ListNode {
+	if headA == nil || headB == nil {
+		return nil
+	}
+	a, b := headA, headB
+	for a != b {
+		if a == nil {
+			a = headB
+		} else {
+			a = a.Next
+		}
+		if b == nil {
+			b = headA
+		} else {
+			b = b.Next
+		}
+	}
+	return a
+}
+
+// ============================================================
+// PROBLEM 8: Add Two Numbers (LeetCode #2) — MEDIUM
+// ============================================================
+// Two non-empty linked lists represent non-negative integers in reverse order.
+// Add the two numbers and return the sum as a linked list.
+//
+// Example: (2→4→3) + (5→6→4) → 7→0→8  (342 + 465 = 807)
+
+// AddTwoNumbers adds two numbers represented as reversed linked lists.
+// Time: O(max(m,n))  Space: O(max(m,n))
+func AddTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
+	dummy := &ListNode{}
+	cur := dummy
+	carry := 0
+
+	for l1 != nil || l2 != nil || carry != 0 {
+		sum := carry
+		if l1 != nil {
+			sum += l1.Val
+			l1 = l1.Next
+		}
+		if l2 != nil {
+			sum += l2.Val
+			l2 = l2.Next
+		}
+		carry = sum / 10
+		cur.Next = &ListNode{Val: sum % 10}
+		cur = cur.Next
+	}
+	return dummy.Next
+}
+
+// ============================================================
+// PROBLEM 9: Copy List with Random Pointer (LeetCode #138) — MEDIUM
+// ============================================================
+// A linked list where each node has Val, Next, and Random (any node or nil).
+// Deep copy the list.
+//
+// Approach: hash map from original node → cloned node.
+
+// RandomNode is a node with an extra random pointer.
+type RandomNode struct {
+	Val    int
+	Next   *RandomNode
+	Random *RandomNode
+}
+
+// CopyRandomList deep copies a linked list with random pointers.
+// Time: O(n)  Space: O(n)
+func CopyRandomList(head *RandomNode) *RandomNode {
+	if head == nil {
+		return nil
+	}
+	nodeMap := make(map[*RandomNode]*RandomNode)
+
+	// First pass: create all cloned nodes
+	for cur := head; cur != nil; cur = cur.Next {
+		nodeMap[cur] = &RandomNode{Val: cur.Val}
+	}
+	// Second pass: assign Next and Random
+	for cur := head; cur != nil; cur = cur.Next {
+		if cur.Next != nil {
+			nodeMap[cur].Next = nodeMap[cur.Next]
+		}
+		if cur.Random != nil {
+			nodeMap[cur].Random = nodeMap[cur.Random]
+		}
+	}
+	return nodeMap[head]
+}
+
+// ============================================================
+// PROBLEM 10: Reorder List (LeetCode #143) — MEDIUM
+// ============================================================
+// Given a list L0→L1→...→Ln, reorder to: L0→Ln→L1→Ln-1→L2→Ln-2→...
+//
+// Example: 1→2→3→4→5 → 1→5→2→4→3
+//
+// Approach: find middle, reverse second half, merge two halves.
+
+// ReorderList reorders the list in-place.
+// Time: O(n)  Space: O(1)
+func ReorderList(head *ListNode) {
+	if head == nil || head.Next == nil {
+		return
+	}
+	// Step 1: find middle
+	slow, fast := head, head
+	for fast.Next != nil && fast.Next.Next != nil {
+		slow = slow.Next
+		fast = fast.Next.Next
+	}
+	// Step 2: reverse second half
+	second := reverseList(slow.Next)
+	slow.Next = nil // cut the list
+
+	// Step 3: merge two halves
+	first := head
+	for second != nil {
+		tmp1 := first.Next
+		tmp2 := second.Next
+		first.Next = second
+		second.Next = tmp1
+		first = tmp1
+		second = tmp2
+	}
+}
