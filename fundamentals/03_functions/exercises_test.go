@@ -14,47 +14,64 @@ func TestMinMax(t *testing.T) {
 		{[]int{}, 0, 0},
 	}
 	for _, tt := range tests {
-		gotMin, gotMax := MinMaxSolution(tt.nums)
+		gotMin, gotMax := MinMax(tt.nums)
 		if gotMin != tt.wantMin || gotMax != tt.wantMax {
-			t.Errorf("MinMax(%v) = (%d,%d), want (%d,%d)", tt.nums, gotMin, gotMax, tt.wantMin, tt.wantMax)
+			t.Errorf("❌ MinMax(%v) = (%d,%d), want (%d,%d)", tt.nums, gotMin, gotMax, tt.wantMin, tt.wantMax)
+		} else {
+			t.Logf("✅ MinMax(%v) = (%d,%d)", tt.nums, gotMin, gotMax)
 		}
 	}
 }
 
 func TestSum(t *testing.T) {
-	if got := SumSolution(1, 2, 3); got != 6 {
-		t.Errorf("Sum(1,2,3) = %d, want 6", got)
+	tests := []struct {
+		args []int
+		want int
+	}{
+		{[]int{1, 2, 3}, 6},
+		{[]int{}, 0},
+		{[]int{10}, 10},
 	}
-	if got := SumSolution(); got != 0 {
-		t.Errorf("Sum() = %d, want 0", got)
-	}
-	if got := SumSolution(10); got != 10 {
-		t.Errorf("Sum(10) = %d, want 10", got)
+	for _, tt := range tests {
+		got := Sum(tt.args...)
+		if got != tt.want {
+			t.Errorf("❌ Sum(%v) = %d, want %d", tt.args, got, tt.want)
+		} else {
+			t.Logf("✅ Sum(%v) = %d", tt.args, got)
+		}
 	}
 }
 
 func TestApply(t *testing.T) {
 	double := func(x int) int { return x * 2 }
-	got := ApplySolution([]int{1, 2, 3}, double)
+	got := Apply([]int{1, 2, 3}, double)
 	want := []int{2, 4, 6}
-	for i, v := range want {
-		if got[i] != v {
-			t.Errorf("Apply double: got[%d]=%d, want %d", i, got[i], v)
+	match := len(got) == len(want)
+	if match {
+		for i, v := range want {
+			if got[i] != v {
+				match = false
+				break
+			}
 		}
+	}
+	if !match {
+		t.Errorf("❌ Apply(double, [1,2,3]) = %v, want %v", got, want)
+	} else {
+		t.Logf("✅ Apply(double, [1,2,3]) = %v", got)
 	}
 }
 
 func TestMakeAdder(t *testing.T) {
-	add5 := MakeAdderSolution(5)
-	if got := add5(3); got != 8 {
-		t.Errorf("add5(3) = %d, want 8", got)
-	}
-	if got := add5(10); got != 15 {
-		t.Errorf("add5(10) = %d, want 15", got)
-	}
-	add10 := MakeAdderSolution(10)
-	if got := add10(0); got != 10 {
-		t.Errorf("add10(0) = %d, want 10", got)
+	add5 := MakeAdder(5)
+	tests := []struct{ in, want int }{{3, 8}, {10, 15}, {0, 5}}
+	for _, tt := range tests {
+		got := add5(tt.in)
+		if got != tt.want {
+			t.Errorf("❌ MakeAdder(5)(%d) = %d, want %d", tt.in, got, tt.want)
+		} else {
+			t.Logf("✅ MakeAdder(5)(%d) = %d", tt.in, got)
+		}
 	}
 }
 
@@ -63,11 +80,25 @@ func TestFibonacci(t *testing.T) {
 		{0, 0}, {1, 1}, {2, 1}, {5, 5}, {10, 55},
 	}
 	for _, tt := range tests {
-		if got := FibonacciSolution(tt.n); got != tt.want {
-			t.Errorf("Fibonacci(%d) = %d, want %d", tt.n, got, tt.want)
+		got := Fibonacci(tt.n)
+		if got != tt.want {
+			t.Errorf("❌ Fibonacci(%d) = %d, want %d", tt.n, got, tt.want)
+		} else {
+			t.Logf("✅ Fibonacci(%d) = %d", tt.n, got)
 		}
-		if got := FibonacciMemoSolution(tt.n); got != tt.want {
-			t.Errorf("FibonacciMemo(%d) = %d, want %d", tt.n, got, tt.want)
+	}
+}
+
+func TestFibonacciMemo(t *testing.T) {
+	tests := []struct{ n, want int }{
+		{0, 0}, {1, 1}, {2, 1}, {5, 5}, {10, 55},
+	}
+	for _, tt := range tests {
+		got := FibonacciMemo(tt.n)
+		if got != tt.want {
+			t.Errorf("❌ FibonacciMemo(%d) = %d, want %d", tt.n, got, tt.want)
+		} else {
+			t.Logf("✅ FibonacciMemo(%d) = %d", tt.n, got)
 		}
 	}
 }
