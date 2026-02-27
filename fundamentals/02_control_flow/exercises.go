@@ -1,5 +1,7 @@
 package control_flow
 
+import "strconv"
+
 // ============================================================
 // EXERCISES — 02 Control Flow
 // ============================================================
@@ -11,7 +13,17 @@ package control_flow
 // Use switch, NOT if/else.
 func FizzBuzzSwitch(n int) string {
 	// TODO: implement using switch
-	return ""
+	switch {
+	case n%3 == 0 && n%5 == 0:
+		return "FizzBuzz"
+	case n%3 == 0:
+		return "Fizz"
+	case n%5 == 0:
+		return "Buzz"
+	default:
+		return strconv.Itoa(n)
+	}
+
 }
 
 // Exercise 2:
