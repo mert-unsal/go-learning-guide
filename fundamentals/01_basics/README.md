@@ -48,18 +48,35 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ **Important:** These commands must be run from the **project root** (`go-interview-prep/`), not from inside this folder.
+> If you are inside `01_basics/`, run `cd ../..` first to go back to the root.
+
+### Run all tests for this module (from project root):
 ```bash
 go test ./fundamentals/01_basics/... -v
 ```
 
-### Run a single exercise test:
+### Or run from inside this folder directly:
+```bash
+go test . -v
+```
+
+### Run a single exercise test (from project root):
 ```bash
 go test ./fundamentals/01_basics/... -v -run TestCelsiusToFahrenheit
 go test ./fundamentals/01_basics/... -v -run TestSwapInts
 go test ./fundamentals/01_basics/... -v -run TestCharacterCount
 go test ./fundamentals/01_basics/... -v -run TestMinMax
 go test ./fundamentals/01_basics/... -v -run TestDirectionName
+```
+
+### Or run a single test from inside this folder:
+```bash
+go test . -v -run TestCelsiusToFahrenheit
+go test . -v -run TestSwapInts
+go test . -v -run TestCharacterCount
+go test . -v -run TestMinMax
+go test . -v -run TestDirectionName
 ```
 
 ### Expected output when all pass:

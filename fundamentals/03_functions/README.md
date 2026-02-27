@@ -46,19 +46,27 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/03_functions/... -v
 ```
 
-### Run a single exercise test:
+### From inside this folder:
 ```bash
-go test ./fundamentals/03_functions/... -v -run TestMinMax
-go test ./fundamentals/03_functions/... -v -run TestSum
-go test ./fundamentals/03_functions/... -v -run TestApply
-go test ./fundamentals/03_functions/... -v -run TestMakeAdder
-go test ./fundamentals/03_functions/... -v -run TestFibonacci
-go test ./fundamentals/03_functions/... -v -run TestFibonacciMemo
+go test . -v
+```
+
+### Run a single test (from inside this folder):
+```bash
+go test . -v -run TestMinMax
+go test . -v -run TestSum
+go test . -v -run TestApply
+go test . -v -run TestMakeAdder
+go test . -v -run TestFibonacci
+go test . -v -run TestFibonacciMemo
 ```
 
 ---

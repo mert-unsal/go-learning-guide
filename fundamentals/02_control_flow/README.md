@@ -44,18 +44,31 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ **Important:** The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/02_control_flow/... -v
 ```
 
-### Run a single exercise test:
+### From inside this folder:
+```bash
+go test . -v
+```
+
+### Run a single test (from project root):
 ```bash
 go test ./fundamentals/02_control_flow/... -v -run TestFizzBuzzSwitch
 go test ./fundamentals/02_control_flow/... -v -run TestSumTo
 go test ./fundamentals/02_control_flow/... -v -run TestCountVowels
 go test ./fundamentals/02_control_flow/... -v -run TestIsPrime
 go test ./fundamentals/02_control_flow/... -v -run TestDeferOrder
+```
+
+### From inside this folder:
+```bash
+go test . -v -run TestFizzBuzzSwitch
 ```
 
 ---

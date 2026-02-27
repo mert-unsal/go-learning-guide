@@ -45,23 +45,31 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/11_channels/... -v
 ```
 
-### Run with race detector:
+### From inside this folder:
 ```bash
-go test ./fundamentals/11_channels/... -v -race
+go test . -v
 ```
 
-### Run a single exercise test:
+### Run with race detector:
 ```bash
-go test ./fundamentals/11_channels/... -v -run TestSumAsync
-go test ./fundamentals/11_channels/... -v -run TestGenerate
-go test ./fundamentals/11_channels/... -v -run TestSquare
-go test ./fundamentals/11_channels/... -v -run TestMerge
-go test ./fundamentals/11_channels/... -v -run TestWithTimeout
+go test . -v -race
+```
+
+### Run a single test (from inside this folder):
+```bash
+go test . -v -run TestSumAsync
+go test . -v -run TestGenerate
+go test . -v -run TestSquare
+go test . -v -run TestMerge
+go test . -v -run TestWithTimeout
 ```
 
 ---

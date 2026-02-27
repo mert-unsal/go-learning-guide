@@ -44,22 +44,30 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/10_goroutines/... -v
 ```
 
-### Run with race detector (highly recommended for concurrency!):
+### From inside this folder:
 ```bash
-go test ./fundamentals/10_goroutines/... -v -race
+go test . -v
 ```
 
-### Run a single exercise test:
+### Run with race detector (highly recommended for concurrency!):
 ```bash
-go test ./fundamentals/10_goroutines/... -v -run TestRunConcurrently
-go test ./fundamentals/10_goroutines/... -v -run TestExCounter
-go test ./fundamentals/10_goroutines/... -v -run TestSumConcurrent
-go test ./fundamentals/10_goroutines/... -v -run TestRunOnce
+go test . -v -race
+```
+
+### Run a single test (from inside this folder):
+```bash
+go test . -v -run TestRunConcurrently
+go test . -v -run TestExCounter
+go test . -v -run TestSumConcurrent
+go test . -v -run TestRunOnce
 ```
 
 ---

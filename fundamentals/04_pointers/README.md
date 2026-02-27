@@ -45,18 +45,26 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/04_pointers/... -v
 ```
 
-### Run a single exercise test:
+### From inside this folder:
 ```bash
-go test ./fundamentals/04_pointers/... -v -run TestIncrement
-go test ./fundamentals/04_pointers/... -v -run TestSwapPointers
-go test ./fundamentals/04_pointers/... -v -run TestScoreBoard
-go test ./fundamentals/04_pointers/... -v -run TestNewPlayer
-go test ./fundamentals/04_pointers/... -v -run TestDoubleValue
+go test . -v
+```
+
+### Run a single test (from inside this folder):
+```bash
+go test . -v -run TestIncrement
+go test . -v -run TestSwapPointers
+go test . -v -run TestScoreBoard
+go test . -v -run TestNewPlayer
+go test . -v -run TestDoubleValue
 ```
 
 ---

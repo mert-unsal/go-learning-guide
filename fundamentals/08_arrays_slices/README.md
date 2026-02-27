@@ -48,19 +48,27 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/08_arrays_slices/... -v
 ```
 
-### Run a single exercise test:
+### From inside this folder:
 ```bash
-go test ./fundamentals/08_arrays_slices/... -v -run TestReverseSlice
-go test ./fundamentals/08_arrays_slices/... -v -run TestRemoveDuplicates
-go test ./fundamentals/08_arrays_slices/... -v -run TestMake2D
-go test ./fundamentals/08_arrays_slices/... -v -run TestRotateLeft
-go test ./fundamentals/08_arrays_slices/... -v -run TestFilter
-go test ./fundamentals/08_arrays_slices/... -v -run TestMergeSorted
+go test . -v
+```
+
+### Run a single test (from inside this folder):
+```bash
+go test . -v -run TestReverseSlice
+go test . -v -run TestRemoveDuplicates
+go test . -v -run TestMake2D
+go test . -v -run TestRotateLeft
+go test . -v -run TestFilter
+go test . -v -run TestMergeSorted
 ```
 
 ---

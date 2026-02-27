@@ -44,18 +44,26 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-### Run all tests for this module:
+> ⚠️ The `./fundamentals/...` paths work from the **project root** only.  
+> If you are inside this folder, use `go test . -v` instead.
+
+### From project root:
 ```bash
 go test ./fundamentals/07_error_handling/... -v
 ```
 
-### Run a single exercise test:
+### From inside this folder:
 ```bash
-go test ./fundamentals/07_error_handling/... -v -run TestDivide
-go test ./fundamentals/07_error_handling/... -v -run TestValidate
-go test ./fundamentals/07_error_handling/... -v -run TestSafeGet
-go test ./fundamentals/07_error_handling/... -v -run TestFindUser
-go test ./fundamentals/07_error_handling/... -v -run TestWrapError
+go test . -v
+```
+
+### Run a single test (from inside this folder):
+```bash
+go test . -v -run TestDivide
+go test . -v -run TestValidate
+go test . -v -run TestSafeGet
+go test . -v -run TestFindUser
+go test . -v -run TestWrapError
 ```
 
 ---
