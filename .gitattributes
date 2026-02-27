@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repository for all text files
+* text=auto eol=lf
+
+# Go source files
+*.go text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Module files
+go.mod text eol=lf
+go.sum text eol=lf
+
