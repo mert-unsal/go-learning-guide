@@ -168,8 +168,15 @@ outer:
 // ============================================================
 // defer delays execution of a function until the surrounding
 // function RETURNS. Very useful for cleanup (closing files, etc.)
+//
+// KEY RULES:
+//   1. Deferred calls run in LIFO order (last deferred = first to run)
+//   2. Arguments to deferred functions are evaluated IMMEDIATELY (at defer time)
+//   3. Deferred functions CAN read and modify named return values
+//   4. Do NOT defer inside loops for resource cleanup — they stack up
 
 func DemonstrateDefer() {
+	fmt.Println("--- LIFO order ---")
 	fmt.Println("start")
 	defer fmt.Println("deferred 1") // runs last
 	defer fmt.Println("deferred 2") // runs second-to-last
@@ -183,6 +190,28 @@ func DemonstrateDefer() {
 	// deferred 1
 }
 
+// RULE: Arguments are evaluated at DEFER time, not when it executes.
+// This is a very common interview question!
+func DemonstrateDefereArgumentEvaluation() {
+	fmt.Println("--- Argument evaluation at defer time ---")
+	x := 10
+	defer fmt.Println("deferred x =", x) // captures x=10 RIGHT NOW
+	x = 99
+	fmt.Println("current x =", x) // prints 99
+	// Output:
+	// current x = 99
+	// deferred x = 10  ← x was captured as 10, not 99
+}
+
+// RULE: Defer CAN modify named return values.
+// This is useful for wrapping errors or ensuring consistent cleanup.
+func deferWithNamedReturn() (result string) {
+	defer func() {
+		result = "modified by defer" // overwrites whatever was returned
+	}()
+	return "original" // this value gets overwritten by defer above
+}
+
 // Typical defer usage: resource cleanup
 func readFile(filename string) {
 	// In real code:
@@ -193,14 +222,31 @@ func readFile(filename string) {
 	fmt.Printf("Opening %s\n", filename)
 	defer fmt.Printf("Closing %s\n", filename) // runs when function returns
 	fmt.Printf("Reading %s\n", filename)
+	// Output:
+	// Opening report.txt
+	// Reading report.txt
+	// Closing report.txt   ← defer ran after the function body finished
 }
 
-// Defer with loop — IMPORTANT GOTCHA
+// GOTCHA: defer inside a loop — do NOT do this for resources!
+// All defers stack up and run only when the FUNCTION exits, not each iteration.
 func deferInLoop() {
-	// BAD: all defers stack up and run when function exits, not each iteration
+	fmt.Println("--- Defer in loop (GOTCHA) ---")
 	for i := 0; i < 3; i++ {
-		defer fmt.Println("defer in loop:", i) // Don't do this for resource cleanup!
+		// BAD for file handles / DB connections — they stay open until function returns!
+		defer fmt.Println("defer in loop:", i)
 	}
+	// Output (after function returns):
+	// defer in loop: 2
+	// defer in loop: 1
+	// defer in loop: 0
+	//
+	// FIX: use an anonymous function or a helper function instead:
+	// for i := 0; i < 3; i++ {
+	//     func(i int) {
+	//         // open resource, defer close, use resource — all scoped here
+	//     }(i)
+	// }
 }
 
 // RunAll runs all demonstrations
@@ -213,4 +259,6 @@ func RunAll() {
 	DemonstrateForLoops()
 	fmt.Println("\n=== Defer ===")
 	DemonstrateDefer()
+	fmt.Println()
+	DemonstrateDefereArgumentEvaluation()
 }
