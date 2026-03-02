@@ -23,12 +23,16 @@ var _ = sort.Ints
 // TwoSum returns the indices of two numbers that sum to target.
 // Time: O(n)  Space: O(n)
 func TwoSum(nums []int, target int) []int {
-	// TODO: implement
-	//seen := make(map[int]int) // num → index
-	//for i, v := range nums {
-	//
-	//}
-
+	//TODO: implement
+	seen := make(map[int]int) // num → index
+	for i, v := range nums {
+		complement := target - v
+		if complement_index, ok := seen[complement]; ok {
+			return []int{complement_index, i}
+		} else {
+			seen[v] = i
+		}
+	}
 	return nil
 }
 
