@@ -2,7 +2,10 @@
 // Topics: hash maps, prefix products, greedy single-pass algorithms.
 package arrays
 
-import "sort"
+import (
+	"math"
+	"sort"
+)
 
 // Suppress unused import warning — you will need sort for some problems.
 var _ = sort.Ints
@@ -51,7 +54,21 @@ func TwoSum(nums []int, target int) []int {
 // Time: O(n)  Space: O(1)
 func MaxProfit(prices []int) int {
 	// TODO: implement
-	return 0
+	var min, max = math.MaxInt32, math.MinInt32
+	for _, price := range prices {
+		if price <= min {
+			min = price
+			max = math.MinInt32
+		} else if price > max {
+			max = price
+		}
+	}
+	if max < min {
+		return 0
+	} else {
+		return max - min
+	}
+
 }
 
 // ============================================================
