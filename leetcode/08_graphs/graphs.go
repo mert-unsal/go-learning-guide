@@ -22,34 +22,13 @@ package graphs
 // NumIslands counts the number of islands in the grid.
 // Time: O(rows * cols)  Space: O(rows * cols) for recursion stack in worst case
 func NumIslands(grid [][]byte) int {
-	if len(grid) == 0 {
-		return 0
-	}
-	rows, cols := len(grid), len(grid[0])
-	count := 0
-
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-			if grid[r][c] == '1' {
-				count++
-				dfsIsland(grid, r, c, rows, cols)
-			}
-		}
-	}
-	return count
+	// TODO: implement
+	return 0
 }
 
 // dfsIsland marks all connected land cells as visited (sets to '0').
 func dfsIsland(grid [][]byte, r, c, rows, cols int) {
-	// Boundary or water: stop
-	if r < 0 || r >= rows || c < 0 || c >= cols || grid[r][c] != '1' {
-		return
-	}
-	grid[r][c] = '0' // mark visited
-	dfsIsland(grid, r+1, c, rows, cols)
-	dfsIsland(grid, r-1, c, rows, cols)
-	dfsIsland(grid, r, c+1, rows, cols)
-	dfsIsland(grid, r, c-1, rows, cols)
+	// TODO: implement
 }
 
 // ============================================================
@@ -69,43 +48,8 @@ func dfsIsland(grid [][]byte, r, c, rows, cols int) {
 // CanFinish returns true if all courses can be completed (no cycle in prereqs).
 // Time: O(V + E)  Space: O(V + E)
 func CanFinish(numCourses int, prerequisites [][]int) bool {
-	// Build adjacency list
-	graph := make([][]int, numCourses)
-	for i := range graph {
-		graph[i] = []int{}
-	}
-	for _, pre := range prerequisites {
-		course, prereq := pre[0], pre[1]
-		graph[prereq] = append(graph[prereq], course) // prereq → course
-	}
-
-	// 0=unvisited, 1=in-path (gray), 2=done (black)
-	color := make([]int, numCourses)
-
-	var hasCycle func(node int) bool
-	hasCycle = func(node int) bool {
-		if color[node] == 1 {
-			return true // back edge → cycle!
-		}
-		if color[node] == 2 {
-			return false // already fully explored, safe
-		}
-		color[node] = 1 // mark as in current path
-		for _, neighbor := range graph[node] {
-			if hasCycle(neighbor) {
-				return true
-			}
-		}
-		color[node] = 2 // fully processed
-		return false
-	}
-
-	for i := 0; i < numCourses; i++ {
-		if hasCycle(i) {
-			return false
-		}
-	}
-	return true
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -123,28 +67,8 @@ type GraphNode struct {
 // CloneGraph returns a deep clone of the graph.
 // Time: O(V + E)  Space: O(V) for the visited map
 func CloneGraph(node *GraphNode) *GraphNode {
-	if node == nil {
-		return nil
-	}
-	// visited maps original node → cloned node
-	visited := make(map[*GraphNode]*GraphNode)
-
-	var clone func(n *GraphNode) *GraphNode
-	clone = func(n *GraphNode) *GraphNode {
-		if copy, ok := visited[n]; ok {
-			return copy // already cloned
-		}
-		// Create new node
-		cloned := &GraphNode{Val: n.Val}
-		visited[n] = cloned // register BEFORE processing neighbors (handles cycles)
-
-		for _, neighbor := range n.Neighbors {
-			cloned.Neighbors = append(cloned.Neighbors, clone(neighbor))
-		}
-		return cloned
-	}
-
-	return clone(node)
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -158,23 +82,12 @@ func CloneGraph(node *GraphNode) *GraphNode {
 // FloodFill performs flood fill from (sr, sc) with newColor.
 // Time: O(rows * cols)  Space: O(rows * cols)
 func FloodFill(image [][]int, sr int, sc int, color int) [][]int {
-	originalColor := image[sr][sc]
-	if originalColor == color {
-		return image // already the target color, nothing to do
-	}
-	fill(image, sr, sc, originalColor, color, len(image), len(image[0]))
-	return image
+	// TODO: implement
+	return nil
 }
 
 func fill(image [][]int, r, c, originalColor, newColor, rows, cols int) {
-	if r < 0 || r >= rows || c < 0 || c >= cols || image[r][c] != originalColor {
-		return
-	}
-	image[r][c] = newColor
-	fill(image, r+1, c, originalColor, newColor, rows, cols)
-	fill(image, r-1, c, originalColor, newColor, rows, cols)
-	fill(image, r, c+1, originalColor, newColor, rows, cols)
-	fill(image, r, c-1, originalColor, newColor, rows, cols)
+	// TODO: implement
 }
 
 // ============================================================
@@ -190,32 +103,7 @@ func fill(image [][]int, r, c, originalColor, newColor, rows, cols int) {
 // ValidPath returns true if a path exists from source to destination.
 // Time: O(V + E)  Space: O(V + E)
 func ValidPath(n int, edges [][]int, source int, destination int) bool {
-	if source == destination {
-		return true
-	}
-	// Build adjacency list
-	adj := make([][]int, n)
-	for _, e := range edges {
-		adj[e[0]] = append(adj[e[0]], e[1])
-		adj[e[1]] = append(adj[e[1]], e[0])
-	}
-	// BFS
-	visited := make([]bool, n)
-	queue := []int{source}
-	visited[source] = true
-	for len(queue) > 0 {
-		curr := queue[0]
-		queue = queue[1:]
-		for _, next := range adj[curr] {
-			if next == destination {
-				return true
-			}
-			if !visited[next] {
-				visited[next] = true
-				queue = append(queue, next)
-			}
-		}
-	}
+	// TODO: implement
 	return false
 }
 
@@ -232,41 +120,8 @@ func ValidPath(n int, edges [][]int, source int, destination int) bool {
 // CountComponents returns the number of connected components.
 // Time: O(n + e * α(n))  Space: O(n)
 func CountComponents(n int, edges [][]int) int {
-	parent := make([]int, n)
-	rank := make([]int, n)
-	for i := range parent {
-		parent[i] = i
-	}
-	components := n
-
-	var find func(x int) int
-	find = func(x int) int {
-		if parent[x] != x {
-			parent[x] = find(parent[x]) // path compression
-		}
-		return parent[x]
-	}
-
-	union := func(x, y int) {
-		px, py := find(x), find(y)
-		if px == py {
-			return
-		}
-		components--
-		if rank[px] < rank[py] {
-			parent[px] = py
-		} else if rank[px] > rank[py] {
-			parent[py] = px
-		} else {
-			parent[py] = px
-			rank[px]++
-		}
-	}
-
-	for _, e := range edges {
-		union(e[0], e[1])
-	}
-	return components
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -283,49 +138,8 @@ func CountComponents(n int, edges [][]int) int {
 // OrangesRotting returns the minimum minutes to rot all oranges, or -1.
 // Time: O(rows * cols)  Space: O(rows * cols)
 func OrangesRotting(grid [][]int) int {
-	rows, cols := len(grid), len(grid[0])
-	queue := [][2]int{}
-	fresh := 0
-
-	// Collect all initially rotten oranges and count fresh
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-			if grid[r][c] == 2 {
-				queue = append(queue, [2]int{r, c})
-			} else if grid[r][c] == 1 {
-				fresh++
-			}
-		}
-	}
-
-	if fresh == 0 {
-		return 0
-	}
-
-	dirs := [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
-	minutes := 0
-
-	for len(queue) > 0 && fresh > 0 {
-		minutes++
-		size := len(queue)
-		for i := 0; i < size; i++ {
-			curr := queue[i]
-			for _, d := range dirs {
-				nr, nc := curr[0]+d[0], curr[1]+d[1]
-				if nr >= 0 && nr < rows && nc >= 0 && nc < cols && grid[nr][nc] == 1 {
-					grid[nr][nc] = 2
-					fresh--
-					queue = append(queue, [2]int{nr, nc})
-				}
-			}
-		}
-		queue = queue[size:]
-	}
-
-	if fresh > 0 {
-		return -1
-	}
-	return minutes
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -341,56 +155,72 @@ func OrangesRotting(grid [][]int) int {
 // PacificAtlantic returns cells that can flow to both oceans.
 // Time: O(m*n)  Space: O(m*n)
 func PacificAtlantic(heights [][]int) [][]int {
-	rows, cols := len(heights), len(heights[0])
-	pacific := make([][]bool, rows)
-	atlantic := make([][]bool, rows)
-	for i := range pacific {
-		pacific[i] = make([]bool, cols)
-		atlantic[i] = make([]bool, cols)
-	}
+	// TODO: implement
+	return nil
+}
 
-	bfs := func(queue [][2]int, visited [][]bool) {
-		dirs := [][2]int{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}
-		for len(queue) > 0 {
-			curr := queue[0]
-			queue = queue[1:]
-			for _, d := range dirs {
-				nr, nc := curr[0]+d[0], curr[1]+d[1]
-				if nr >= 0 && nr < rows && nc >= 0 && nc < cols &&
-					!visited[nr][nc] && heights[nr][nc] >= heights[curr[0]][curr[1]] {
-					visited[nr][nc] = true
-					queue = append(queue, [2]int{nr, nc})
-				}
-			}
-		}
-	}
+// ============================================================
+// PROBLEM 9: Course Schedule II (LeetCode #210) — MEDIUM
+// ============================================================
+// Return the order in which courses should be taken (topological sort).
+// If impossible (cycle exists), return empty array.
+//
+// Example: numCourses=4, prerequisites=[[1,0],[2,0],[3,1],[3,2]] → [0,1,2,3] or [0,2,1,3]
+//
+// Approach: BFS topological sort (Kahn's algorithm).
+// Start from nodes with in-degree 0. Process them, decrement neighbors' in-degree.
 
-	// Seed Pacific (top row + left column)
-	var pacQueue [][2]int
-	var atlQueue [][2]int
-	for r := 0; r < rows; r++ {
-		pacific[r][0] = true
-		atlantic[r][cols-1] = true
-		pacQueue = append(pacQueue, [2]int{r, 0})
-		atlQueue = append(atlQueue, [2]int{r, cols - 1})
-	}
-	for c := 0; c < cols; c++ {
-		pacific[0][c] = true
-		atlantic[rows-1][c] = true
-		pacQueue = append(pacQueue, [2]int{0, c})
-		atlQueue = append(atlQueue, [2]int{rows - 1, c})
-	}
+// FindOrder returns a valid course order, or empty if impossible.
+// Time: O(V + E)  Space: O(V + E)
+func FindOrder(numCourses int, prerequisites [][]int) []int {
+	// TODO: implement
+	return nil
+}
 
-	bfs(pacQueue, pacific)
-	bfs(atlQueue, atlantic)
+// ============================================================
+// PROBLEM 10: Max Area of Island (LeetCode #695) — MEDIUM
+// ============================================================
+// Given a grid of 0s and 1s, find the maximum area of an island.
+//
+// Example: grid has island of area 4 → 4
+//
+// Approach: DFS flood-fill, track area of each island.
 
-	var result [][]int
-	for r := 0; r < rows; r++ {
-		for c := 0; c < cols; c++ {
-			if pacific[r][c] && atlantic[r][c] {
-				result = append(result, []int{r, c})
-			}
-		}
-	}
-	return result
+// MaxAreaOfIsland returns the maximum island area.
+// Time: O(rows * cols)  Space: O(rows * cols)
+func MaxAreaOfIsland(grid [][]int) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 11: Surrounded Regions (LeetCode #130) — MEDIUM
+// ============================================================
+// Given a board of 'X' and 'O', capture all regions surrounded by 'X'.
+// Border-connected 'O' regions should NOT be captured.
+//
+// Approach: DFS from all border 'O's, mark them as safe ('#').
+// Then flip all remaining 'O' to 'X' and '#' back to 'O'.
+
+// SurroundedRegions captures surrounded 'O' regions in-place.
+// Time: O(rows * cols)  Space: O(rows * cols)
+func SurroundedRegions(board [][]byte) {
+	// TODO: implement
+}
+
+// ============================================================
+// PROBLEM 12: Redundant Connection (LeetCode #684) — MEDIUM
+// ============================================================
+// Given edges that form a tree plus one extra edge creating a cycle,
+// find the edge that can be removed to make a tree.
+// Return the last such edge in the input.
+//
+// Approach: Union-Find. Process edges one by one. The first edge that
+// connects two already-connected nodes is the redundant one.
+
+// FindRedundantConnection returns the redundant edge.
+// Time: O(n * α(n))  Space: O(n)
+func FindRedundantConnection(edges [][]int) []int {
+	// TODO: implement
+	return nil
 }

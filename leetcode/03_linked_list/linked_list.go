@@ -45,31 +45,16 @@ func toSlice(head *ListNode) []int {
 // ReverseList reverses a linked list iteratively.
 // Time: O(n)  Space: O(1)
 func ReverseList(head *ListNode) *ListNode {
-	var prev *ListNode
-	cur := head
-
-	for cur != nil {
-		next := cur.Next // save next before we overwrite it
-		cur.Next = prev  // reverse the pointer
-		prev = cur       // advance prev
-		cur = next       // advance cur
-	}
-	return prev // prev is now the new head
+	// TODO: implement
+	return nil
 }
 
 // ReverseListRecursive reverses a linked list recursively.
 // Time: O(n)  Space: O(n) — recursion stack
 // The base case: a list of 0 or 1 nodes is already reversed.
 func ReverseListRecursive(head *ListNode) *ListNode {
-	if head == nil || head.Next == nil {
-		return head
-	}
-	// Recursively reverse the rest of the list
-	newHead := ReverseListRecursive(head.Next)
-	// Make the next node point back to head
-	head.Next.Next = head
-	head.Next = nil
-	return newHead
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -85,29 +70,8 @@ func ReverseListRecursive(head *ListNode) *ListNode {
 // MergeTwoLists merges two sorted linked lists.
 // Time: O(n + m)  Space: O(1) — we reuse existing nodes
 func MergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
-	// Dummy head: we never have to special-case the first node
-	dummy := &ListNode{}
-	cur := dummy
-
-	for list1 != nil && list2 != nil {
-		if list1.Val <= list2.Val {
-			cur.Next = list1
-			list1 = list1.Next
-		} else {
-			cur.Next = list2
-			list2 = list2.Next
-		}
-		cur = cur.Next
-	}
-
-	// Attach the remaining non-nil list
-	if list1 != nil {
-		cur.Next = list1
-	} else {
-		cur.Next = list2
-	}
-
-	return dummy.Next // skip the dummy node
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -123,16 +87,8 @@ func MergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
 // HasCycle returns true if the list contains a cycle.
 // Time: O(n)  Space: O(1)
 func HasCycle(head *ListNode) bool {
-	slow, fast := head, head
-
-	for fast != nil && fast.Next != nil {
-		slow = slow.Next      // move 1 step
-		fast = fast.Next.Next // move 2 steps
-		if slow == fast {
-			return true // they met → cycle exists
-		}
-	}
-	return false // fast reached end → no cycle
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -143,29 +99,14 @@ func HasCycle(head *ListNode) bool {
 // Example: 1→2→3→4→5, n=2 → 1→2→3→5
 //
 // Approach: two-pointer with n-step gap.
-// Advance fast pointer n steps ahead. Then advance both until fast reaches end.
-// Slow's next is the node to remove.
+// Advance fast pointer n+1 steps ahead. Then advance both until fast reaches end.
+// Slow's next is the node to remove. Use a dummy node for edge cases.
 
 // RemoveNthFromEnd removes the nth node from the end.
 // Time: O(n)  Space: O(1)
 func RemoveNthFromEnd(head *ListNode, n int) *ListNode {
-	dummy := &ListNode{Next: head}
-	fast, slow := dummy, dummy
-
-	// Advance fast n+1 steps (one extra so slow stops before the target)
-	for i := 0; i <= n; i++ {
-		fast = fast.Next
-	}
-
-	// Move both until fast reaches nil
-	for fast != nil {
-		fast = fast.Next
-		slow = slow.Next
-	}
-
-	// slow.Next is the node to remove
-	slow.Next = slow.Next.Next
-	return dummy.Next
+	// TODO: implement
+	return head
 }
 
 // ============================================================
@@ -181,12 +122,8 @@ func RemoveNthFromEnd(head *ListNode, n int) *ListNode {
 // MiddleNode returns the middle node of the list.
 // Time: O(n)  Space: O(1)
 func MiddleNode(head *ListNode) *ListNode {
-	slow, fast := head, head
-	for fast != nil && fast.Next != nil {
-		slow = slow.Next
-		fast = fast.Next.Next
-	}
-	return slow
+	// TODO: implement
+	return head
 }
 
 // ============================================================
@@ -201,43 +138,8 @@ func MiddleNode(head *ListNode) *ListNode {
 // IsPalindrome returns true if the linked list is a palindrome.
 // Time: O(n)  Space: O(1)
 func IsPalindrome(head *ListNode) bool {
-	if head == nil || head.Next == nil {
-		return true
-	}
-	// Find middle
-	slow, fast := head, head
-	for fast.Next != nil && fast.Next.Next != nil {
-		slow = slow.Next
-		fast = fast.Next.Next
-	}
-	// Reverse second half
-	secondHalf := reverseList(slow.Next)
-	// Compare
-	p1, p2 := head, secondHalf
-	result := true
-	for p2 != nil {
-		if p1.Val != p2.Val {
-			result = false
-			break
-		}
-		p1 = p1.Next
-		p2 = p2.Next
-	}
-	// Restore list (optional but good practice)
-	slow.Next = reverseList(secondHalf)
-	return result
-}
-
-func reverseList(head *ListNode) *ListNode {
-	var prev *ListNode
-	cur := head
-	for cur != nil {
-		next := cur.Next
-		cur.Next = prev
-		prev = cur
-		cur = next
-	}
-	return prev
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -254,23 +156,8 @@ func reverseList(head *ListNode) *ListNode {
 // GetIntersectionNode returns the intersection node of two lists.
 // Time: O(m+n)  Space: O(1)
 func GetIntersectionNode(headA, headB *ListNode) *ListNode {
-	if headA == nil || headB == nil {
-		return nil
-	}
-	a, b := headA, headB
-	for a != b {
-		if a == nil {
-			a = headB
-		} else {
-			a = a.Next
-		}
-		if b == nil {
-			b = headA
-		} else {
-			b = b.Next
-		}
-	}
-	return a
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -280,29 +167,14 @@ func GetIntersectionNode(headA, headB *ListNode) *ListNode {
 // Add the two numbers and return the sum as a linked list.
 //
 // Example: (2→4→3) + (5→6→4) → 7→0→8  (342 + 465 = 807)
+//
+// Hint: use a carry variable, iterate while either list or carry is non-zero.
 
 // AddTwoNumbers adds two numbers represented as reversed linked lists.
 // Time: O(max(m,n))  Space: O(max(m,n))
 func AddTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
-	dummy := &ListNode{}
-	cur := dummy
-	carry := 0
-
-	for l1 != nil || l2 != nil || carry != 0 {
-		sum := carry
-		if l1 != nil {
-			sum += l1.Val
-			l1 = l1.Next
-		}
-		if l2 != nil {
-			sum += l2.Val
-			l2 = l2.Next
-		}
-		carry = sum / 10
-		cur.Next = &ListNode{Val: sum % 10}
-		cur = cur.Next
-	}
-	return dummy.Next
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -323,25 +195,8 @@ type RandomNode struct {
 // CopyRandomList deep copies a linked list with random pointers.
 // Time: O(n)  Space: O(n)
 func CopyRandomList(head *RandomNode) *RandomNode {
-	if head == nil {
-		return nil
-	}
-	nodeMap := make(map[*RandomNode]*RandomNode)
-
-	// First pass: create all cloned nodes
-	for cur := head; cur != nil; cur = cur.Next {
-		nodeMap[cur] = &RandomNode{Val: cur.Val}
-	}
-	// Second pass: assign Next and Random
-	for cur := head; cur != nil; cur = cur.Next {
-		if cur.Next != nil {
-			nodeMap[cur].Next = nodeMap[cur.Next]
-		}
-		if cur.Random != nil {
-			nodeMap[cur].Random = nodeMap[cur.Random]
-		}
-	}
-	return nodeMap[head]
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -356,27 +211,107 @@ func CopyRandomList(head *RandomNode) *RandomNode {
 // ReorderList reorders the list in-place.
 // Time: O(n)  Space: O(1)
 func ReorderList(head *ListNode) {
-	if head == nil || head.Next == nil {
-		return
-	}
-	// Step 1: find middle
-	slow, fast := head, head
-	for fast.Next != nil && fast.Next.Next != nil {
-		slow = slow.Next
-		fast = fast.Next.Next
-	}
-	// Step 2: reverse second half
-	second := reverseList(slow.Next)
-	slow.Next = nil // cut the list
+	// TODO: implement
+}
 
-	// Step 3: merge two halves
-	first := head
-	for second != nil {
-		tmp1 := first.Next
-		tmp2 := second.Next
-		first.Next = second
-		second.Next = tmp1
-		first = tmp1
-		second = tmp2
+// ============================================================
+// PROBLEM 11: Linked List Cycle II (LeetCode #142) — MEDIUM
+// ============================================================
+// Given a linked list, return the node where the cycle begins.
+// Return nil if there is no cycle.
+//
+// Approach: Floyd's cycle detection. Once slow and fast meet,
+// move one pointer back to head and advance both by 1.
+// They will meet at the cycle entry point.
+//
+// Proof: let d = distance to cycle start, c = cycle length.
+// When they meet, slow traveled d + k, fast traveled d + k + nc.
+// Since fast = 2*slow: d + k + nc = 2(d + k) → d = nc - k.
+// So moving d steps from head and d steps from meeting point both reach cycle start.
+
+// DetectCycle returns the node where the cycle begins, or nil.
+// Time: O(n)  Space: O(1)
+func DetectCycle(head *ListNode) *ListNode {
+	// TODO: implement
+	return nil
+}
+
+// ============================================================
+// PROBLEM 12: Reverse Nodes in k-Group (LeetCode #25) — HARD
+// ============================================================
+// Reverse the nodes of a linked list k at a time.
+// If the number of nodes is not a multiple of k, the remaining nodes
+// at the end stay as they are.
+//
+// Example: [1,2,3,4,5], k=2 → [2,1,4,3,5]
+// Example: [1,2,3,4,5], k=3 → [3,2,1,4,5]
+
+// ReverseKGroup reverses nodes in groups of k.
+// Time: O(n)  Space: O(1)
+func ReverseKGroup(head *ListNode, k int) *ListNode {
+	// TODO: implement
+	return head
+}
+
+// ============================================================
+// PROBLEM 13: LRU Cache (LeetCode #146) — MEDIUM
+// ============================================================
+// Design a data structure that follows LRU eviction policy.
+// get(key) and put(key, value) must both run in O(1).
+//
+// Approach: doubly-linked list + hash map.
+// - Hash map: key → node pointer (O(1) lookup)
+// - Doubly-linked list: most recently used at head, least recently at tail
+// - On get: move node to head
+// - On put: add to head; if over capacity, evict tail
+
+type lruNode struct {
+	key, val   int
+	prev, next *lruNode
+}
+
+// LRUCache is an LRU cache with O(1) get and put.
+type LRUCache struct {
+	capacity   int
+	cache      map[int]*lruNode
+	head, tail *lruNode // sentinel nodes
+}
+
+// NewLRUCache creates a new LRU cache with given capacity.
+func NewLRUCache(capacity int) *LRUCache {
+	// TODO: implement — create head/tail sentinels, link them
+	return &LRUCache{
+		capacity: capacity,
+		cache:    make(map[int]*lruNode),
 	}
+}
+
+// Get returns the value for key, or -1 if not found. Marks as recently used.
+func (c *LRUCache) Get(key int) int {
+	// TODO: implement
+	return -1
+}
+
+// Put inserts or updates a key-value pair. Evicts LRU entry if over capacity.
+func (c *LRUCache) Put(key, value int) {
+	// TODO: implement
+}
+
+// ============================================================
+// PROBLEM 14: Find the Duplicate Number (LeetCode #287) — MEDIUM
+// ============================================================
+// Given an array of n+1 integers where each is in [1, n], find the
+// duplicate number. Must not modify the array. O(1) extra space.
+//
+// Example: nums=[1,3,4,2,2] → 2
+//
+// Approach: Floyd's cycle detection on index mapping.
+// Treat nums as a linked list: index i → nums[i].
+// Since there's a duplicate, there must be a cycle. The cycle entry is the duplicate.
+
+// FindDuplicate finds the duplicate number using Floyd's algorithm.
+// Time: O(n)  Space: O(1)
+func FindDuplicate(nums []int) int {
+	// TODO: implement
+	return 0
 }

@@ -132,3 +132,89 @@ func TestMiddleNode(t *testing.T) {
 		})
 	}
 }
+
+func TestDetectCycle(t *testing.T) {
+	t.Run("no cycle", func(t *testing.T) {
+		head := newList([]int{1, 2, 3})
+		if DetectCycle(head) != nil {
+			t.Error("expected nil for acyclic list")
+		}
+	})
+	t.Run("has cycle", func(t *testing.T) {
+		head := &ListNode{Val: 3}
+		n2 := &ListNode{Val: 2}
+		n3 := &ListNode{Val: 0}
+		n4 := &ListNode{Val: -4}
+		head.Next = n2
+		n2.Next = n3
+		n3.Next = n4
+		n4.Next = n2 // cycle at n2
+		got := DetectCycle(head)
+		if got != n2 {
+			t.Error("expected cycle start at node 2")
+		}
+	})
+}
+
+func TestReverseKGroup(t *testing.T) {
+	tests := []struct {
+		name  string
+		input []int
+		k     int
+		want  []int
+	}{
+		{"k=2", []int{1, 2, 3, 4, 5}, 2, []int{2, 1, 4, 3, 5}},
+		{"k=3", []int{1, 2, 3, 4, 5}, 3, []int{3, 2, 1, 4, 5}},
+		{"k=1", []int{1, 2, 3}, 1, []int{1, 2, 3}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := toSlice(ReverseKGroup(newList(tt.input), tt.k))
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ReverseKGroup(%v, %d) = %v, want %v", tt.input, tt.k, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestLRUCache(t *testing.T) {
+	cache := NewLRUCache(2)
+	cache.Put(1, 1)
+	cache.Put(2, 2)
+	if got := cache.Get(1); got != 1 {
+		t.Errorf("Get(1) = %d, want 1", got)
+	}
+	cache.Put(3, 3) // evicts key 2
+	if got := cache.Get(2); got != -1 {
+		t.Errorf("Get(2) = %d, want -1 (evicted)", got)
+	}
+	cache.Put(4, 4) // evicts key 1
+	if got := cache.Get(1); got != -1 {
+		t.Errorf("Get(1) = %d, want -1 (evicted)", got)
+	}
+	if got := cache.Get(3); got != 3 {
+		t.Errorf("Get(3) = %d, want 3", got)
+	}
+	if got := cache.Get(4); got != 4 {
+		t.Errorf("Get(4) = %d, want 4", got)
+	}
+}
+
+func TestFindDuplicate(t *testing.T) {
+	tests := []struct {
+		name string
+		nums []int
+		want int
+	}{
+		{"basic", []int{1, 3, 4, 2, 2}, 2},
+		{"another", []int{3, 1, 3, 4, 2}, 3},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := FindDuplicate(tt.nums)
+			if got != tt.want {
+				t.Errorf("FindDuplicate(%v) = %d, want %d", tt.nums, got, tt.want)
+			}
+		})
+	}
+}

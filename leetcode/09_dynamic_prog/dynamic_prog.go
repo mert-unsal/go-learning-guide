@@ -18,16 +18,8 @@ package dynamic_prog
 // ClimbStairs returns the number of distinct ways to climb n stairs.
 // Time: O(n)  Space: O(1)
 func ClimbStairs(n int) int {
-	if n <= 2 {
-		return n
-	}
-	prev2, prev1 := 1, 2
-	for i := 3; i <= n; i++ {
-		cur := prev1 + prev2
-		prev2 = prev1
-		prev1 = cur
-	}
-	return prev1
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -48,25 +40,8 @@ func ClimbStairs(n int) int {
 // CoinChange returns the minimum number of coins to make amount, or -1 if impossible.
 // Time: O(amount * len(coins))  Space: O(amount)
 func CoinChange(coins []int, amount int) int {
-	inf := amount + 1 // larger than any valid answer; acts as "infinity"
-	dp := make([]int, amount+1)
-	for i := range dp {
-		dp[i] = inf // initialize with "infinity"
-	}
-	dp[0] = 0 // base case: 0 coins needed for amount 0
-
-	for i := 1; i <= amount; i++ {
-		for _, coin := range coins {
-			if coin <= i && dp[i-coin]+1 < dp[i] {
-				dp[i] = dp[i-coin] + 1
-			}
-		}
-	}
-
-	if dp[amount] == inf {
-		return -1
-	}
-	return dp[amount]
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -86,28 +61,13 @@ func CoinChange(coins []int, amount int) int {
 // Rob returns the maximum amount that can be robbed without robbing adjacent houses.
 // Time: O(n)  Space: O(1)
 func Rob(nums []int) int {
-	if len(nums) == 0 {
-		return 0
-	}
-	if len(nums) == 1 {
-		return nums[0]
-	}
-	prev2 := nums[0]               // max loot up to house i-2
-	prev1 := max(nums[0], nums[1]) // max loot up to house i-1
-
-	for i := 2; i < len(nums); i++ {
-		cur := max(prev1, prev2+nums[i])
-		prev2 = prev1
-		prev1 = cur
-	}
-	return prev1
+	// TODO: implement
+	return 0
 }
 
 func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -125,16 +85,8 @@ func max(a, b int) int {
 // UniquePaths returns the number of unique paths in an m×n grid.
 // Time: O(m*n)  Space: O(n)
 func UniquePaths(m int, n int) int {
-	dp := make([]int, n)
-	for i := range dp {
-		dp[i] = 1 // first row: all 1s
-	}
-	for r := 1; r < m; r++ {
-		for c := 1; c < n; c++ {
-			dp[c] += dp[c-1] // dp[c] was top, dp[c-1] is left
-		}
-	}
-	return dp[n-1]
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -152,26 +104,8 @@ func UniquePaths(m int, n int) int {
 // LongestCommonSubsequence returns the LCS length of text1 and text2.
 // Time: O(m*n)  Space: O(m*n) — can be optimized to O(n)
 func LongestCommonSubsequence(text1 string, text2 string) int {
-	m, n := len(text1), len(text2)
-	dp := make([][]int, m+1)
-	for i := range dp {
-		dp[i] = make([]int, n+1)
-	}
-
-	for i := 1; i <= m; i++ {
-		for j := 1; j <= n; j++ {
-			if text1[i-1] == text2[j-1] {
-				dp[i][j] = dp[i-1][j-1] + 1
-			} else {
-				if dp[i-1][j] > dp[i][j-1] {
-					dp[i][j] = dp[i-1][j]
-				} else {
-					dp[i][j] = dp[i][j-1]
-				}
-			}
-		}
-	}
-	return dp[m][n]
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -188,21 +122,13 @@ func LongestCommonSubsequence(text1 string, text2 string) int {
 // MinCostClimbingStairs returns minimum cost to reach the top.
 // Time: O(n)  Space: O(1)
 func MinCostClimbingStairs(cost []int) int {
-	n := len(cost)
-	prev2, prev1 := cost[0], cost[1]
-	for i := 2; i < n; i++ {
-		curr := cost[i] + min2(prev1, prev2)
-		prev2 = prev1
-		prev1 = curr
-	}
-	return min2(prev1, prev2)
+	// TODO: implement
+	return 0
 }
 
 func min2(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -220,26 +146,8 @@ func min2(a, b int) int {
 // LengthOfLIS returns the length of the longest increasing subsequence.
 // Time: O(n log n)  Space: O(n)
 func LengthOfLIS(nums []int) int {
-	tails := []int{} // tails[i] = smallest tail of all increasing subsequences of length i+1
-
-	for _, num := range nums {
-		// Binary search for first tail >= num
-		left, right := 0, len(tails)
-		for left < right {
-			mid := left + (right-left)/2
-			if tails[mid] < num {
-				left = mid + 1
-			} else {
-				right = mid
-			}
-		}
-		if left == len(tails) {
-			tails = append(tails, num) // extend
-		} else {
-			tails[left] = num // replace
-		}
-	}
-	return len(tails)
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -256,23 +164,8 @@ func LengthOfLIS(nums []int) int {
 // WordBreak returns true if s can be segmented into dictionary words.
 // Time: O(n² * m) where m = avg word length  Space: O(n)
 func WordBreak(s string, wordDict []string) bool {
-	wordSet := make(map[string]bool)
-	for _, w := range wordDict {
-		wordSet[w] = true
-	}
-	n := len(s)
-	dp := make([]bool, n+1)
-	dp[0] = true // empty string is always segmentable
-
-	for i := 1; i <= n; i++ {
-		for j := 0; j < i; j++ {
-			if dp[j] && wordSet[s[j:i]] {
-				dp[i] = true
-				break
-			}
-		}
-	}
-	return dp[n]
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -289,16 +182,8 @@ func WordBreak(s string, wordDict []string) bool {
 // CanJump returns true if you can reach the last index.
 // Time: O(n)  Space: O(1)
 func CanJump(nums []int) bool {
-	furthest := 0
-	for i, jump := range nums {
-		if i > furthest {
-			return false // can't reach this index
-		}
-		if i+jump > furthest {
-			furthest = i + jump
-		}
-	}
-	return true
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -315,22 +200,101 @@ func CanJump(nums []int) bool {
 // CanPartition returns true if the array can be split into two equal-sum subsets.
 // Time: O(n * sum)  Space: O(sum)
 func CanPartition(nums []int) bool {
-	total := 0
-	for _, n := range nums {
-		total += n
-	}
-	if total%2 != 0 {
-		return false // odd total can't be split evenly
-	}
-	target := total / 2
-	dp := make([]bool, target+1)
-	dp[0] = true
+	// TODO: implement
+	return false
+}
 
-	for _, num := range nums {
-		// Traverse backwards to avoid using same element twice
-		for j := target; j >= num; j-- {
-			dp[j] = dp[j] || dp[j-num]
-		}
-	}
-	return dp[target]
+// ============================================================
+// PROBLEM 11: Maximum Product Subarray (LeetCode #152) — MEDIUM
+// ============================================================
+// Find the contiguous subarray with the largest product.
+//
+// Example: nums=[2,3,-2,4] → 6  ([2,3])
+// Example: nums=[-2,0,-1]  → 0
+//
+// Key insight: track both max and min products ending at each position.
+// A negative number can turn a min product into a max product.
+
+// MaxProduct returns the largest product of any contiguous subarray.
+// Time: O(n)  Space: O(1)
+func MaxProduct(nums []int) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 12: Decode Ways (LeetCode #91) — MEDIUM
+// ============================================================
+// A string of digits can be decoded where '1'→A, '2'→B, ..., '26'→Z.
+// Given a string s, return the number of ways to decode it.
+//
+// Example: s="12" → 2  ("AB" or "L")
+// Example: s="226" → 3  ("BZ", "VF", "BBF")
+//
+// dp[i] = number of ways to decode s[0..i-1]
+// If s[i-1] != '0': dp[i] += dp[i-1]
+// If s[i-2..i-1] is in 10..26: dp[i] += dp[i-2]
+
+// NumDecodings returns the number of ways to decode the digit string.
+// Time: O(n)  Space: O(1)
+func NumDecodings(s string) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 13: House Robber II (LeetCode #213) — MEDIUM
+// ============================================================
+// Houses are arranged in a circle. You cannot rob adjacent houses.
+// Maximize the amount robbed.
+//
+// Key insight: since houses form a circle, we can't rob both the first
+// and last house. Run House Robber I on two subarrays:
+//   nums[0..n-2] (exclude last) and nums[1..n-1] (exclude first).
+// Return the max of both.
+
+// RobII returns the maximum loot from circular houses.
+// Time: O(n)  Space: O(1)
+func RobII(nums []int) int {
+	// TODO: implement
+	return 0
+}
+
+func robRange(nums []int, start, end int) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 14: Coin Change II (LeetCode #518) — MEDIUM
+// ============================================================
+// Given coin denominations and an amount, find the number of combinations
+// that make up that amount. (Unbounded knapsack — count ways)
+//
+// Example: amount=5, coins=[1,2,5] → 4
+//
+// dp[i] = number of combinations to make amount i
+// For each coin, for each amount: dp[j] += dp[j - coin]
+
+// CoinChangeII returns the number of combinations to make amount.
+// Time: O(amount * len(coins))  Space: O(amount)
+func CoinChangeII(amount int, coins []int) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 15: Interleaving String (LeetCode #97) — MEDIUM
+// ============================================================
+// Given strings s1, s2, and s3, determine if s3 is formed by interleaving s1 and s2.
+//
+// Example: s1="aabcc", s2="dbbca", s3="aadbbcbcac" → true
+//
+// dp[i][j] = true if s3[0..i+j-1] can be formed by interleaving s1[0..i-1] and s2[0..j-1]
+
+// IsInterleave returns true if s3 is an interleaving of s1 and s2.
+// Time: O(m*n)  Space: O(n) optimized to 1D
+func IsInterleave(s1, s2, s3 string) bool {
+	// TODO: implement
+	return false
 }

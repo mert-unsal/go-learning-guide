@@ -2,6 +2,11 @@
 // Topics: hash maps, prefix products, greedy single-pass algorithms.
 package arrays
 
+import "sort"
+
+// Suppress unused import warning — you will need sort for some problems.
+var _ = sort.Ints
+
 // ============================================================
 // PROBLEM 1: Two Sum (LeetCode #1) — EASY
 // ============================================================
@@ -12,21 +17,19 @@ package arrays
 //
 // Brute force: O(n²) — check every pair
 // Optimal: O(n) — hash map stores "what complement have we seen?"
+//
+// Hint: iterate once. For each num, check if (target - num) is already in the map.
 
 // TwoSum returns the indices of two numbers that sum to target.
 // Time: O(n)  Space: O(n)
 func TwoSum(nums []int, target int) []int {
-	// seen maps value → index
-	seen := make(map[int]int)
+	// TODO: implement
+	//seen := make(map[int]int) // num → index
+	//for i, v := range nums {
+	//
+	//}
 
-	for i, num := range nums {
-		complement := target - num
-		if j, ok := seen[complement]; ok {
-			return []int{j, i} // complement was seen at index j
-		}
-		seen[num] = i // record this number's index
-	}
-	return nil // no solution (problem guarantees one exists)
+	return nil
 }
 
 // ============================================================
@@ -43,20 +46,8 @@ func TwoSum(nums []int, target int) []int {
 // MaxProfit returns the maximum profit achievable from one transaction.
 // Time: O(n)  Space: O(1)
 func MaxProfit(prices []int) int {
-	if len(prices) == 0 {
-		return 0
-	}
-	minPrice := prices[0] // lowest buy price seen so far
-	maxProfit := 0
-
-	for _, price := range prices {
-		if price < minPrice {
-			minPrice = price // found a cheaper buy day
-		} else if price-minPrice > maxProfit {
-			maxProfit = price - minPrice // better profit today
-		}
-	}
-	return maxProfit
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -75,22 +66,8 @@ func MaxProfit(prices []int) int {
 // ProductExceptSelf returns the product array without division.
 // Time: O(n)  Space: O(1) extra (output array doesn't count)
 func ProductExceptSelf(nums []int) []int {
-	n := len(nums)
-	result := make([]int, n)
-
-	// Pass 1: result[i] = product of nums[0..i-1]
-	result[0] = 1
-	for i := 1; i < n; i++ {
-		result[i] = result[i-1] * nums[i-1]
-	}
-
-	// Pass 2: multiply result[i] by product of nums[i+1..n-1]
-	suffix := 1
-	for i := n - 1; i >= 0; i-- {
-		result[i] *= suffix
-		suffix *= nums[i]
-	}
-	return result
+	// TODO: implement
+	return make([]int, len(nums))
 }
 
 // ============================================================
@@ -98,17 +75,13 @@ func ProductExceptSelf(nums []int) []int {
 // ============================================================
 // Return true if any value appears at least twice.
 //
+// Hint: use a map[int]bool as a "seen" set.
+//
 // Time: O(n)  Space: O(n)
 
 // ContainsDuplicate returns true if the slice has any repeated element.
 func ContainsDuplicate(nums []int) bool {
-	seen := make(map[int]bool)
-	for _, n := range nums {
-		if seen[n] {
-			return true
-		}
-		seen[n] = true
-	}
+	// TODO: implement
 	return false
 }
 
@@ -125,24 +98,8 @@ func ContainsDuplicate(nums []int) bool {
 // MaxSubArray returns the largest sum of any contiguous subarray.
 // Time: O(n)  Space: O(1)
 func MaxSubArray(nums []int) int {
-	if len(nums) == 0 {
-		return 0
-	}
-	current := nums[0]
-	best := nums[0]
-
-	for _, num := range nums[1:] {
-		// Extend previous subarray or start a new one here
-		if current+num > num {
-			current = current + num
-		} else {
-			current = num
-		}
-		if current > best {
-			best = current
-		}
-	}
-	return best
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -159,17 +116,7 @@ func MaxSubArray(nums []int) int {
 // Merge merges nums2 into nums1 in-place (fills from the back).
 // Time: O(m+n)  Space: O(1)
 func Merge(nums1 []int, m int, nums2 []int, n int) {
-	i, j, k := m-1, n-1, m+n-1 // i=last of nums1, j=last of nums2, k=write position
-	for j >= 0 {
-		if i >= 0 && nums1[i] > nums2[j] {
-			nums1[k] = nums1[i]
-			i--
-		} else {
-			nums1[k] = nums2[j]
-			j--
-		}
-		k--
-	}
+	// TODO: implement
 }
 
 // ============================================================
@@ -187,24 +134,8 @@ func Merge(nums1 []int, m int, nums2 []int, n int) {
 // FindDisappearedNumbers returns missing numbers using O(1) extra space.
 // Time: O(n)  Space: O(1) extra
 func FindDisappearedNumbers(nums []int) []int {
-	// Mark visited indices negative
-	for _, v := range nums {
-		if v < 0 {
-			v = -v
-		}
-		idx := v - 1
-		if nums[idx] > 0 {
-			nums[idx] = -nums[idx]
-		}
-	}
-	// Indices still positive are missing numbers
-	var result []int
-	for i, v := range nums {
-		if v > 0 {
-			result = append(result, i+1)
-		}
-	}
-	return result
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -222,42 +153,24 @@ func FindDisappearedNumbers(nums []int) []int {
 // Rotate rotates the array to the right by k positions in-place.
 // Time: O(n)  Space: O(1)
 func Rotate(nums []int, k int) {
-	n := len(nums)
-	k = k % n // handle k >= n
-	reverse(nums, 0, n-1)
-	reverse(nums, 0, k-1)
-	reverse(nums, k, n-1)
-}
-
-func reverse(nums []int, left, right int) {
-	for left < right {
-		nums[left], nums[right] = nums[right], nums[left]
-		left++
-		right--
-	}
+	// TODO: implement
+	// Hint: you may want a helper: func reverse(nums []int, left, right int)
 }
 
 // ============================================================
 // PROBLEM 9: Find Minimum in Rotated Sorted Array (LeetCode #153) — MEDIUM
 // ============================================================
-// (Also in binary_search — here for completeness in arrays track)
 // Array was sorted then rotated. Find the minimum element.
 //
 // Example: nums=[3,4,5,1,2] → 1
+//
+// Hint: binary search. If nums[mid] > nums[right], the min is in the right half.
 
 // FindMinRotated returns the minimum of a rotated sorted array.
 // Time: O(log n)  Space: O(1)
 func FindMinRotated(nums []int) int {
-	left, right := 0, len(nums)-1
-	for left < right {
-		mid := left + (right-left)/2
-		if nums[mid] > nums[right] {
-			left = mid + 1
-		} else {
-			right = mid
-		}
-	}
-	return nums[left]
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -275,16 +188,134 @@ func FindMinRotated(nums []int) int {
 // SubarraySum returns the number of subarrays with sum equal to k.
 // Time: O(n)  Space: O(n)
 func SubarraySum(nums []int, k int) int {
-	// prefixCount[s] = how many times prefix sum s has occurred
-	prefixCount := map[int]int{0: 1} // empty prefix has sum 0
-	sum := 0
-	count := 0
+	// TODO: implement
+	return 0
+}
 
-	for _, num := range nums {
-		sum += num
-		// If (sum - k) was seen before, those subarrays end here with sum k
-		count += prefixCount[sum-k]
-		prefixCount[sum]++
-	}
-	return count
+// ============================================================
+// PROBLEM 11: Longest Consecutive Sequence (LeetCode #128) — MEDIUM
+// ============================================================
+// Given an unsorted array of integers, find the length of the longest
+// consecutive elements sequence. Must run in O(n) time.
+//
+// Example: nums=[100,4,200,1,3,2] → 4  (sequence: [1,2,3,4])
+//
+// Key insight: use a hash set. For each number, check if (num-1) exists.
+// If not, num is the START of a new sequence → count forward.
+// This ensures each element is visited at most twice.
+
+// LongestConsecutive returns the length of the longest consecutive sequence.
+// Time: O(n)  Space: O(n)
+func LongestConsecutive(nums []int) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 12: Top K Frequent Elements (LeetCode #347) — MEDIUM
+// ============================================================
+// Given an integer array and k, return the k most frequent elements.
+// Answer may be returned in any order.
+//
+// Example: nums=[1,1,1,2,2,3], k=2 → [1,2]
+//
+// Approach: bucket sort. Index = frequency, value = list of numbers with that freq.
+// Walk buckets from highest → lowest, collect k elements.
+// This avoids a heap and runs in O(n).
+
+// TopKFrequent returns the k most frequent elements.
+// Time: O(n)  Space: O(n)
+func TopKFrequent(nums []int, k int) []int {
+	// TODO: implement
+	return nil
+}
+
+// ============================================================
+// PROBLEM 13: Valid Sudoku (LeetCode #36) — MEDIUM
+// ============================================================
+// Determine if a 9×9 Sudoku board is valid. Only filled cells need to
+// be validated: each row, column, and 3×3 box must contain digits 1-9
+// without repetition.
+//
+// Approach: use three sets of hash sets (rows, cols, boxes).
+// Box index = (row/3)*3 + col/3.
+
+// IsValidSudoku returns true if the board is a valid Sudoku configuration.
+// Time: O(81) = O(1)  Space: O(81) = O(1)
+func IsValidSudoku(board [][]byte) bool {
+	// TODO: implement
+	return false
+}
+
+// ============================================================
+// PROBLEM 14: Majority Element (LeetCode #169) — EASY
+// ============================================================
+// Given an array of size n, find the majority element (appears more than n/2 times).
+// The majority element always exists.
+//
+// Example: nums=[2,2,1,1,1,2,2] → 2
+//
+// Boyer-Moore Voting Algorithm:
+// Maintain a candidate and a count. When count drops to 0, pick the current
+// element as the new candidate. The majority element survives because it
+// appears more than all others combined.
+
+// MajorityElement returns the element that appears more than n/2 times.
+// Time: O(n)  Space: O(1)
+func MajorityElement(nums []int) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 15: Merge Intervals (LeetCode #56) — MEDIUM
+// ============================================================
+// Given an array of intervals, merge all overlapping intervals.
+//
+// Example: intervals=[[1,3],[2,6],[8,10],[15,18]] → [[1,6],[8,10],[15,18]]
+//
+// Approach: sort by start time, then merge greedily.
+// If current interval overlaps with the last merged, extend the end.
+
+// MergeIntervals merges overlapping intervals.
+// Time: O(n log n)  Space: O(n)
+func MergeIntervals(intervals [][]int) [][]int {
+	// TODO: implement
+	return nil
+}
+
+// ============================================================
+// PROBLEM 16: Insert Interval (LeetCode #57) — MEDIUM
+// ============================================================
+// Given a sorted list of non-overlapping intervals and a new interval,
+// insert and merge if necessary.
+//
+// Example: intervals=[[1,3],[6,9]], newInterval=[2,5] → [[1,5],[6,9]]
+//
+// Three phases: add all intervals ending before newInterval starts,
+// merge overlapping intervals, add remaining.
+
+// InsertInterval inserts a new interval and merges overlaps.
+// Time: O(n)  Space: O(n)
+func InsertInterval(intervals [][]int, newInterval []int) [][]int {
+	// TODO: implement
+	return nil
+}
+
+// ============================================================
+// PROBLEM 17: Non-overlapping Intervals (LeetCode #435) — MEDIUM
+// ============================================================
+// Given an array of intervals, find the minimum number of intervals
+// to remove to make the rest non-overlapping.
+//
+// Example: intervals=[[1,2],[2,3],[3,4],[1,3]] → 1  (remove [1,3])
+//
+// Greedy: sort by end time. Always keep the interval that ends earliest
+// (leaves the most room for future intervals).
+
+// EraseOverlapIntervals returns the minimum removals for non-overlapping intervals.
+// Time: O(n log n)  Space: O(1)
+func EraseOverlapIntervals(intervals [][]int) int {
+	// TODO: implement
+	return 0
 }

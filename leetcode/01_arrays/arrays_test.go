@@ -224,3 +224,140 @@ func TestSubarraySum(t *testing.T) {
 		})
 	}
 }
+
+func TestLongestConsecutive(t *testing.T) {
+	tests := []struct {
+		name string
+		nums []int
+		want int
+	}{
+		{"basic", []int{100, 4, 200, 1, 3, 2}, 4},
+		{"single", []int{1}, 1},
+		{"empty", []int{}, 0},
+		{"duplicates", []int{1, 2, 0, 1}, 3},
+		{"all same", []int{0, 0, 0}, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := LongestConsecutive(tt.nums)
+			if got != tt.want {
+				t.Errorf("LongestConsecutive(%v) = %d, want %d", tt.nums, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTopKFrequent(t *testing.T) {
+	tests := []struct {
+		name string
+		nums []int
+		k    int
+		want int // expected length
+	}{
+		{"basic", []int{1, 1, 1, 2, 2, 3}, 2, 2},
+		{"single", []int{1}, 1, 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := TopKFrequent(tt.nums, tt.k)
+			if len(got) != tt.want {
+				t.Errorf("TopKFrequent(%v, %d) returned %d elements, want %d", tt.nums, tt.k, len(got), tt.want)
+			}
+		})
+	}
+}
+
+func TestIsValidSudoku(t *testing.T) {
+	valid := [][]byte{
+		{'5', '3', '.', '.', '7', '.', '.', '.', '.'},
+		{'6', '.', '.', '1', '9', '5', '.', '.', '.'},
+		{'.', '9', '8', '.', '.', '.', '.', '6', '.'},
+		{'8', '.', '.', '.', '6', '.', '.', '.', '3'},
+		{'4', '.', '.', '8', '.', '3', '.', '.', '1'},
+		{'7', '.', '.', '.', '2', '.', '.', '.', '6'},
+		{'.', '6', '.', '.', '.', '.', '2', '8', '.'},
+		{'.', '.', '.', '4', '1', '9', '.', '.', '5'},
+		{'.', '.', '.', '.', '8', '.', '.', '7', '9'},
+	}
+	if !IsValidSudoku(valid) {
+		t.Error("expected valid sudoku")
+	}
+}
+
+func TestMajorityElement(t *testing.T) {
+	tests := []struct {
+		name string
+		nums []int
+		want int
+	}{
+		{"basic", []int{3, 2, 3}, 3},
+		{"longer", []int{2, 2, 1, 1, 1, 2, 2}, 2},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := MajorityElement(tt.nums)
+			if got != tt.want {
+				t.Errorf("MajorityElement(%v) = %d, want %d", tt.nums, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMergeIntervals(t *testing.T) {
+	tests := []struct {
+		name      string
+		intervals [][]int
+		want      [][]int
+	}{
+		{"basic", [][]int{{1, 3}, {2, 6}, {8, 10}, {15, 18}}, [][]int{{1, 6}, {8, 10}, {15, 18}}},
+		{"overlap all", [][]int{{1, 4}, {4, 5}}, [][]int{{1, 5}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := MergeIntervals(tt.intervals)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MergeIntervals() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestInsertInterval(t *testing.T) {
+	tests := []struct {
+		name        string
+		intervals   [][]int
+		newInterval []int
+		want        [][]int
+	}{
+		{"basic", [][]int{{1, 3}, {6, 9}}, []int{2, 5}, [][]int{{1, 5}, {6, 9}}},
+		{"merge multiple", [][]int{{1, 2}, {3, 5}, {6, 7}, {8, 10}, {12, 16}}, []int{4, 8}, [][]int{{1, 2}, {3, 10}, {12, 16}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := InsertInterval(tt.intervals, tt.newInterval)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("InsertInterval() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestEraseOverlapIntervals(t *testing.T) {
+	tests := []struct {
+		name      string
+		intervals [][]int
+		want      int
+	}{
+		{"basic", [][]int{{1, 2}, {2, 3}, {3, 4}, {1, 3}}, 1},
+		{"all overlap", [][]int{{1, 2}, {1, 2}, {1, 2}}, 2},
+		{"none overlap", [][]int{{1, 2}, {2, 3}}, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := EraseOverlapIntervals(tt.intervals)
+			if got != tt.want {
+				t.Errorf("EraseOverlapIntervals() = %d, want %d", got, tt.want)
+			}
+		})
+	}
+}

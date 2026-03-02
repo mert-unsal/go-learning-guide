@@ -2,6 +2,11 @@
 // Topics: stack-based validation, auxiliary stack, monotonic stack.
 package stacks_queues
 
+import "sort"
+
+// Suppress unused import — you will need sort for some problems.
+var _ = sort.Ints
+
 // ============================================================
 // PROBLEM 1: Valid Parentheses (LeetCode #20) — EASY
 // ============================================================
@@ -17,26 +22,8 @@ package stacks_queues
 // IsValid returns true if the bracket string is valid.
 // Time: O(n)  Space: O(n)
 func IsValid(s string) bool {
-	stack := []rune{}
-
-	pairs := map[rune]rune{
-		')': '(',
-		']': '[',
-		'}': '{',
-	}
-
-	for _, ch := range s {
-		if ch == '(' || ch == '[' || ch == '{' {
-			stack = append(stack, ch) // push opening bracket
-		} else {
-			// Closing bracket: check if top of stack matches
-			if len(stack) == 0 || stack[len(stack)-1] != pairs[ch] {
-				return false
-			}
-			stack = stack[:len(stack)-1] // pop
-		}
-	}
-	return len(stack) == 0 // valid only if all brackets are matched
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -55,28 +42,24 @@ type MinStack struct {
 
 // Push adds x to the stack.
 func (s *MinStack) Push(val int) {
-	s.stack = append(s.stack, val)
-	if len(s.minStack) == 0 || val < s.minStack[len(s.minStack)-1] {
-		s.minStack = append(s.minStack, val)
-	} else {
-		s.minStack = append(s.minStack, s.minStack[len(s.minStack)-1])
-	}
+	// TODO: implement
 }
 
 // Pop removes the top element.
 func (s *MinStack) Pop() {
-	s.stack = s.stack[:len(s.stack)-1]
-	s.minStack = s.minStack[:len(s.minStack)-1]
+	// TODO: implement
 }
 
 // Top returns the top element without removing it.
 func (s *MinStack) Top() int {
-	return s.stack[len(s.stack)-1]
+	// TODO: implement
+	return 0
 }
 
 // GetMin returns the minimum element in the stack in O(1).
 func (s *MinStack) GetMin() int {
-	return s.minStack[len(s.minStack)-1]
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -96,20 +79,8 @@ func (s *MinStack) GetMin() int {
 // DailyTemperatures returns the wait days until a warmer temperature.
 // Time: O(n)  Space: O(n)
 func DailyTemperatures(temperatures []int) []int {
-	n := len(temperatures)
-	answer := make([]int, n) // zero-initialized = default "never" answer
-	stack := []int{}         // stores indices of temperatures (decreasing order)
-
-	for i, temp := range temperatures {
-		// Pop all indices whose temperature is less than current
-		for len(stack) > 0 && temperatures[stack[len(stack)-1]] < temp {
-			prevIdx := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
-			answer[prevIdx] = i - prevIdx // days waited
-		}
-		stack = append(stack, i)
-	}
-	return answer
+	// TODO: implement
+	return make([]int, len(temperatures))
 }
 
 // ============================================================
@@ -124,46 +95,8 @@ func DailyTemperatures(temperatures []int) []int {
 // EvalRPN evaluates a Reverse Polish Notation expression.
 // Time: O(n)  Space: O(n)
 func EvalRPN(tokens []string) int {
-	stack := []int{}
-
-	for _, token := range tokens {
-		switch token {
-		case "+", "-", "*", "/":
-			// Pop two operands (b is on top, a is below)
-			b := stack[len(stack)-1]
-			a := stack[len(stack)-2]
-			stack = stack[:len(stack)-2]
-			var result int
-			switch token {
-			case "+":
-				result = a + b
-			case "-":
-				result = a - b
-			case "*":
-				result = a * b
-			case "/":
-				result = a / b // Go integer division truncates toward zero
-			}
-			stack = append(stack, result)
-		default:
-			// It's a number — parse and push
-			num := 0
-			neg := false
-			start := 0
-			if token[0] == '-' {
-				neg = true
-				start = 1
-			}
-			for _, ch := range token[start:] {
-				num = num*10 + int(ch-'0')
-			}
-			if neg {
-				num = -num
-			}
-			stack = append(stack, num)
-		}
-	}
-	return stack[0]
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -183,36 +116,25 @@ type MyQueue struct {
 
 // Push adds element to the back of the queue.
 func (q *MyQueue) Push(x int) {
-	q.inbox = append(q.inbox, x)
-}
-
-func (q *MyQueue) pour() {
-	if len(q.outbox) == 0 {
-		for len(q.inbox) > 0 {
-			top := q.inbox[len(q.inbox)-1]
-			q.inbox = q.inbox[:len(q.inbox)-1]
-			q.outbox = append(q.outbox, top)
-		}
-	}
+	// TODO: implement
 }
 
 // Pop removes the front element and returns it.
 func (q *MyQueue) Pop() int {
-	q.pour()
-	val := q.outbox[len(q.outbox)-1]
-	q.outbox = q.outbox[:len(q.outbox)-1]
-	return val
+	// TODO: implement
+	return 0
 }
 
 // Peek returns the front element without removing it.
 func (q *MyQueue) Peek() int {
-	q.pour()
-	return q.outbox[len(q.outbox)-1]
+	// TODO: implement
+	return 0
 }
 
 // Empty returns true if the queue is empty.
 func (q *MyQueue) Empty() bool {
-	return len(q.inbox) == 0 && len(q.outbox) == 0
+	// TODO: implement
+	return true
 }
 
 // ============================================================
@@ -229,28 +151,8 @@ func (q *MyQueue) Empty() bool {
 // NextGreaterElement returns next greater element for each nums1 value.
 // Time: O(n+m)  Space: O(n)
 func NextGreaterElement(nums1 []int, nums2 []int) []int {
-	nextGreater := make(map[int]int)
-	stack := []int{}
-
-	for _, num := range nums2 {
-		// Pop all elements smaller than current — current is their next greater
-		for len(stack) > 0 && stack[len(stack)-1] < num {
-			top := stack[len(stack)-1]
-			stack = stack[:len(stack)-1]
-			nextGreater[top] = num
-		}
-		stack = append(stack, num)
-	}
-	// Remaining in stack have no next greater element
-	for _, num := range stack {
-		nextGreater[num] = -1
-	}
-
-	result := make([]int, len(nums1))
-	for i, num := range nums1 {
-		result[i] = nextGreater[num]
-	}
-	return result
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -265,34 +167,8 @@ func NextGreaterElement(nums1 []int, nums2 []int) []int {
 // DecodeString decodes the encoded string.
 // Time: O(output length)  Space: O(output length)
 func DecodeString(s string) string {
-	countStack := []int{}
-	strStack := []string{}
-	current := ""
-	k := 0
-
-	for _, ch := range s {
-		if ch >= '0' && ch <= '9' {
-			k = k*10 + int(ch-'0')
-		} else if ch == '[' {
-			countStack = append(countStack, k)
-			strStack = append(strStack, current)
-			current = ""
-			k = 0
-		} else if ch == ']' {
-			count := countStack[len(countStack)-1]
-			countStack = countStack[:len(countStack)-1]
-			prev := strStack[len(strStack)-1]
-			strStack = strStack[:len(strStack)-1]
-			repeated := ""
-			for i := 0; i < count; i++ {
-				repeated += current
-			}
-			current = prev + repeated
-		} else {
-			current += string(ch)
-		}
-	}
-	return current
+	// TODO: implement
+	return ""
 }
 
 // ============================================================
@@ -309,28 +185,41 @@ func DecodeString(s string) string {
 // LargestRectangleArea returns the largest rectangle area in a histogram.
 // Time: O(n)  Space: O(n)
 func LargestRectangleArea(heights []int) int {
-	stack := []int{} // indices, monotonic increasing by height
-	maxArea := 0
-	n := len(heights)
+	// TODO: implement
+	return 0
+}
 
-	for i := 0; i <= n; i++ {
-		h := 0
-		if i < n {
-			h = heights[i]
-		}
-		for len(stack) > 0 && heights[stack[len(stack)-1]] > h {
-			height := heights[stack[len(stack)-1]]
-			stack = stack[:len(stack)-1]
-			width := i
-			if len(stack) > 0 {
-				width = i - stack[len(stack)-1] - 1
-			}
-			area := height * width
-			if area > maxArea {
-				maxArea = area
-			}
-		}
-		stack = append(stack, i)
-	}
-	return maxArea
+// ============================================================
+// PROBLEM 9: Generate Parentheses (LeetCode #22) — MEDIUM
+// ============================================================
+// Generate all combinations of n pairs of well-formed parentheses.
+//
+// Example: n=3 → ["((()))","(()())","(())()","()(())","()()()"]
+//
+// Approach: backtracking. Track open and close count.
+// Add '(' if open < n. Add ')' if close < open.
+
+// GenerateParenthesis generates all valid combinations of n pairs of parentheses.
+// Time: O(4^n / √n) — Catalan number  Space: O(n)
+func GenerateParenthesis(n int) []string {
+	// TODO: implement
+	return nil
+}
+
+// ============================================================
+// PROBLEM 10: Car Fleet (LeetCode #853) — MEDIUM
+// ============================================================
+// N cars drive toward a target. Car i starts at position[i] with speed[i].
+// A car can't pass another; they form a fleet. Count the number of fleets.
+//
+// Example: target=12, position=[10,8,0,5,3], speed=[2,4,1,1,3] → 3
+//
+// Approach: sort by position (descending). Calculate time to reach target.
+// If current car takes longer than the car in front, it's a new fleet.
+
+// CarFleet returns the number of car fleets reaching the target.
+// Time: O(n log n)  Space: O(n)
+func CarFleet(target int, position []int, speed []int) int {
+	// TODO: implement
+	return 0
 }

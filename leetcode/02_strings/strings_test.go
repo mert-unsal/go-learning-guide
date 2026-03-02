@@ -110,3 +110,74 @@ func TestReverseWords(t *testing.T) {
 		})
 	}
 }
+
+func TestLongestPalindrome(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want []string // multiple valid answers
+	}{
+		{"babad", "babad", []string{"bab", "aba"}},
+		{"cbbd", "cbbd", []string{"bb"}},
+		{"single", "a", []string{"a"}},
+		{"two same", "aa", []string{"aa"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := LongestPalindrome(tt.s)
+			valid := false
+			for _, w := range tt.want {
+				if got == w {
+					valid = true
+					break
+				}
+			}
+			if !valid {
+				t.Errorf("LongestPalindrome(%q) = %q, want one of %v", tt.s, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCountSubstrings(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want int
+	}{
+		{"abc", "abc", 3},
+		{"aaa", "aaa", 6},
+		{"single", "a", 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := CountSubstrings(tt.s)
+			if got != tt.want {
+				t.Errorf("CountSubstrings(%q) = %d, want %d", tt.s, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMyAtoi(t *testing.T) {
+	tests := []struct {
+		name string
+		s    string
+		want int
+	}{
+		{"positive", "42", 42},
+		{"negative", "   -42", -42},
+		{"with words", "4193 with words", 4193},
+		{"empty", "", 0},
+		{"overflow", "2147483648", 2147483647},
+		{"underflow", "-2147483649", -2147483648},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := MyAtoi(tt.s)
+			if got != tt.want {
+				t.Errorf("MyAtoi(%q) = %d, want %d", tt.s, got, tt.want)
+			}
+		})
+	}
+}

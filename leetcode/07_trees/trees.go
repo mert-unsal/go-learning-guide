@@ -49,39 +49,14 @@ func newTree(vals []int) *TreeNode {
 // InorderTraversal returns inorder traversal (Left → Root → Right).
 // Time: O(n)  Space: O(n) for result + O(h) recursion stack
 func InorderTraversal(root *TreeNode) []int {
-	var result []int
-	var dfs func(node *TreeNode)
-	dfs = func(node *TreeNode) {
-		if node == nil {
-			return
-		}
-		dfs(node.Left)                    // visit left
-		result = append(result, node.Val) // visit root
-		dfs(node.Right)                   // visit right
-	}
-	dfs(root)
-	return result
+	// TODO: implement
+	return nil
 }
 
 // InorderIterative uses a stack to avoid recursion.
 func InorderIterative(root *TreeNode) []int {
-	var result []int
-	stack := []*TreeNode{}
-	cur := root
-
-	for cur != nil || len(stack) > 0 {
-		// Push all left children
-		for cur != nil {
-			stack = append(stack, cur)
-			cur = cur.Left
-		}
-		// Process node
-		cur = stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-		result = append(result, cur.Val)
-		cur = cur.Right // move to right subtree
-	}
-	return result
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -94,15 +69,8 @@ func InorderIterative(root *TreeNode) []int {
 // MaxDepth returns the maximum depth of the tree.
 // Time: O(n)  Space: O(h) where h is tree height
 func MaxDepth(root *TreeNode) int {
-	if root == nil {
-		return 0
-	}
-	leftDepth := MaxDepth(root.Left)
-	rightDepth := MaxDepth(root.Right)
-	if leftDepth > rightDepth {
-		return 1 + leftDepth
-	}
-	return 1 + rightDepth
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -115,31 +83,8 @@ func MaxDepth(root *TreeNode) int {
 // LevelOrder returns the level-order traversal grouped by level.
 // Time: O(n)  Space: O(n)
 func LevelOrder(root *TreeNode) [][]int {
-	if root == nil {
-		return nil
-	}
-	var result [][]int
-	queue := []*TreeNode{root}
-
-	for len(queue) > 0 {
-		levelSize := len(queue)
-		var level []int
-
-		for i := 0; i < levelSize; i++ {
-			node := queue[0]
-			queue = queue[1:]
-			level = append(level, node.Val)
-
-			if node.Left != nil {
-				queue = append(queue, node.Left)
-			}
-			if node.Right != nil {
-				queue = append(queue, node.Right)
-			}
-		}
-		result = append(result, level)
-	}
-	return result
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -156,23 +101,8 @@ func LevelOrder(root *TreeNode) [][]int {
 // LowestCommonAncestor returns the LCA of nodes with values pVal and qVal.
 // Time: O(n)  Space: O(h)
 func LowestCommonAncestor(root *TreeNode, p *TreeNode, q *TreeNode) *TreeNode {
-	if root == nil {
-		return nil
-	}
-	if root == p || root == q {
-		return root // found one of the targets
-	}
-
-	left := LowestCommonAncestor(root.Left, p, q)
-	right := LowestCommonAncestor(root.Right, p, q)
-
-	if left != nil && right != nil {
-		return root // p is in one subtree, q in the other → LCA is root
-	}
-	if left != nil {
-		return left // both are in the left subtree
-	}
-	return right
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -186,22 +116,13 @@ func LowestCommonAncestor(root *TreeNode, p *TreeNode, q *TreeNode) *TreeNode {
 // IsSymmetric returns true if the tree is symmetric.
 // Time: O(n)  Space: O(h)
 func IsSymmetric(root *TreeNode) bool {
-	if root == nil {
-		return true
-	}
-	return isMirror(root.Left, root.Right)
+	// TODO: implement
+	return false
 }
 
 func isMirror(left, right *TreeNode) bool {
-	if left == nil && right == nil {
-		return true
-	}
-	if left == nil || right == nil {
-		return false
-	}
-	return left.Val == right.Val &&
-		isMirror(left.Left, right.Right) && // outer pair
-		isMirror(left.Right, right.Left) // inner pair
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -215,22 +136,13 @@ func isMirror(left, right *TreeNode) bool {
 // IsValidBST returns true if the tree is a valid BST.
 // Time: O(n)  Space: O(h)
 func IsValidBST(root *TreeNode) bool {
-	return isValid(root, nil, nil) // no bounds initially
+	// TODO: implement
+	return false
 }
 
 func isValid(node *TreeNode, min, max *int) bool {
-	if node == nil {
-		return true
-	}
-	if min != nil && node.Val <= *min {
-		return false // value must be GREATER than min (left bound)
-	}
-	if max != nil && node.Val >= *max {
-		return false // value must be LESS than max (right bound)
-	}
-	v := node.Val
-	return isValid(node.Left, min, &v) && // left: max bound tightens
-		isValid(node.Right, &v, max) // right: min bound tightens
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -246,14 +158,8 @@ func isValid(node *TreeNode, min, max *int) bool {
 // HasPathSum returns true if any root-to-leaf path sums to targetSum.
 // Time: O(n)  Space: O(h)
 func HasPathSum(root *TreeNode, targetSum int) bool {
-	if root == nil {
-		return false
-	}
-	targetSum -= root.Val
-	if root.Left == nil && root.Right == nil {
-		return targetSum == 0 // leaf: check remaining sum
-	}
-	return HasPathSum(root.Left, targetSum) || HasPathSum(root.Right, targetSum)
+	// TODO: implement
+	return false
 }
 
 // ============================================================
@@ -271,11 +177,8 @@ func HasPathSum(root *TreeNode, targetSum int) bool {
 // InvertTree returns the root of the inverted tree.
 // Time: O(n)  Space: O(h)
 func InvertTree(root *TreeNode) *TreeNode {
-	if root == nil {
-		return nil
-	}
-	root.Left, root.Right = InvertTree(root.Right), InvertTree(root.Left)
-	return root
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -290,24 +193,8 @@ func InvertTree(root *TreeNode) *TreeNode {
 // DiameterOfBinaryTree returns the diameter (longest path edge count).
 // Time: O(n)  Space: O(h)
 func DiameterOfBinaryTree(root *TreeNode) int {
-	maxDiameter := 0
-	var height func(node *TreeNode) int
-	height = func(node *TreeNode) int {
-		if node == nil {
-			return 0
-		}
-		l := height(node.Left)
-		r := height(node.Right)
-		if l+r > maxDiameter {
-			maxDiameter = l + r
-		}
-		if l > r {
-			return 1 + l
-		}
-		return 1 + r
-	}
-	height(root)
-	return maxDiameter
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -324,27 +211,8 @@ func DiameterOfBinaryTree(root *TreeNode) int {
 // BuildTree constructs a binary tree from preorder and inorder traversals.
 // Time: O(n)  Space: O(n) for the index map
 func BuildTree(preorder []int, inorder []int) *TreeNode {
-	// Build index map for inorder lookup
-	inorderIdx := make(map[int]int)
-	for i, v := range inorder {
-		inorderIdx[v] = i
-	}
-
-	var build func(preL, preR, inL, inR int) *TreeNode
-	build = func(preL, preR, inL, inR int) *TreeNode {
-		if preL > preR {
-			return nil
-		}
-		rootVal := preorder[preL]
-		root := &TreeNode{Val: rootVal}
-		mid := inorderIdx[rootVal] // index in inorder
-		leftSize := mid - inL
-		root.Left = build(preL+1, preL+leftSize, inL, mid-1)
-		root.Left = build(preL+1, preL+leftSize, inL, mid-1)
-		root.Right = build(preL+leftSize+1, preR, mid+1, inR)
-		return root
-	}
-	return build(0, len(preorder)-1, 0, len(inorder)-1)
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -359,28 +227,8 @@ func BuildTree(preorder []int, inorder []int) *TreeNode {
 // RightSideView returns values visible from the right of each level.
 // Time: O(n)  Space: O(n)
 func RightSideView(root *TreeNode) []int {
-	if root == nil {
-		return nil
-	}
-	var result []int
-	queue := []*TreeNode{root}
-	for len(queue) > 0 {
-		levelSize := len(queue)
-		for i := 0; i < levelSize; i++ {
-			node := queue[0]
-			queue = queue[1:]
-			if i == levelSize-1 {
-				result = append(result, node.Val) // rightmost of this level
-			}
-			if node.Left != nil {
-				queue = append(queue, node.Left)
-			}
-			if node.Right != nil {
-				queue = append(queue, node.Right)
-			}
-		}
-	}
-	return result
+	// TODO: implement
+	return nil
 }
 
 // ============================================================
@@ -394,21 +242,136 @@ func RightSideView(root *TreeNode) []int {
 // KthSmallest returns the kth smallest value in a BST.
 // Time: O(H + k) where H is tree height  Space: O(H)
 func KthSmallest(root *TreeNode, k int) int {
-	count := 0
-	result := 0
-	var inorder func(node *TreeNode)
-	inorder = func(node *TreeNode) {
-		if node == nil || count >= k {
-			return
-		}
-		inorder(node.Left)
-		count++
-		if count == k {
-			result = node.Val
-			return
-		}
-		inorder(node.Right)
-	}
-	inorder(root)
-	return result
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 13: Same Tree (LeetCode #100) — EASY
+// ============================================================
+// Given two binary trees, check if they are the same (structurally identical
+// with same node values).
+//
+// Approach: recursive comparison — both nil → true, one nil → false,
+// values must match, then check both subtrees.
+
+// IsSameTree returns true if two trees are structurally identical.
+// Time: O(n)  Space: O(h)
+func IsSameTree(p *TreeNode, q *TreeNode) bool {
+	// TODO: implement
+	return false
+}
+
+// ============================================================
+// PROBLEM 14: Subtree of Another Tree (LeetCode #572) — EASY
+// ============================================================
+// Given trees root and subRoot, check if subRoot is a subtree of root.
+// A subtree consists of a node and all its descendants.
+//
+// Approach: for each node in root, check if the subtree rooted there
+// is identical to subRoot using IsSameTree.
+
+// IsSubtree returns true if subRoot is a subtree of root.
+// Time: O(m*n)  Space: O(h)
+func IsSubtree(root *TreeNode, subRoot *TreeNode) bool {
+	// TODO: implement
+	return false
+}
+
+// ============================================================
+// PROBLEM 15: Binary Tree Maximum Path Sum (LeetCode #124) — HARD
+// ============================================================
+// Find the maximum path sum. A path is any sequence of nodes connected
+// by edges (doesn't need to pass through root, can go up and down).
+//
+// Example: root=[-10,9,20,null,null,15,7] → 42  (15→20→7)
+//
+// Key insight: at each node, the max path through it =
+//   node.Val + max(0, leftGain) + max(0, rightGain)
+// But when returning to the parent, we can only use ONE branch
+// (path can't split and rejoin).
+
+// MaxPathSum returns the maximum path sum in a binary tree.
+// Time: O(n)  Space: O(h)
+func MaxPathSum(root *TreeNode) int {
+	// TODO: implement
+	return 0
+}
+
+// ============================================================
+// PROBLEM 16: Implement Trie / Prefix Tree (LeetCode #208) — MEDIUM
+// ============================================================
+// Implement a trie with insert, search, and startsWith methods.
+//
+// Each node has up to 26 children (a-z) and a boolean indicating
+// if a word ends at this node.
+
+// TrieNode represents a node in the trie.
+type TrieNode struct {
+	children [26]*TrieNode
+	isEnd    bool
+}
+
+// Trie is a prefix tree for lowercase English words.
+type Trie struct {
+	root *TrieNode
+}
+
+// NewTrie creates a new Trie.
+func NewTrie() *Trie {
+	// TODO: implement
+	return nil
+}
+
+// Insert adds a word to the trie.
+// Time: O(m) where m = len(word)
+func (t *Trie) Insert(word string) {
+	// TODO: implement
+}
+
+// Search returns true if the word is in the trie.
+// Time: O(m)
+func (t *Trie) Search(word string) bool {
+	// TODO: implement
+	return false
+}
+
+// StartsWith returns true if any word in the trie starts with prefix.
+// Time: O(m)
+func (t *Trie) StartsWith(prefix string) bool {
+	// TODO: implement
+	return false
+}
+
+// ============================================================
+// PROBLEM 17: Lowest Common Ancestor of BST (LeetCode #235) — MEDIUM
+// ============================================================
+// Find the LCA of two nodes in a BST.
+// Unlike #236 (general binary tree), we can exploit the BST property:
+// If both p and q are smaller than root, LCA is in left subtree.
+// If both are larger, LCA is in right subtree.
+// Otherwise, root is the LCA (split point).
+
+// LowestCommonAncestorBST returns the LCA in a BST.
+// Time: O(h)  Space: O(1)
+func LowestCommonAncestorBST(root, p, q *TreeNode) *TreeNode {
+	// TODO: implement
+	return nil
+}
+
+// ============================================================
+// PROBLEM 18: Count Good Nodes in Binary Tree (LeetCode #1448) — MEDIUM
+// ============================================================
+// A node X is "good" if no node on the path from root to X has a value
+// greater than X.Val.
+//
+// Example: root=[3,1,4,3,null,1,5] → 4
+//
+// Approach: DFS passing the maximum value seen so far.
+
+// GoodNodes counts the number of good nodes in the tree.
+// Time: O(n)  Space: O(h)
+func GoodNodes(root *TreeNode) int {
+	// TODO: implement
+	return 0
 }

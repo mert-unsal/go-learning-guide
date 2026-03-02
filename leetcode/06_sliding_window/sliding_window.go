@@ -31,21 +31,8 @@ package sliding_window
 // FindMaxAverage returns the maximum average of any contiguous subarray of length k.
 // Time: O(n)  Space: O(1)
 func FindMaxAverage(nums []int, k int) float64 {
-	// Build the first window
-	windowSum := 0
-	for i := 0; i < k; i++ {
-		windowSum += nums[i]
-	}
-	maxSum := windowSum
-
-	// Slide window: add right element, remove left element
-	for i := k; i < len(nums); i++ {
-		windowSum += nums[i] - nums[i-k]
-		if windowSum > maxSum {
-			maxSum = windowSum
-		}
-	}
-	return float64(maxSum) / float64(k)
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -65,54 +52,8 @@ func FindMaxAverage(nums []int, k int) float64 {
 // MinWindow returns the minimum window substring containing all chars of t.
 // Time: O(|s| + |t|)  Space: O(|s| + |t|)
 func MinWindow(s string, t string) string {
-	if len(s) == 0 || len(t) == 0 {
-		return ""
-	}
-
-	// Count required characters from t
-	need := make(map[byte]int)
-	for i := 0; i < len(t); i++ {
-		need[t[i]]++
-	}
-	required := len(need) // number of unique chars we need to satisfy
-
-	have := make(map[byte]int)
-	formed := 0 // how many unique chars currently satisfy their frequency
-
-	left := 0
-	minLen := len(s) + 1
-	minLeft := 0
-
-	for right := 0; right < len(s); right++ {
-		ch := s[right]
-		have[ch]++
-
-		// Check if this char now satisfies its required count
-		if count, ok := need[ch]; ok && have[ch] == count {
-			formed++
-		}
-
-		// Try to shrink window from the left while it's valid
-		for formed == required {
-			// Update minimum window
-			if right-left+1 < minLen {
-				minLen = right - left + 1
-				minLeft = left
-			}
-			// Remove leftmost character
-			leftCh := s[left]
-			have[leftCh]--
-			if count, ok := need[leftCh]; ok && have[leftCh] < count {
-				formed-- // window no longer satisfies this char
-			}
-			left++
-		}
-	}
-
-	if minLen == len(s)+1 {
-		return ""
-	}
-	return s[minLeft : minLeft+minLen]
+	// TODO: implement
+	return ""
 }
 
 // ============================================================
@@ -128,32 +69,7 @@ func MinWindow(s string, t string) string {
 // CheckInclusion returns true if any permutation of s1 is a substring of s2.
 // Time: O(|s1| + |s2|)  Space: O(1) — only 26 lowercase letters
 func CheckInclusion(s1 string, s2 string) bool {
-	if len(s1) > len(s2) {
-		return false
-	}
-	var need, have [26]int
-
-	// Count s1 characters
-	for i := 0; i < len(s1); i++ {
-		need[s1[i]-'a']++
-	}
-
-	// Initialize window with first len(s1) chars of s2
-	for i := 0; i < len(s1); i++ {
-		have[s2[i]-'a']++
-	}
-	if need == have {
-		return true
-	}
-
-	// Slide the window
-	for i := len(s1); i < len(s2); i++ {
-		have[s2[i]-'a']++         // add new right char
-		have[s2[i-len(s1)]-'a']-- // remove old left char
-		if need == have {
-			return true
-		}
-	}
+	// TODO: implement
 	return false
 }
 
@@ -169,28 +85,8 @@ func CheckInclusion(s1 string, s2 string) bool {
 // TotalFruit returns the max fruits pickable with at most 2 baskets.
 // Time: O(n)  Space: O(1) — at most 3 entries in the map at once
 func TotalFruit(fruits []int) int {
-	basket := make(map[int]int) // fruit type → count in window
-	left := 0
-	maxFruits := 0
-
-	for right := 0; right < len(fruits); right++ {
-		basket[fruits[right]]++
-
-		// Shrink window if more than 2 distinct types
-		for len(basket) > 2 {
-			leftFruit := fruits[left]
-			basket[leftFruit]--
-			if basket[leftFruit] == 0 {
-				delete(basket, leftFruit)
-			}
-			left++
-		}
-
-		if right-left+1 > maxFruits {
-			maxFruits = right - left + 1
-		}
-	}
-	return maxFruits
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -209,29 +105,8 @@ func TotalFruit(fruits []int) int {
 // CharacterReplacement returns the longest valid substring length after k replacements.
 // Time: O(n)  Space: O(1) — 26-char array
 func CharacterReplacement(s string, k int) int {
-	var freq [26]int
-	maxFreq := 0
-	left := 0
-	maxLen := 0
-
-	for right := 0; right < len(s); right++ {
-		freq[s[right]-'A']++
-		if freq[s[right]-'A'] > maxFreq {
-			maxFreq = freq[s[right]-'A']
-		}
-
-		// Shrink window if too many replacements needed
-		windowSize := right - left + 1
-		if windowSize-maxFreq > k {
-			freq[s[left]-'A']--
-			left++
-		}
-
-		if right-left+1 > maxLen {
-			maxLen = right - left + 1
-		}
-	}
-	return maxLen
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -248,31 +123,8 @@ func CharacterReplacement(s string, k int) int {
 // MaxScore returns the maximum score by picking k cards from the ends.
 // Time: O(n)  Space: O(1)
 func MaxScore(cardPoints []int, k int) int {
-	n := len(cardPoints)
-	total := 0
-	for _, p := range cardPoints {
-		total += p
-	}
-
-	windowSize := n - k // size of the minimum window we want to exclude
-	if windowSize == 0 {
-		return total
-	}
-
-	// Find minimum window sum of size windowSize
-	windowSum := 0
-	for i := 0; i < windowSize; i++ {
-		windowSum += cardPoints[i]
-	}
-	minWindowSum := windowSum
-
-	for i := windowSize; i < n; i++ {
-		windowSum += cardPoints[i] - cardPoints[i-windowSize]
-		if windowSum < minWindowSum {
-			minWindowSum = windowSum
-		}
-	}
-	return total - minWindowSum
+	// TODO: implement
+	return 0
 }
 
 // ============================================================
@@ -286,22 +138,6 @@ func MaxScore(cardPoints []int, k int) int {
 // MinSubArrayLen returns the minimum length subarray with sum >= target.
 // Time: O(n)  Space: O(1)
 func MinSubArrayLen(target int, nums []int) int {
-	left := 0
-	sum := 0
-	minLen := len(nums) + 1
-
-	for right := 0; right < len(nums); right++ {
-		sum += nums[right]
-		for sum >= target {
-			if right-left+1 < minLen {
-				minLen = right - left + 1
-			}
-			sum -= nums[left]
-			left++
-		}
-	}
-	if minLen == len(nums)+1 {
-		return 0
-	}
-	return minLen
+	// TODO: implement
+	return 0
 }
