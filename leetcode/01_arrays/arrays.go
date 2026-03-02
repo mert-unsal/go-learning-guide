@@ -78,6 +78,9 @@ func MaxProfit(prices []int) int {
 // EXCEPT nums[i]. Solve in O(n) WITHOUT using division.
 //
 // Example: nums=[1,2,3,4] → [24,12,8,6]
+//				  1,1,2,6
+//				  24,12,4,1
+//
 //
 // Key insight: output[i] = (product of everything to the LEFT of i)
 //                        × (product of everything to the RIGHT of i)
@@ -88,7 +91,22 @@ func MaxProfit(prices []int) int {
 // Time: O(n)  Space: O(1) extra (output array doesn't count)
 func ProductExceptSelf(nums []int) []int {
 	// TODO: implement
-	return make([]int, len(nums))
+	outputArray := make([]int, len(nums))
+
+	// Pass 1: fill outputArray with left prefix products
+	outputArray[0] = 1
+	for i := 1; i < len(nums); i++ {
+		outputArray[i] = outputArray[i-1] * nums[i-1]
+	}
+
+	// Pass 2: multiply by right suffix products (single running variable)
+	rightProduct := 1
+	for i := len(nums) - 1; i >= 0; i-- {
+		outputArray[i] *= rightProduct
+		rightProduct *= nums[i]
+	}
+
+	return outputArray
 }
 
 // ============================================================
