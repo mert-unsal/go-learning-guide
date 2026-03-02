@@ -121,6 +121,14 @@ func ProductExceptSelf(nums []int) []int {
 // ContainsDuplicate returns true if the slice has any repeated element.
 func ContainsDuplicate(nums []int) bool {
 	// TODO: implement
+	m := make(map[int]bool)
+	for _, v := range nums {
+		if _, isFound := m[v]; isFound {
+			return true
+		} else {
+			m[v] = true
+		}
+	}
 	return false
 }
 
