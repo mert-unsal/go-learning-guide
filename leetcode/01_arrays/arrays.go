@@ -3,6 +3,7 @@
 package arrays
 
 import (
+	"fmt"
 	"math"
 	"sort"
 )
@@ -145,8 +146,24 @@ func ContainsDuplicate(nums []int) bool {
 // MaxSubArray returns the largest sum of any contiguous subarray.
 // Time: O(n)  Space: O(1)
 func MaxSubArray(nums []int) int {
-	// TODO: implement
-	return 0
+	var current, maxCurrent = nums[0], nums[0]
+
+	if len(nums) == 0 {
+		return 0
+	}
+
+	for i := 1; i < len(nums); i++ {
+		fmt.Printf("num : %d \n", nums[i])
+		if nums[i] >= current+nums[i] {
+			current = nums[i]
+		} else {
+			current += nums[i]
+		}
+		if current >= maxCurrent {
+			maxCurrent = current
+		}
+	}
+	return maxCurrent
 }
 
 // ============================================================
