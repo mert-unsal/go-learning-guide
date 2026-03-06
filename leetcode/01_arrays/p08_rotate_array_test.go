@@ -16,6 +16,7 @@ func TestRotate(t *testing.T) {
 		{"k=2", []int{-1, -100, 3, 99}, 2, []int{3, 99, -1, -100}},
 		{"k=0", []int{1, 2, 3}, 0, []int{1, 2, 3}},
 		{"k=len", []int{1, 2, 3}, 3, []int{1, 2, 3}},
+		{"k>len", []int{1, 2, 3}, 5, []int{2, 3, 1}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
