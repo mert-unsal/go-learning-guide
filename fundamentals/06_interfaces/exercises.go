@@ -140,3 +140,118 @@ func IsTrulyNil(i interface{}) bool {
 	// TODO: implement
 	return false
 }
+
+// ============================================================
+// Exercise 5: Method Sets & Interface Satisfaction
+// ============================================================
+// This exercise tests your understanding of Go's method set rules:
+//
+//   Type T  → method set = only value receivers
+//   Type *T → method set = value receivers + pointer receivers
+//
+// A type satisfies an interface only if its method set includes
+// ALL the interface's methods.
+//
+// This means:
+//   - If interface requires value-receiver method  → both T and *T satisfy it
+//   - If interface requires pointer-receiver method → only *T satisfies it
+//
+// WHY? Go can always dereference *T to get T, but it CANNOT always take
+// the address of T (map values, return values, constants have no stable address).
+//
+// You will implement:
+//
+// 5a. Two types (Celsius, Kelvin) with specific receiver types,
+//     and predict which can be assigned to an interface.
+//
+// 5b. A function that accepts a Sensor interface and calls both methods.
+//     You must understand which concrete types can be passed.
+//
+// 5c. A function that collects multiple Stringer types into a slice,
+//     choosing the correct way to add value vs pointer receiver types.
+
+// Sensor is an interface requiring two methods:
+//   - Reading() returns the sensor value (can be value receiver)
+//   - Calibrate() adjusts the sensor (needs to mutate state → pointer receiver)
+type Sensor interface {
+	Reading() float64
+	Calibrate(offset float64)
+}
+
+// Exercise 5a: Implement Thermometer
+// A Thermometer has a Temp field (float64).
+// - Reading() should return t.Temp              → use VALUE receiver
+// - Calibrate() should add offset to t.Temp     → use POINTER receiver (mutation!)
+//
+// Think: which type satisfies Sensor — Thermometer or *Thermometer?
+type Thermometer struct {
+	Temp float64
+}
+
+// TODO: implement Reading() with value receiver
+func (t Thermometer) Reading() float64 {
+	// TODO: return t.Temp
+	return 0
+}
+
+// TODO: implement Calibrate() with pointer receiver
+func (t *Thermometer) Calibrate(offset float64) {
+	// TODO: add offset to t.Temp
+}
+
+// Exercise 5b: ReadAndCalibrate
+// Given a Sensor, return the reading, then calibrate by the given offset,
+// then return the new reading.
+// Return (before, after).
+//
+// Think: can you pass Thermometer{Temp: 20.0} to this function?
+//        Or must you pass &Thermometer{Temp: 20.0}?
+func ReadAndCalibrate(s Sensor, offset float64) (before, after float64) {
+	// TODO: implement
+	return 0, 0
+}
+
+// Displayer is an interface with only a value-receiver method.
+type Displayer interface {
+	Display() string
+}
+
+// Celsius uses a VALUE receiver for Display.
+// Both Celsius and *Celsius satisfy Displayer.
+type Celsius float64
+
+// TODO: implement Display() on Celsius with VALUE receiver
+// Return format: "XX.X°C" (e.g., "36.6°C")
+// Hint: use fmt.Sprintf("%.1f°C", float64(c))
+func (c Celsius) Display() string {
+	// TODO: implement
+	return ""
+}
+
+// Kelvin uses a POINTER receiver for Display.
+// ONLY *Kelvin satisfies Displayer.
+type Kelvin float64
+
+// TODO: implement Display() on Kelvin with POINTER receiver
+// Return format: "XX.XK" (e.g., "309.8K")
+// Hint: use fmt.Sprintf("%.1fK", float64(*k))
+func (k *Kelvin) Display() string {
+	// TODO: implement
+	return ""
+}
+
+// Exercise 5c: CollectDisplayers
+// Return a slice of Displayer containing these values in order:
+//   1. Celsius(36.6)
+//   2. Kelvin(309.8)
+//
+// The challenge: one uses value receiver, one uses pointer receiver.
+// You must figure out which needs & and which doesn't.
+//
+// Hint: If Kelvin.Display() has a pointer receiver, can you assign
+//       Kelvin(309.8) directly to Displayer? Or do you need &Kelvin?
+//       Remember: you can't take the address of a converted literal directly.
+func CollectDisplayers() []Displayer {
+	// TODO: implement — return a []Displayer with Celsius and Kelvin values
+	return nil
+}

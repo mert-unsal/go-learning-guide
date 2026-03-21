@@ -178,3 +178,118 @@ func TestIsTrulyNil(t *testing.T) {
 		})
 	}
 }
+
+// ─── Exercise 5a: Thermometer method set ───
+
+func TestThermometer_Reading(t *testing.T) {
+	th := Thermometer{Temp: 22.5}
+	got := th.Reading()
+	if got != 22.5 {
+		t.Errorf("❌ Thermometer{22.5}.Reading() = %v, want 22.5\n"+
+			"   Hint: implement func (t Thermometer) Reading() float64", got)
+	} else {
+		t.Logf("✅ Thermometer.Reading() = %v", got)
+	}
+}
+
+func TestThermometer_Calibrate(t *testing.T) {
+	th := &Thermometer{Temp: 22.5}
+	th.Calibrate(1.5)
+	if th.Temp != 24.0 {
+		t.Errorf("❌ After Calibrate(1.5), Temp = %v, want 24.0\n"+
+			"   Hint: implement func (t *Thermometer) Calibrate(offset float64) — must be pointer receiver to mutate", th.Temp)
+	} else {
+		t.Logf("✅ Thermometer.Calibrate(1.5) → Temp = %v", th.Temp)
+	}
+}
+
+func TestThermometer_SatisfiesSensor(t *testing.T) {
+	// *Thermometer should satisfy Sensor (has both value + pointer receiver methods)
+	// Thermometer (without &) should NOT satisfy Sensor (Calibrate has pointer receiver)
+	var _ Sensor = &Thermometer{Temp: 20.0} // this must compile
+
+	// The following line would NOT compile if uncommented:
+	// var _ Sensor = Thermometer{Temp: 20.0}
+	// Error: "Thermometer does not implement Sensor (method Calibrate has pointer receiver)"
+	//
+	// WHY: Thermometer's method set = {Reading} (value receivers only)
+	//      *Thermometer's method set = {Reading, Calibrate} (value + pointer receivers)
+	//      Sensor requires {Reading, Calibrate} → only *Thermometer qualifies
+
+	t.Log("✅ *Thermometer satisfies Sensor interface (has both Reading + Calibrate)")
+	t.Log("   ℹ️  Thermometer (value) would NOT satisfy Sensor — Calibrate has pointer receiver")
+}
+
+// ─── Exercise 5b: ReadAndCalibrate ───
+
+func TestReadAndCalibrate(t *testing.T) {
+	th := &Thermometer{Temp: 20.0}
+	before, after := ReadAndCalibrate(th, 2.5)
+
+	if before != 20.0 {
+		t.Errorf("❌ before = %v, want 20.0\n"+
+			"   Hint: call s.Reading() before calibrating", before)
+	}
+	if after != 22.5 {
+		t.Errorf("❌ after = %v, want 22.5\n"+
+			"   Hint: call s.Calibrate(offset), then s.Reading() again", after)
+	}
+	if before == 20.0 && after == 22.5 {
+		t.Logf("✅ ReadAndCalibrate: before=%v, after=%v", before, after)
+	}
+}
+
+// ─── Exercise 5c: Celsius and Kelvin Display ───
+
+func TestCelsius_Display(t *testing.T) {
+	c := Celsius(36.6)
+	got := c.Display()
+	want := "36.6°C"
+	if got != want {
+		t.Errorf("❌ Celsius(36.6).Display() = %q, want %q\n"+
+			"   Hint: use value receiver — func (c Celsius) Display() string", got, want)
+	} else {
+		t.Logf("✅ Celsius.Display() = %q", got)
+	}
+}
+
+func TestKelvin_Display(t *testing.T) {
+	k := Kelvin(309.8)
+	got := k.Display() // Go auto-takes &k since k is addressable
+	want := "309.8K"
+	if got != want {
+		t.Errorf("❌ Kelvin(309.8).Display() = %q, want %q\n"+
+			"   Hint: use pointer receiver — func (k *Kelvin) Display() string", got, want)
+	} else {
+		t.Logf("✅ Kelvin.Display() = %q", got)
+	}
+}
+
+func TestCollectDisplayers(t *testing.T) {
+	ds := CollectDisplayers()
+	if ds == nil {
+		t.Fatal("❌ CollectDisplayers() returned nil — implement it!")
+	}
+	if len(ds) != 2 {
+		t.Fatalf("❌ CollectDisplayers() returned %d items, want 2", len(ds))
+	}
+
+	got0 := ds[0].Display()
+	want0 := "36.6°C"
+	if got0 != want0 {
+		t.Errorf("❌ ds[0].Display() = %q, want %q\n"+
+			"   Hint: Celsius uses value receiver → both Celsius and *Celsius satisfy Displayer", got0, want0)
+	} else {
+		t.Logf("✅ ds[0].Display() = %q (Celsius, value receiver → T satisfies Displayer)", got0)
+	}
+
+	got1 := ds[1].Display()
+	want1 := "309.8K"
+	if got1 != want1 {
+		t.Errorf("❌ ds[1].Display() = %q, want %q\n"+
+			"   Hint: Kelvin uses pointer receiver → only *Kelvin satisfies Displayer\n"+
+			"   You need: k := Kelvin(309.8); append &k to the slice", got1, want1)
+	} else {
+		t.Logf("✅ ds[1].Display() = %q (Kelvin, pointer receiver → only *Kelvin satisfies Displayer)", got1)
+	}
+}

@@ -80,3 +80,40 @@ func IsTrulyNilSolution(i interface{}) bool {
 	}
 	return false // non-nillable kinds (int, string, struct, etc.)
 }
+
+// ─── Exercise 5a Solution: Thermometer ───
+
+func (t Thermometer) ReadingSolution() float64 {
+	return t.Temp
+}
+
+func (t *Thermometer) CalibrateSolution(offset float64) {
+	t.Temp += offset
+}
+
+// ─── Exercise 5b Solution: ReadAndCalibrate ───
+
+func ReadAndCalibrateSolution(s Sensor, offset float64) (before, after float64) {
+	before = s.Reading()
+	s.Calibrate(offset)
+	after = s.Reading()
+	return before, after
+}
+
+// ─── Exercise 5c Solution: Celsius & Kelvin formatters ───
+
+func (c Celsius) DisplaySolution() string {
+	return fmt.Sprintf("%.1f°C", float64(c))
+}
+
+func (k *Kelvin) DisplaySolution() string {
+	return fmt.Sprintf("%.1fK", float64(*k))
+}
+
+func CollectDisplayersSolution() []Displayer {
+	k := Kelvin(309.8) // must store in variable to take address
+	return []Displayer{
+		Celsius(36.6), // value receiver → T satisfies Displayer, no & needed
+		&k,            // pointer receiver → only *Kelvin satisfies Displayer
+	}
+}
