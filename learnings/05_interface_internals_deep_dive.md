@@ -594,22 +594,35 @@ You have an interface value and need to know if it's safe to call methods
 
 ## 9. Type Assertions Under the Hood
 
+Given any interface variable `i` (e.g., `var i Notifier = &EmailNotifier{}`):
+
 ### Single Type Assertion: `v, ok := i.(ConcreteType)`
 
 ```
+// i is any interface value — could be Notifier, io.Reader, error, any, etc.
+// The assertion extracts the concrete type stored inside.
+
+var i Notifier = &EmailNotifier{smtp: "mx.google.com"}
+v, ok := i.(*EmailNotifier)   // is the concrete type inside i a *EmailNotifier?
+
+Under the hood:
 1. Read i.tab._type.hash                    // O(1) — hash stored in itab
-2. Compare with hash(ConcreteType)          // O(1) — compiler knows this at build time
-3. Match? → ok = true, v = *(*ConcreteType)(i.data)
-   No match? → ok = false, v = zero value
+2. Compare with hash(*EmailNotifier)        // O(1) — compiler knows this at build time
+3. Match? → ok = true, v = *(*EmailNotifier)(i.data)   // cast the data pointer
+   No match? → ok = false, v = nil (*EmailNotifier zero value)
 ```
 
 ### Type Switch: `switch v := i.(type) { ... }`
 
 ```go
+// i is the interface variable you're inspecting.
+// The switch tests which concrete type is stored inside.
+var i any = 42
+
 switch v := i.(type) {
-case int:       // compare i.tab._type.hash with hash(int)
-case string:    // compare i.tab._type.hash with hash(string)
-case *User:     // compare i.tab._type.hash with hash(*User)
+case int:       // compare i._type.hash with hash(int)     ← eface, not itab (empty interface)
+case string:    // compare i._type.hash with hash(string)
+case *User:     // compare i._type.hash with hash(*User)
 default:        // no match
 }
 ```
