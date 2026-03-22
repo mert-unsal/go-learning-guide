@@ -277,63 +277,40 @@ errors.As(err, &ve)                // true if *ValidationError is anywhere in th
 **Interview trap**: Why use `errors.Is` instead of `err == ErrNotFound`?
 Because `err` might be a wrapped error. `errors.Is` unwraps the chain recursively. `==` only compares the outermost error.
 
-### Exercises in `fundamentals/07_error_handling/exercises.go` ✅
+### Exercises in `fundamentals/07_error_handling/exercises.go` 🔲
 
-All 5 exercises are now implemented. Here's the complete solution with explanations:
-
-```go
-// Exercise 1: Basic error return
-func Divide(a, b float64) (float64, error) {
-    if b == 0 {
-        return 0, errors.New("cannot divide by zero")
-        // return 0 not undefined — always return zero value for the type
-    }
-    return a / b, nil  // nil means no error
-}
-
-// Exercise 2: Custom error type — caller can extract Field and Message
-func Validate(name string) error {
-    if name == "" {
-        return &ValidationError{Field: "name", Message: "cannot be empty"}
-        // Must be &ValidationError (pointer) because Error() has a pointer receiver
-    }
-    return nil
-}
-
-// Exercise 3: fmt.Errorf adds a descriptive message
-func SafeGet(m map[string]int, key string) (int, error) {
-    v, ok := m[key]  // Two-value map lookup: ok = false if key absent
-    if !ok {
-        return 0, fmt.Errorf("key %q not found in map", key)
-    }
-    return v, nil
-}
-
-// Exercise 4: Return sentinel errors — callers use errors.Is() to check
-func FindUser(id int) (string, error) {
-    if id <= 0 { return "", ErrUserNotFound }
-    if id == 999 { return "", ErrAccessDenied }
-    return fmt.Sprintf("User%d", id), nil
-}
-
-// Exercise 5: %w wraps the error — errors.Is still finds the original
-func WrapError(err error, context string) error {
-    return fmt.Errorf("%s: %w", context, err)  // %w not %v — preserves error identity
-}
+All 5 exercises have been **reset to stubs** — implement them yourself! Run tests with:
+```bash
+go test -v ./fundamentals/07_error_handling/
 ```
 
-**Result of running `go test -v`:**
-```
-✅ Divide(10,2) = 5.0
-✅ Divide(10,0) returned error: cannot divide by zero
-✅ Validate("Alice") = nil (valid)
-✅ Validate("") = validation error: name — cannot be empty
-✅ SafeGet(m, "x") = 10
-✅ SafeGet(m, "missing") returned error: key "missing" not found in map
-✅ FindUser(1) = "User1"
-✅ FindUser(0) → ErrUserNotFound
-✅ FindUser(999) → ErrAccessDenied
-✅ WrapError wraps correctly: context: original
+**Exercises overview:**
+1. `Divide` — Basic `(value, error)` return pattern
+2. `Validate` — Custom error type with `*ValidationError`
+3. `SafeGet` — Descriptive errors with `fmt.Errorf`
+4. `FindUser` — Sentinel errors (`ErrUserNotFound`, `ErrAccessDenied`)
+5. `WrapError` — Error wrapping with `%w` to preserve identity
+
+Reference solutions are in `solutions.go` if you get stuck.
+
+### 🆕 Deep Dive: Error Recovery & Retry — `practical/08_error_recovery_retry/`
+
+Coming from Java, you're used to `try-catch-finally`. Go doesn't have that — and it's intentional.
+This module bridges the mental model gap with 6 exercises covering:
+
+| Exercise | Java Equivalent | Go Pattern |
+|----------|----------------|-----------|
+| `SafeExecute` | `try { fn() } catch (Exception e)` | `defer func() { recover() }()` |
+| `SafeGoroutine` | Thread.setUncaughtExceptionHandler | Recovery in spawned goroutines |
+| `Retry` | `@Retryable(maxAttempts=3)` | Manual retry loop |
+| `RetryWithBackoff` | Resilience4j / Spring Retry | Exponential backoff with jitter |
+| `RetryClassified` | Catching specific exception types | `PermanentError` marker pattern |
+| `RetryWithContext` | `Future.cancel()` / timeout | `context.Context` + `select` |
+
+```bash
+# Read concepts first, then implement exercises
+cat practical/08_error_recovery_retry/concepts.go
+go test -v ./practical/08_error_recovery_retry/
 ```
 
 ---

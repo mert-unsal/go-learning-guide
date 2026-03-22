@@ -10,10 +10,12 @@
 
 | Area | Status | Detail |
 |------|--------|--------|
-| Fundamentals (12 packages) | ✅ All exercises implemented, all tests pass | Core Go syntax mastered |
+| Fundamentals 01-06, 12 | ✅ All exercises implemented, all tests pass | Core Go syntax mastered |
+| Fundamentals 07-11 | 🔲 Exercises reset to stubs | Error handling, slices, maps, goroutines, channels — ready to re-implement |
 | Interfaces | ✅ Deep mastery | `iface`/`eface`, nil trap, method sets, three guards |
 | HackerRank (9 problems) | ✅ Complete | All implemented and passing |
 | Deep dive docs (11 documents) | ✅ Written | 7,400+ lines of runtime internals |
+| Error Recovery & Retry | 🔲 6 exercises TODO | Try-catch equiv, retry patterns, backoff, context-aware retry |
 | Stdlib (7 packages) | 🔲 37 exercises TODO | Need implementation |
 | LeetCode (14 categories) | 🔲 207 problems TODO | All stubs, 0% implemented |
 | Performance tuning | 🔲 8 exercises TODO | Module created, not attempted |
@@ -94,7 +96,8 @@
 
 - Re-read `fundamentals/03_functions/` — focus on closure exercises
 - Re-read `fundamentals/04_pointers/` — pointer manipulation with addressability understanding
-- Re-read `fundamentals/07_error_handling/` — error wrapping exercises
+- Implement `fundamentals/07_error_handling/exercises.go` — error wrapping exercises
+- Implement `practical/08_error_recovery_retry/exercises.go` — defer/recover (Go's try-catch), retry with backoff, permanent vs retryable errors, context-aware retry
 
 ### ✅ Mastery Check
 
@@ -103,6 +106,8 @@
 3. When does Go auto-insert `*` or `&`? What is "addressability"?
 4. Walk through `errors.Is()` chain walk — what happens with wrapped errors?
 5. What's the difference between `errors.Is()` and `errors.As()`?
+6. How does Go's defer/recover compare to Java's try-catch-finally? When is panic appropriate?
+7. Why do production retries need exponential backoff with jitter instead of fixed delay?
 
 ---
 
@@ -277,6 +282,7 @@ go test -run TestTwoSum ./leetcode/01_arrays/
 
 - Review `practical/05_config_env_json_yaml/` — config management patterns
 - Review `practical/01-04/` concepts — dependency mgmt, build/deploy, Docker, debugging
+- Review `practical/08_error_recovery_retry/` — production error recovery and retry patterns
 
 ### 🎤 Mock Interview Topics
 
@@ -298,6 +304,8 @@ M1 — Data Structures Internals
 [ ] Read slices internals doc
 [ ] Read maps internals doc
 [ ] Read sorting/pdqsort doc
+[ ] Implement fundamentals/08_arrays_slices exercises
+[ ] Implement fundamentals/09_maps exercises
 [ ] Review slice/map exercises with internals lens
 
 M2 — Language Core Internals
@@ -305,11 +313,15 @@ M2 — Language Core Internals
 [ ] Read closures & scopes doc
 [ ] Read pointers & auto-deref doc
 [ ] Read error handling patterns doc
+[ ] Implement fundamentals/07_error_handling exercises
+[ ] Implement practical/08_error_recovery_retry exercises (try-catch, retry, backoff)
 [ ] Review functions/pointers/errors exercises
 
 M3 — Concurrency Internals
 [ ] Read channels internals doc
 [ ] Read goroutines & scheduler doc
+[ ] Implement fundamentals/10_goroutines exercises
+[ ] Implement fundamentals/11_channels exercises
 [ ] Review concurrency exercises + worker pool
 
 M4 — Runtime & Performance
