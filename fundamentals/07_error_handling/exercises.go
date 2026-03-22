@@ -12,8 +12,9 @@ import (
 // Exercise 1: Divide returns error if b == 0
 // LESSON: The most basic pattern. Return (value, error). The caller MUST check the error.
 func Divide(a, b float64) (float64, error) {
+	// TODO: implement
 	if b == 0 {
-		return 0, errors.New("cannot divide by zero")
+		return b, errors.New("cannot divide by zero")
 	}
 	return a / b, nil
 }
@@ -27,12 +28,13 @@ type ValidationError struct {
 }
 
 func (e *ValidationError) Error() string {
+	// TODO: return formatted "validation error: <Field> — <Message>"
 	return fmt.Sprintf("validation error: %s — %s", e.Field, e.Message)
 }
 
 func Validate(name string) error {
+	// TODO: return &ValidationError if name is empty, nil otherwise
 	if name == "" {
-		// Return a pointer — the Error() method has a pointer receiver
 		return &ValidationError{Field: "name", Message: "cannot be empty"}
 	}
 	return nil
@@ -40,14 +42,14 @@ func Validate(name string) error {
 
 // Exercise 3: Safe map access
 // LESSON: Add context to errors so they're useful when they bubble up.
-// fmt.Errorf("context: ...") is Level 1. No wrapping needed here since
-// there is no original error to preserve.
+// Use fmt.Errorf to create an error with the key name embedded.
 func SafeGet(m map[string]int, key string) (int, error) {
-	v, ok := m[key]
-	if !ok {
-		return 0, fmt.Errorf("key %q not found in map", key)
+	// TODO: return value if key exists, descriptive error if not
+	if value, found := m[key]; found {
+		return value, nil
 	}
-	return v, nil
+
+	return 0, fmt.Errorf("key %q not found", key)
 }
 
 // Exercise 4: Sentinel errors
@@ -57,18 +59,15 @@ var ErrUserNotFound = errors.New("user not found")
 var ErrAccessDenied = errors.New("access denied")
 
 func FindUser(id int) (string, error) {
-	if id <= 0 {
-		return "", ErrUserNotFound
-	}
-	if id == 999 {
-		return "", ErrAccessDenied
-	}
-	return fmt.Sprintf("User%d", id), nil
+	// TODO: return ErrUserNotFound if id <= 0, ErrAccessDenied if id == 999,
+	//       otherwise return "User<id>" with nil error
+	panic("not implemented")
 }
 
 // Exercise 5: Wrap errors with context using %w
 // LESSON: %w (not %v!) wraps the error so errors.Is/errors.As can still find
 // the original inside the chain. This is how you add context without losing identity.
 func WrapError(err error, context string) error {
-	return fmt.Errorf("%s: %w", context, err)
+	// TODO: wrap err with context string using fmt.Errorf and %w
+	panic("not implemented")
 }
