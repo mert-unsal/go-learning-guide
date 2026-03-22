@@ -1,0 +1,23 @@
+Session
+ Name:                   Clear Workspace
+ ID:                     6294b48b-4a55-484d-8cf6-603b37738532
+ Duration:               14h 15m 2s
+ Created:                3/21/2026, 10:00:22 PM
+ Modified:               3/21/2026, 10:00:22 PM
+ Directory:              C:\Users\samte\workspace\go-workspace\go-interview-prep
+ Log:                    C:\Users\samte\.copilot\logs\process-1774126821599-18448.log
+ Session:                C:\Users\samte\.copilot\session-state\6294b48b-4a55-484d-8cf6-603b37738532\events.jsonl
+
+ Workspace
+ Path:                   C:\Users\samte\.copilot\session-state\6294b48b-4a55-484d-8cf6-603b37738532
+ Plan:                   yes
+ Checkpoints (1):        1. Deep dive docs and performance module
+
+ Usage
+ Total usage est:        33 Premium requests
+ API time spent:         1h 28m 25s
+ Total session time:     14h 15m 2s
+ Total code changes:     +3357 -701
+ Breakdown by AI model:
+  claude-opus-4.6          20.9m in, 262.8k out, 19.5m cached (Est. 33 Premium requests)
+  claude-haiku-4.5         1.3m in, 28.6k out, 1.2m cached (Est. 0 Premium requests)
