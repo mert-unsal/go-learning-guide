@@ -4,17 +4,23 @@ import (
 	"fmt"
 	"reflect"
 )
-// ============================================================
+
+// ExStringer ============================================================
 // EXERCISES — 06 Interfaces
 // ============================================================
 // Exercise 1:
 // Stringer — any type with String() string method.
 // Book and Movie both implement it.
 type ExStringer interface {
-String() string
+	String() string
 }
 type ExBook struct{ Title, Author string }
-type ExMovie struct{ Title string; Year int }
+
+type ExMovie struct {
+	Title string
+	Year  int
+}
+
 func (b ExBook) String() string {
 	return fmt.Sprintf("%q by %s", b.Title, b.Author)
 }
@@ -22,17 +28,22 @@ func (b ExBook) String() string {
 func (m ExMovie) String() string {
 	return fmt.Sprintf("%s (%d)", m.Title, m.Year)
 }
+
 func PrintAll(items []ExStringer) {
-// TODO: print each item.String()
+	for _, v := range items {
+		v.String()
+	}
 }
-// Exercise 2:
+
+// ExWriter Exercise 2:
 // ExWriter interface — anything that can Write a string.
 type ExWriter interface {
-Write(data string) error
+	Write(data string) error
 }
 type ExBufferWriter struct {
-Buffer []string
+	Buffer []string
 }
+
 func (bw *ExBufferWriter) Write(data string) error {
 	bw.Buffer = append(bw.Buffer, data)
 	return nil
@@ -46,6 +57,7 @@ func WriteAll(w ExWriter, items []string) error {
 	}
 	return nil
 }
+
 // Exercise 3:
 // Type switch — describe what kind of value is passed.
 func Describe(i interface{}) string {
@@ -106,8 +118,10 @@ func (p *Product) Label() string {
 // Hint: the trap is doing `var p *Product; return p` — that returns
 // iface{tab: *itab, data: nil} which is NOT nil.
 func SafeGetLabel(name string) Labeler {
-	// TODO: implement
-	return nil
+	if len(name) == 0 {
+		return nil
+	}
+	return &Product{Name: name}
 }
 
 // Exercise 4b: SafeCallLabeler — Guard 2 (type assertion guard)
@@ -118,8 +132,11 @@ func SafeGetLabel(name string) Labeler {
 //
 // Use a type assertion to extract *Product, then check if the pointer is nil.
 func SafeCallLabeler(l Labeler) string {
-	// TODO: implement
-	return ""
+	product, found := l.(*Product)
+	if !found || product == nil {
+		return "no labeler"
+	}
+	return product.Label()
 }
 
 // Exercise 4c: IsTrulyNil — Guard 3 (reflect-based, for unknown types)
@@ -138,7 +155,16 @@ func SafeCallLabeler(l Labeler) string {
 var _ = reflect.ValueOf // keep import alive
 func IsTrulyNil(i interface{}) bool {
 	// TODO: implement
-	return false
+	if i == nil {
+		return true
+	}
+	v := reflect.ValueOf(i)
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Func, reflect.Map, reflect.Slice, reflect.Chan:
+		return v.IsNil()
+	default:
+		return false
+	}
 }
 
 // ============================================================
@@ -178,7 +204,7 @@ type Sensor interface {
 	Calibrate(offset float64)
 }
 
-// Exercise 5a: Implement Thermometer
+// Thermometer Exercise 5a: Implement Thermometer
 // A Thermometer has a Temp field (float64).
 // - Reading() should return t.Temp              → use VALUE receiver
 // - Calibrate() should add offset to t.Temp     → use POINTER receiver (mutation!)
@@ -191,24 +217,29 @@ type Thermometer struct {
 // TODO: implement Reading() with value receiver
 func (t Thermometer) Reading() float64 {
 	// TODO: return t.Temp
-	return 0
+	return t.Temp
 }
 
 // TODO: implement Calibrate() with pointer receiver
 func (t *Thermometer) Calibrate(offset float64) {
 	// TODO: add offset to t.Temp
+	t.Temp += offset
 }
 
-// Exercise 5b: ReadAndCalibrate
+// ReadAndCalibrate Exercise 5b: ReadAndCalibrate
 // Given a Sensor, return the reading, then calibrate by the given offset,
 // then return the new reading.
 // Return (before, after).
 //
 // Think: can you pass Thermometer{Temp: 20.0} to this function?
-//        Or must you pass &Thermometer{Temp: 20.0}?
+//
+//	Or must you pass &Thermometer{Temp: 20.0}?
 func ReadAndCalibrate(s Sensor, offset float64) (before, after float64) {
 	// TODO: implement
-	return 0, 0
+	reading := s.Reading()
+	s.Calibrate(offset)
+	newReading := s.Reading()
+	return reading, newReading
 }
 
 // Displayer is an interface with only a value-receiver method.
@@ -220,12 +251,13 @@ type Displayer interface {
 // Both Celsius and *Celsius satisfy Displayer.
 type Celsius float64
 
+// Display
 // TODO: implement Display() on Celsius with VALUE receiver
 // Return format: "XX.X°C" (e.g., "36.6°C")
 // Hint: use fmt.Sprintf("%.1f°C", float64(c))
 func (c Celsius) Display() string {
 	// TODO: implement
-	return ""
+	return fmt.Sprintf("%.1f°C", float64(c))
 }
 
 // Kelvin uses a POINTER receiver for Display.
@@ -237,21 +269,23 @@ type Kelvin float64
 // Hint: use fmt.Sprintf("%.1fK", float64(*k))
 func (k *Kelvin) Display() string {
 	// TODO: implement
-	return ""
+	return fmt.Sprintf("%.1fK", float64(*k))
 }
 
 // Exercise 5c: CollectDisplayers
 // Return a slice of Displayer containing these values in order:
-//   1. Celsius(36.6)
-//   2. Kelvin(309.8)
+//  1. Celsius(36.6)
+//  2. Kelvin(309.8)
 //
 // The challenge: one uses value receiver, one uses pointer receiver.
 // You must figure out which needs & and which doesn't.
 //
 // Hint: If Kelvin.Display() has a pointer receiver, can you assign
-//       Kelvin(309.8) directly to Displayer? Or do you need &Kelvin?
-//       Remember: you can't take the address of a converted literal directly.
+//
+//	Kelvin(309.8) directly to Displayer? Or do you need &Kelvin?
+//	Remember: you can't take the address of a converted literal directly.
 func CollectDisplayers() []Displayer {
 	// TODO: implement — return a []Displayer with Celsius and Kelvin values
-	return nil
+	kelvin := Kelvin(309.8)
+	return []Displayer{Celsius(36.6), &kelvin}
 }

@@ -84,7 +84,7 @@ func TestWrapError(t *testing.T) {
 	orig := errors.New("original")
 	wrapped := WrapError(orig, "context")
 	if !errors.Is(wrapped, orig) {
-		t.Error("❌ errors.Is should find original in wrapped  ← Hint: use fmt.Errorf(\"%s: %w\", ...)")
+		t.Errorf("❌ errors.Is should find original in wrapped  ← Hint: use fmt.Errorf(\"%%s: %%w\", ...)")
 	} else {
 		t.Logf("✅ WrapError wraps correctly: %v", wrapped)
 	}
