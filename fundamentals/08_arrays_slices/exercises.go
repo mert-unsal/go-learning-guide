@@ -3,6 +3,13 @@ package arrays_slices
 // ============================================================
 // EXERCISES — 08 Arrays & Slices
 // ============================================================
+//
+// Exercises 1-6:  Algorithm patterns (reverse, dedup, 2D, rotate, filter, merge)
+// Exercises 7-12: Slice internals (backing array, copy, nil vs empty, leaks, append growth, full slice expression)
+
+// ============================================================
+// PART A — Algorithm Patterns
+// ============================================================
 
 // Exercise 1:
 // ReverseSlice reverses a slice IN-PLACE using the two-pointer technique.
@@ -84,5 +91,133 @@ func Filter(s []int, fn func(int) bool) []int {
 func MergeSorted(a, b []int) []int {
 	// TODO: implement two-pointer merge
 	// Hint: pre-allocate with make([]int, 0, len(a)+len(b))
+	panic("not implemented")
+}
+
+// ============================================================
+// PART B — Slice Internals
+// ============================================================
+
+// Exercise 7:
+// SafeDelete deletes the element at index i from s (order-preserving) and returns
+// the shortened slice WITHOUT mutating the original backing array that the caller holds.
+//
+// LESSON: The standard delete trick `append(s[:i], s[i+1:]...)` mutates the original
+// backing array. If another variable shares that backing array, it sees corrupted data.
+// You must copy first to get an independent backing array, then delete from the copy.
+//
+// Example:
+//
+//	original := []int{10, 20, 30, 40, 50}
+//	result := SafeDelete(original, 2)
+//	// result   = [10, 20, 40, 50]
+//	// original = [10, 20, 30, 40, 50]  ← must be unchanged!
+func SafeDelete(s []int, i int) []int {
+	// TODO: create an independent copy, then delete index i from the copy
+	panic("not implemented")
+}
+
+// Exercise 8:
+// CopySlice creates a completely independent copy of src using the copy() built-in.
+// The returned slice must have the same length and elements as src, but a different
+// backing array.
+//
+// LESSON: copy() copies min(len(dst), len(src)) elements. You must allocate dst
+// with the right length BEFORE calling copy. copy() does NOT allocate for you.
+//
+// Requirements:
+//   - Must use the copy() built-in (not append)
+//   - Returned slice must have same len as src
+//   - Modifying the returned slice must NOT affect src
+func CopySlice(src []int) []int {
+	// TODO: allocate a new slice with make(), then use copy()
+	panic("not implemented")
+}
+
+// Exercise 9:
+// NilVsEmpty returns two slices: one nil and one empty (non-nil).
+// This exercise tests your understanding of the difference.
+//
+// LESSON: A nil slice and an empty slice behave identically for len(), cap(),
+// append(), and range — but they differ in nil comparison and JSON marshaling.
+//
+//	var s []int       → nil slice:  s == nil is true,  json: "null"
+//	s := []int{}      → empty slice: s == nil is false, json: "[]"
+//	s := make([]int,0)→ empty slice: s == nil is false, json: "[]"
+//
+// Returns: (nilSlice, emptySlice)
+func NilVsEmpty() ([]int, []int) {
+	// TODO: return a nil slice and an empty (non-nil) slice
+	panic("not implemented")
+}
+
+// Exercise 10:
+// ExtractWithoutLeak takes a large slice and an index range [from, to),
+// and returns a NEW slice containing only those elements.
+// The returned slice must NOT hold a reference to the original's backing array.
+//
+// LESSON: s[from:to] creates a sub-slice that shares the original backing array.
+// If the original is large (e.g., 1 million elements) and the sub-slice is small
+// (e.g., 3 elements), the entire original array stays in memory because the sub-slice
+// holds a pointer into it. This is a memory leak.
+//
+// Fix: copy the elements into a new, independent slice.
+//
+// Example:
+//
+//	huge := make([]int, 1_000_000)
+//	small := ExtractWithoutLeak(huge, 0, 3)
+//	// small has len=3, cap=3, independent backing array
+//	// huge can now be garbage collected
+func ExtractWithoutLeak(s []int, from, to int) []int {
+	// TODO: extract s[from:to] into a new slice with its own backing array
+	panic("not implemented")
+}
+
+// Exercise 11:
+// ObserveGrowth appends n elements (values 0 to n-1) to an initially empty slice
+// and returns a slice of every capacity value observed after each append.
+//
+// LESSON: append uses growslice when len==cap. The growth strategy is:
+//   - 2x when cap < 256
+//   - ~1.25x when cap >= 256
+//   - Then rounded up to memory allocator size classes
+//
+// Understanding this helps you decide when to pre-allocate with make([]T, 0, n).
+//
+// Example:
+//
+//	ObserveGrowth(5) might return [1, 2, 4, 4, 8]
+//	// append 0: cap goes 0→1
+//	// append 1: cap goes 1→2
+//	// append 2: cap goes 2→4
+//	// append 3: cap stays 4
+//	// append 4: cap goes 4→8
+func ObserveGrowth(n int) []int {
+	// TODO: start with a nil slice, append values 0..n-1,
+	// record cap(s) after each append into a result slice
+	panic("not implemented")
+}
+
+// Exercise 12:
+// DetachSlice takes a slice and returns a new slice with the same elements
+// but limited capacity, so that appending to the returned slice cannot
+// accidentally overwrite elements in the original backing array.
+//
+// LESSON: The full slice expression s[low:high:max] sets cap = max - low.
+// This is the Go idiom for "detaching" a sub-slice so future appends
+// trigger growslice instead of overwriting shared backing data.
+//
+// You MUST use the full slice expression (three-index slice) in your solution.
+//
+// Example:
+//
+//	original := []int{10, 20, 30, 40, 50}
+//	detached := DetachSlice(original)
+//	detached = append(detached, 99)
+//	// original is still [10, 20, 30, 40, 50] — not corrupted
+func DetachSlice(s []int) []int {
+	// TODO: return s with cap limited to len using full slice expression
+	// Hint: s[0:len(s):len(s)]
 	panic("not implemented")
 }
