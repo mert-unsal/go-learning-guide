@@ -1,6 +1,7 @@
 package arrays_slices
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -20,14 +21,16 @@ func TestReverseSlice(t *testing.T) {
 		{[]int{}, []int{}},
 	}
 	for _, tt := range tests {
-		s := make([]int, len(tt.input))
-		copy(s, tt.input)
-		ReverseSlice(s)
-		if !reflect.DeepEqual(s, tt.want) {
-			t.Errorf("❌ ReverseSlice(%v) = %v, want %v  ← Hint: two-pointer swap", tt.input, s, tt.want)
-		} else {
-			t.Logf("✅ ReverseSlice(%v) = %v", tt.input, s)
-		}
+		t.Run(fmt.Sprintf("ReverseSlice(%v)", tt.input), func(t *testing.T) {
+			s := make([]int, len(tt.input))
+			copy(s, tt.input)
+			ReverseSlice(s)
+			if !reflect.DeepEqual(s, tt.want) {
+				t.Errorf("❌ ReverseSlice(%v) = %v, want %v  ← Hint: two-pointer swap", tt.input, s, tt.want)
+			} else {
+				t.Logf("✅ ReverseSlice(%v) = %v", tt.input, s)
+			}
+		})
 	}
 }
 
@@ -42,14 +45,16 @@ func TestRemoveDuplicates(t *testing.T) {
 		{[]int{}, []int{}},
 	}
 	for _, tt := range tests {
-		s := make([]int, len(tt.input))
-		copy(s, tt.input)
-		got := RemoveDuplicates(s)
-		if !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("❌ RemoveDuplicates(%v) = %v, want %v  ← Hint: write-pointer pattern", tt.input, got, tt.want)
-		} else {
-			t.Logf("✅ RemoveDuplicates(%v) = %v", tt.input, got)
-		}
+		t.Run(fmt.Sprintf("RemoveDuplicates(%v)", tt.input), func(t *testing.T) {
+			s := make([]int, len(tt.input))
+			copy(s, tt.input)
+			got := RemoveDuplicates(s)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("❌ RemoveDuplicates(%v) = %v, want %v  ← Hint: write-pointer pattern", tt.input, got, tt.want)
+			} else {
+				t.Logf("✅ RemoveDuplicates(%v) = %v", tt.input, got)
+			}
+		})
 	}
 }
 
@@ -83,14 +88,16 @@ func TestRotateLeft(t *testing.T) {
 		{[]int{1, 2, 3}, 1, []int{2, 3, 1}},
 	}
 	for _, tt := range tests {
-		s := make([]int, len(tt.input))
-		copy(s, tt.input)
-		RotateLeft(s, tt.k)
-		if !reflect.DeepEqual(s, tt.want) {
-			t.Errorf("❌ RotateLeft(%v, %d) = %v, want %v  ← Hint: three-reversal trick", tt.input, tt.k, s, tt.want)
-		} else {
-			t.Logf("✅ RotateLeft(%v, %d) = %v", tt.input, tt.k, s)
-		}
+		t.Run(fmt.Sprintf("RotateLeft(%v,%d)", tt.input, tt.k), func(t *testing.T) {
+			s := make([]int, len(tt.input))
+			copy(s, tt.input)
+			RotateLeft(s, tt.k)
+			if !reflect.DeepEqual(s, tt.want) {
+				t.Errorf("❌ RotateLeft(%v, %d) = %v, want %v  ← Hint: three-reversal trick", tt.input, tt.k, s, tt.want)
+			} else {
+				t.Logf("✅ RotateLeft(%v, %d) = %v", tt.input, tt.k, s)
+			}
+		})
 	}
 }
 
@@ -125,12 +132,14 @@ func TestMergeSorted(t *testing.T) {
 		{[]int{1}, []int{1}, []int{1, 1}},
 	}
 	for _, tt := range tests {
-		got := MergeSorted(tt.a, tt.b)
-		if !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("❌ MergeSorted(%v, %v) = %v, want %v  ← Hint: two-pointer merge", tt.a, tt.b, got, tt.want)
-		} else {
-			t.Logf("✅ MergeSorted(%v, %v) = %v", tt.a, tt.b, got)
-		}
+		t.Run(fmt.Sprintf("MergeSorted(%v,%v)", tt.a, tt.b), func(t *testing.T) {
+			got := MergeSorted(tt.a, tt.b)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("❌ MergeSorted(%v, %v) = %v, want %v  ← Hint: two-pointer merge", tt.a, tt.b, got, tt.want)
+			} else {
+				t.Logf("✅ MergeSorted(%v, %v) = %v", tt.a, tt.b, got)
+			}
+		})
 	}
 }
 

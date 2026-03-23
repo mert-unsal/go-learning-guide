@@ -97,11 +97,17 @@ func reverseRange(s []int, l, r int) {
 // Filter Exercise 5:
 // Filter returns a new slice containing only elements where fn(element) is true.
 //
-// LESSON: Higher-order functions. Go doesn't have built-in map/filter/reduce,
-// but you can write them easily. Note we build a new slice — we don't modify original.
+// LESSON: Higher-order functions. Go doesn't have a built-in map / filter /reduce,
+// but you can write them easily. Note we build a new slice — we don't modify the original.
 func Filter(s []int, fn func(int) bool) []int {
 	// TODO: build and return a new slice with matching elements
-	panic("not implemented")
+	var result []int
+	for _, v := range s {
+		if fn(v) {
+			result = append(result, v)
+		}
+	}
+	return result
 }
 
 // MergeSorted Exercise 6:
@@ -113,7 +119,20 @@ func Filter(s []int, fn func(int) bool) []int {
 func MergeSorted(a, b []int) []int {
 	// TODO: implement two-pointer merge
 	// Hint: pre-allocate with make([]int, 0, len(a)+len(b))
-	panic("not implemented")
+	var mergedSlice = make([]int, 0, len(a)+len(b))
+	var p1, p2 = 0, 0
+	for p1 < len(a) && p2 < len(b) {
+		if a[p1] <= b[p2] {
+			mergedSlice = append(mergedSlice, a[p1])
+			p1++
+		} else {
+			mergedSlice = append(mergedSlice, b[p2])
+			p2++
+		}
+	}
+	mergedSlice = append(mergedSlice, a[p1:]...) // drain remaining a
+	mergedSlice = append(mergedSlice, b[p2:]...) // drain remaining b
+	return mergedSlice
 }
 
 // ============================================================
