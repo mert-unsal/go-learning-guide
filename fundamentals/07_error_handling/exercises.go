@@ -41,7 +41,7 @@ func Validate(name string) error {
 	return nil
 }
 
-// Exercise 3: Safe map access
+// SafeGet Exercise 3: Safe map access
 // LESSON: Add context to errors so they're useful when they bubble up.
 // Use fmt.Errorf to create an error with the key name embedded.
 func SafeGet(m map[string]int, key string) (int, error) {
