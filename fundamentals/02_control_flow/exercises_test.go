@@ -1,6 +1,7 @@
 package control_flow
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -13,12 +14,14 @@ func TestFizzBuzzSwitch(t *testing.T) {
 		{9, "Fizz"}, {10, "Buzz"}, {30, "FizzBuzz"}, {7, "7"},
 	}
 	for _, tt := range tests {
-		got := FizzBuzzSwitch(tt.n)
-		if got != tt.want {
-			t.Errorf("❌ FizzBuzzSwitch(%d) = %q, want %q", tt.n, got, tt.want)
-		} else {
-			t.Logf("✅ FizzBuzzSwitch(%d) = %q", tt.n, got)
-		}
+		t.Run(fmt.Sprintf("FizzBuzzSwitch(%d)", tt.n), func(t *testing.T) {
+			got := FizzBuzzSwitch(tt.n)
+			if got != tt.want {
+				t.Errorf("❌ FizzBuzzSwitch(%d) = %q, want %q", tt.n, got, tt.want)
+			} else {
+				t.Logf("✅ FizzBuzzSwitch(%d) = %q", tt.n, got)
+			}
+		})
 	}
 }
 
@@ -27,12 +30,14 @@ func TestSumTo(t *testing.T) {
 		{1, 1}, {5, 15}, {10, 55}, {100, 5050},
 	}
 	for _, tt := range tests {
-		got := SumTo(tt.n)
-		if got != tt.want {
-			t.Errorf("❌ SumTo(%d) = %d, want %d", tt.n, got, tt.want)
-		} else {
-			t.Logf("✅ SumTo(%d) = %d", tt.n, got)
-		}
+		t.Run(fmt.Sprintf("SumTo(%d)", tt.n), func(t *testing.T) {
+			got := SumTo(tt.n)
+			if got != tt.want {
+				t.Errorf("❌ SumTo(%d) = %d, want %d", tt.n, got, tt.want)
+			} else {
+				t.Logf("✅ SumTo(%d) = %d", tt.n, got)
+			}
+		})
 	}
 }
 
@@ -44,12 +49,14 @@ func TestCountVowels(t *testing.T) {
 		{"hello", 2}, {"AEIOU", 5}, {"rhythm", 0}, {"Go is fun", 3},
 	}
 	for _, tt := range tests {
-		got := CountVowels(tt.s)
-		if got != tt.want {
-			t.Errorf("❌ CountVowels(%q) = %d, want %d  ← Hint: handle uppercase too", tt.s, got, tt.want)
-		} else {
-			t.Logf("✅ CountVowels(%q) = %d", tt.s, got)
-		}
+		t.Run(fmt.Sprintf("CountVowels(%q)", tt.s), func(t *testing.T) {
+			got := CountVowels(tt.s)
+			if got != tt.want {
+				t.Errorf("❌ CountVowels(%q) = %d, want %d  ← Hint: handle uppercase too", tt.s, got, tt.want)
+			} else {
+				t.Logf("✅ CountVowels(%q) = %d", tt.s, got)
+			}
+		})
 	}
 }
 
@@ -62,12 +69,14 @@ func TestIsPrime(t *testing.T) {
 		{1, false}, {0, false}, {97, true}, {100, false},
 	}
 	for _, tt := range tests {
-		got := IsPrime(tt.n)
-		if got != tt.want {
-			t.Errorf("❌ IsPrime(%d) = %v, want %v  ← Hint: check divisors up to sqrt(n)", tt.n, got, tt.want)
-		} else {
-			t.Logf("✅ IsPrime(%d) = %v", tt.n, got)
-		}
+		t.Run(fmt.Sprintf("IsPrime(%d)", tt.n), func(t *testing.T) {
+			got := IsPrime(tt.n)
+			if got != tt.want {
+				t.Errorf("❌ IsPrime(%d) = %v, want %v  ← Hint: check divisors up to sqrt(n)", tt.n, got, tt.want)
+			} else {
+				t.Logf("✅ IsPrime(%d) = %v", tt.n, got)
+			}
+		})
 	}
 }
 

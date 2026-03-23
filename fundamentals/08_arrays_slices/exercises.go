@@ -150,12 +150,15 @@ func MergeSorted(a, b []int) []int {
 // Example:
 //
 //	original := []int{10, 20, 30, 40, 50}
-//	result := SafeDelete(original, 2)
+//	result: = SafeDelete(original, 2)
 //	// result   = [10, 20, 40, 50]
-//	// original = [10, 20, 30, 40, 50]  ← must be unchanged!
+//	// original = [10, 20, 30, 40, 50] ← must be unchanged!
 func SafeDelete(s []int, i int) []int {
 	// TODO: create an independent copy, then delete index i from the copy
-	panic("not implemented")
+	var copiedSlice = make([]int, len(s))
+	copy(copiedSlice, s)
+	copiedSlice = append(copiedSlice[:i], copiedSlice[i+1:]...)
+	return copiedSlice
 }
 
 // CopySlice Exercise 8:
@@ -168,11 +171,13 @@ func SafeDelete(s []int, i int) []int {
 //
 // Requirements:
 //   - Must use the copy() built-in (not append)
-//   - Returned slice must have same len as src
+//   - Returned slice must have the same len as src
 //   - Modifying the returned slice must NOT affect src
 func CopySlice(src []int) []int {
 	// TODO: allocate a new slice with make(), then use copy()
-	panic("not implemented")
+	var copiedSlice = make([]int, len(src))
+	copy(copiedSlice, src)
+	return copiedSlice
 }
 
 // NilVsEmpty Exercise 9:
@@ -182,14 +187,14 @@ func CopySlice(src []int) []int {
 // LESSON: A nil slice and an empty slice behave identically for len(), cap(),
 // append(), and range — but they differ in nil comparison and JSON marshaling.
 //
-//	var s []int       → nil slice:  s == nil is true,  json: "null"
-//	s := []int{}      → empty slice: s == nil is false, json: "[]"
+//	var s []int → nil slice:  s == nil is true,  json: "null"
+//	s := []int{} → empty slice: s == nil is false, json: "[]"
 //	s := make([]int,0)→ empty slice: s == nil is false, json: "[]"
 //
 // Returns: (nilSlice, emptySlice)
 func NilVsEmpty() ([]int, []int) {
 	// TODO: return a nil slice and an empty (non-nil) slice
-	panic("not implemented")
+	return []int(nil), []int{}
 }
 
 // ExtractWithoutLeak Exercise 10:
@@ -226,18 +231,28 @@ func ExtractWithoutLeak(s []int, from, to int) []int {
 //
 // Understanding this helps you decide when to pre-allocate with make([]T, 0, n).
 //
-// Example:
+// Example (for []int on 64-bit — size-class rounding applies):
 //
-//	ObserveGrowth(5) might return [1, 2, 4, 4, 8]
-//	// append 0: cap goes 0→1
-//	// append 1: cap goes 1→2
-//	// append 2: cap goes 2→4
-//	// append 3: cap stays 4
-//	// append 4: cap goes 4→8
+//	ObserveGrowth(10) returns [4, 4, 4, 4, 8, 8, 8, 8, 16, 16]
+//	// append 0: growslice requests cap=1 → allocator rounds to 32B → 32/8 = cap 4
+//	// append 1-3: cap 4 still has room, no growth
+//	// append 4: growslice requests cap=8 → allocator gives 64B → cap 8
+//	// append 5-7: cap 8 still has room, no growth
+//	// append 8: growslice requests cap=16 → allocator gives 128B → cap 16
+//	// append 9: cap 16 still has room, no growth
+//
+// NOTE: You'll never see cap=1 or cap=2 for []int because the smallest
+// allocator size class that holds int (8 bytes) is 32 bytes = 4 ints.
 func ObserveGrowth(n int) []int {
 	// TODO: start with a nil slice, append values 0..n-1,
 	// record cap(s) after each append into a result slice
-	panic("not implemented")
+	var output []int = make([]int, 0, n)
+	var s []int
+	for i := 0; i < n; i++ {
+		s = append(s, i)
+		output = append(output, cap(s))
+	}
+	return output
 }
 
 // DetachSlice Exercise 12:
@@ -254,11 +269,12 @@ func ObserveGrowth(n int) []int {
 // Example:
 //
 //	original := []int{10, 20, 30, 40, 50}
-//	detached := DetachSlice(original)
+//	detached: = DetachSlice(original)
 //	detached = append(detached, 99)
 //	// original is still [10, 20, 30, 40, 50] — not corrupted
 func DetachSlice(s []int) []int {
 	// TODO: return s with cap limited to len using full slice expression
 	// Hint: s[0:len(s):len(s)]
-	panic("not implemented")
+	var detached = s[0:len(s):len(s)]
+	return detached
 }

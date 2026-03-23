@@ -231,7 +231,7 @@ func TestNilVsEmpty(t *testing.T) {
 		t.Errorf("❌ Both slices should have len=0, got nil=%d, empty=%d", len(nilSlice), len(emptySlice))
 	}
 
-	// Both should work with append
+	// Both should work with appending
 	nilSlice = append(nilSlice, 1)
 	emptySlice = append(emptySlice, 1)
 	if nilSlice[0] != 1 || emptySlice[0] != 1 {
@@ -278,7 +278,7 @@ func TestObserveGrowth(t *testing.T) {
 		t.Fatalf("❌ ObserveGrowth(10) returned %d entries, want 10", len(caps))
 	}
 
-	// First element should have cap >= 1 (grew from 0)
+	// The first element should have cap >= 1 (grew from 0)
 	if caps[0] < 1 {
 		t.Errorf("❌ After first append, cap should be >= 1, got %d", caps[0])
 	}
@@ -290,7 +290,7 @@ func TestObserveGrowth(t *testing.T) {
 		}
 	}
 
-	// Last cap should be >= 10 (must hold 10 elements)
+	// The last cap should be >= 10 (must hold 10 elements)
 	if caps[len(caps)-1] < 10 {
 		t.Errorf("❌ Final cap = %d, must be >= 10", caps[len(caps)-1])
 	}

@@ -1,6 +1,7 @@
 package goroutines
 
 import (
+	"fmt"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -48,12 +49,14 @@ func TestSumConcurrent(t *testing.T) {
 		{[]int{100}, 100},
 	}
 	for _, tt := range tests {
-		got := SumConcurrent(tt.nums)
-		if got != tt.want {
-			t.Errorf("❌ SumConcurrent(%v) = %d, want %d", tt.nums, got, tt.want)
-		} else {
-			t.Logf("✅ SumConcurrent(%v) = %d", tt.nums, got)
-		}
+		t.Run(fmt.Sprintf("SumConcurrent(%v)", tt.nums), func(t *testing.T) {
+			got := SumConcurrent(tt.nums)
+			if got != tt.want {
+				t.Errorf("❌ SumConcurrent(%v) = %d, want %d", tt.nums, got, tt.want)
+			} else {
+				t.Logf("✅ SumConcurrent(%v) = %d", tt.nums, got)
+			}
+		})
 	}
 }
 
