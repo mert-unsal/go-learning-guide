@@ -49,13 +49,6 @@ package arrays
 //   Output: true
 //   Why:    -1 appears twice.
 //
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • Brute force: compare every pair → O(n²). Can you do better?
-//   • Sorting first lets you check adjacent elements → O(n log n).
-//   • A hash set lets you check "have I seen this before?" in O(1).
-//   • What data structure in Go acts as a set? (Hint: map[int]bool)
-//   • Target: O(n) time, O(n) space.
-
 // ContainsDuplicate returns true if the slice has any repeated element.
 // Time: O(n)  Space: O(n)
 func ContainsDuplicate(nums []int) bool {

@@ -57,28 +57,6 @@ package arrays
 //   Output: 1
 //   Why:    Remove [2,4]. Then [1,3] and [3,5] are non-overlapping.
 //
-// ─── GREEDY INSIGHT ─────────────────────────────────────────
-//
-//   This is the "interval scheduling maximization" problem in disguise.
-//
-//   To MINIMIZE removals = MAXIMIZE the number of non-overlapping intervals
-//   you can KEEP.
-//
-//   Greedy strategy: sort by END TIME. Always keep the interval that
-//   ends earliest — it leaves the most room for future intervals.
-//
-//   Walk through sorted intervals:
-//     • If current interval starts >= previous kept interval's end → keep it.
-//     • Otherwise → skip (remove) it.
-//
-//   Answer = total intervals - max intervals you can keep.
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • Why sort by end time instead of start time?
-//   • What if two intervals end at the same time?
-//   • This is the same greedy approach used in "activity selection".
-//   • Target: O(n log n) time, O(1) extra space.
-
 // EraseOverlapIntervals returns the minimum removals for non-overlapping intervals.
 // Time: O(n log n)  Space: O(1)
 func EraseOverlapIntervals(intervals [][]int) int {

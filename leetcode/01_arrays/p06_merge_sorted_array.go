@@ -92,13 +92,6 @@ package arrays
 //           nums2 = [500, 999999],        n = 2
 //   Result: nums1 = [1, 500, 999999, 1000000]
 //
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • Both arrays are ALREADY sorted. Can you exploit that?
-//   • If you write into nums1 from the front, you may overwrite
-//     elements you still need. Is there a direction that avoids this?
-//   • What happens when one array is exhausted before the other?
-//   • Target: O(m+n) time, O(1) extra space.
-
 // Merge merges nums2 into nums1 in-place.
 // Time: O(m+n)  Space: O(1)
 func Merge(nums1 []int, m int, nums2 []int, n int) {

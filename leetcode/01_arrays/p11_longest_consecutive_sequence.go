@@ -60,26 +60,6 @@ package arrays
 //   Output: 1
 //   Why:    Only one unique value → sequence length 1.
 //
-// ─── WHY O(n) IS TRICKY ────────────────────────────────────
-//
-//   Sorting gives O(n log n) easily. But the problem asks for O(n).
-//   The key insight is to use a HASH SET to avoid sorting.
-//
-//   For each number, check if it is the START of a sequence:
-//     num is a start if (num - 1) is NOT in the set.
-//
-//   If it IS a start, count forward: num, num+1, num+2, ...
-//   until you hit a value not in the set.
-//
-//   Why is this O(n)? Each element is visited at most twice:
-//   once when inserted into the set, once when counted in a sequence.
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • Why do we only count forward from "start" elements?
-//   • What happens if you count from every element? (Hint: O(n²) in worst case)
-//   • How do you handle duplicates? (Hint: a set ignores them naturally)
-//   • Target: O(n) time, O(n) space.
-
 // LongestConsecutive returns the length of the longest consecutive sequence.
 // Time: O(n)  Space: O(n)
 func LongestConsecutive(nums []int) int {

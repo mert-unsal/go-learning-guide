@@ -48,31 +48,6 @@ package arrays
 //   Top-left 3×3 box contains '1' twice.
 //   Output: false
 //
-// ─── 3×3 BOX INDEX MAPPING ─────────────────────────────────
-//
-//   The board has 9 sub-boxes (3 rows of boxes × 3 columns of boxes).
-//   For cell at (row, col), its box index is:
-//
-//     boxIndex = (row / 3) * 3 + (col / 3)
-//
-//   Box layout:
-//     ┌───────┬───────┬───────┐
-//     │ Box 0 │ Box 1 │ Box 2 │   rows 0-2
-//     ├───────┼───────┼───────┤
-//     │ Box 3 │ Box 4 │ Box 5 │   rows 3-5
-//     ├───────┼───────┼───────┤
-//     │ Box 6 │ Box 7 │ Box 8 │   rows 6-8
-//     └───────┴───────┴───────┘
-//      cols    cols    cols
-//      0-2     3-5     6-8
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • You need to check 3 things per digit: row, column, box.
-//   • How many "seen" sets do you need? (Hint: 9 rows + 9 cols + 9 boxes)
-//   • You only iterate the board once — O(81) = O(1).
-//   • What data structure tracks "have I seen this digit in this row/col/box"?
-//   • Target: O(1) time (fixed 9×9), O(1) space (fixed-size sets).
-
 // IsValidSudoku returns true if the board is a valid Sudoku configuration.
 // Time: O(81) = O(1)  Space: O(81) = O(1)
 func IsValidSudoku(board [][]byte) bool {

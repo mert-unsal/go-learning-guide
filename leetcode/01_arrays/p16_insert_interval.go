@@ -56,25 +56,6 @@ package arrays
 //   Input:  intervals = [[2,3], [4,5], [6,7]], newInterval = [1,10]
 //   Output: [[1,10]]
 //
-// ─── THREE-PHASE APPROACH ───────────────────────────────────
-//
-//   Phase 1: Add all intervals that END BEFORE newInterval starts.
-//            (They don't overlap — just copy them.)
-//
-//   Phase 2: Merge all intervals that OVERLAP with newInterval.
-//            (Their start <= newInterval's end AND newInterval's start <= their end.)
-//            Expand newInterval to cover them all.
-//
-//   Phase 3: Add all remaining intervals.
-//            (They start AFTER newInterval ends.)
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • How do you detect if two intervals overlap?
-//     [a, b] and [c, d] overlap when a <= d AND c <= b.
-//   • During the merge phase, how do you update newInterval?
-//   • Since input is sorted, you can process left-to-right in one pass.
-//   • Target: O(n) time, O(n) space.
-
 // InsertInterval inserts a new interval and merges overlaps.
 // Time: O(n)  Space: O(n)
 func InsertInterval(intervals [][]int, newInterval []int) [][]int {

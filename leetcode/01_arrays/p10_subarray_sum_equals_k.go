@@ -55,34 +55,6 @@ package arrays
 //   Output: 4
 //   Why:    [1,2] at indices 0-1, [2,1] at 1-2, [1,2] at 2-3, [2,1] at 3-4.
 //
-// ─── KEY INSIGHT: PREFIX SUMS ───────────────────────────────
-//
-//   Define prefixSum[j] = nums[0] + nums[1] + ... + nums[j-1].
-//
-//   Then the sum of subarray [i+1 .. j] = prefixSum[j] - prefixSum[i].
-//
-//   If prefixSum[j] - prefixSum[i] == k,
-//   then prefixSum[i] == prefixSum[j] - k.
-//
-//   So for each j, you need to count how many earlier prefix sums
-//   equal (prefixSum[j] - k).
-//
-//   A hash map can store the frequency of each prefix sum seen so far.
-//
-// ─── WHY NOT SLIDING WINDOW? ────────────────────────────────
-//
-//   Sliding window only works when all values are positive (or all
-//   non-negative), because adding elements always increases the sum.
-//   Here, negative values mean the sum can go up and down — so the
-//   window can't be monotonically adjusted.
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • Brute force: try all O(n²) subarrays. Can you do better?
-//   • What does the prefix sum represent?
-//   • What should the initial value in your prefix sum map be?
-//     (Hint: prefixSum of 0 appears once before you start.)
-//   • Target: O(n) time, O(n) space.
-
 // SubarraySum returns the number of subarrays with sum equal to k.
 // Time: O(n)  Space: O(n)
 func SubarraySum(nums []int, k int) int {

@@ -61,13 +61,6 @@ package arrays
 //   Output: [[1,6]]
 //   Why:    Each overlaps with the next, forming one big merged interval.
 //
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • If the intervals were sorted by start time, how would you decide
-//     if two consecutive intervals overlap?
-//   • When merging, the merged interval's end is the MAX of both ends.
-//   • Sorting first makes the greedy merge possible in a single pass.
-//   • Target: O(n log n) time (sorting dominates), O(n) space.
-
 // MergeIntervals merges overlapping intervals.
 // Time: O(n log n)  Space: O(n)
 func MergeIntervals(intervals [][]int) [][]int {

@@ -63,23 +63,6 @@ package arrays
 //   Output: 0
 //   Why:    [0] or [0, -1, 0] → best is just [0] = 0.
 //
-// ─── KEY DECISION AT EACH POSITION ─────────────────────────
-//
-//   At each index i, you face a choice:
-//     Option A: EXTEND the previous subarray by including nums[i]
-//     Option B: START FRESH at nums[i] (abandon everything before)
-//
-//   You should start fresh when the accumulated sum so far is
-//   negative — because adding a negative prefix only hurts.
-//
-//   This greedy choice at every step is called KADANE'S ALGORITHM.
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • What two variables do you need to track?
-//   • When is it better to "start fresh" vs "extend"?
-//   • Why does this work even when all numbers are negative?
-//   • Target: O(n) time, O(1) space.
-
 // MaxSubArray returns the largest sum of any contiguous subarray.
 // Time: O(n)  Space: O(1)
 func MaxSubArray(nums []int) int {

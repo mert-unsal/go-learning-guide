@@ -66,15 +66,6 @@ package arrays
 //   Output: 1
 //   Why:    Only the largest element wrapped to the front.
 //
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • Linear scan finds the minimum in O(n). But the problem
-//     requires O(log n). What search technique gives O(log n)?
-//   • In a rotated sorted array, compare nums[mid] to nums[right].
-//     If nums[mid] > nums[right], where is the minimum?
-//     If nums[mid] <= nums[right], where is the minimum?
-//   • Be careful with your boundary conditions (inclusive vs exclusive).
-//   • Target: O(log n) time, O(1) space.
-
 // FindMinRotated returns the minimum of a rotated sorted array.
 // Time: O(log n)  Space: O(1)
 func FindMinRotated(nums []int) int {

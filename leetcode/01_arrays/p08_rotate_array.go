@@ -56,31 +56,6 @@ package arrays
 //   Output: [1, 2, 3]
 //   Why:    No rotation needed.
 //
-// ─── THE REVERSE TRICK ─────────────────────────────────────
-//
-//   There's an elegant O(n) time, O(1) space approach using reversals:
-//
-//   Given nums = [1, 2, 3, 4, 5, 6, 7], k = 3:
-//
-//   Step 1: Reverse the entire array:
-//           [7, 6, 5, 4, 3, 2, 1]
-//
-//   Step 2: Reverse the first k elements [0..k-1]:
-//           [5, 6, 7, 4, 3, 2, 1]
-//
-//   Step 3: Reverse the remaining elements [k..n-1]:
-//           [5, 6, 7, 1, 2, 3, 4]  ✓
-//
-//   Why does this work? Reversing twice restores order, but the two
-//   halves are now in swapped positions.
-//
-// ─── THINGS TO THINK ABOUT ─────────────────────────────────
-//   • What if k >= len(nums)? What does k % len(nums) give you?
-//   • The naive approach (shift one by one, k times) is O(n*k). Too slow.
-//   • Using a temp array is O(n) space. Can you do O(1)?
-//   • You may want a helper: func reverse(nums []int, left, right int)
-//   • Target: O(n) time, O(1) space.
-
 // Rotate rotates the array to the right by k positions in-place.
 // Time: O(n)  Space: O(1)
 func Rotate(nums []int, k int) {
