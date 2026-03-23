@@ -70,5 +70,17 @@ package arrays
 // Time: O(n)  Space: O(n)
 func TwoSum(nums []int, target int) []int {
 	// TODO: implement
-	return nil
+	// value to store the indices of the two numbers
+	var indices = make([]int, 2)
+	var indicesMap = make(map[int]int)
+	for i, num := range nums {
+		complement := target - num
+		if complementIndex, ok := indicesMap[complement]; ok {
+			indices[0] = complementIndex
+			indices[1] = i
+		} else {
+			indicesMap[num] = i
+		}
+	}
+	return indices
 }
