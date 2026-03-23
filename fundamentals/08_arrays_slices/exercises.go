@@ -75,14 +75,23 @@ func Make2D(rows, cols int) [][]int {
 // LESSON: Three-reversal trick — no extra space needed.
 // [1,2,3,4,5], k=2 → want [3,4,5,1,2]
 //
-//	Step 1: reverse whole:       [5,4,3,2,1]
+//	Step 1: reverse whole: [5,4,3,2,1]
 //	Step 2: reverse first n-k=3: [3,4,5,2,1]
-//	Step 3: reverse last k=2:    [3,4,5,1,2] ✅
+//	Step 3: reverse last k=2: [3,4,5,1,2] ✅
 //
 // Hint: write a helper func reverseRange(s []int, l, r int)
 func RotateLeft(s []int, k int) {
 	// TODO: implement three-reversal trick
-	panic("not implemented")
+	k = k % len(s)
+	reverseRange(s, 0, k-1)
+	reverseRange(s, k, len(s)-1)
+	reverseRange(s, 0, len(s)-1)
+}
+
+func reverseRange(s []int, l, r int) {
+	for i, j := l, r; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
 }
 
 // Filter Exercise 5:
