@@ -11,7 +11,7 @@ package arrays_slices
 // PART A — Algorithm Patterns
 // ============================================================
 
-// Exercise 1:
+// ReverseSlice Exercise 1:
 // ReverseSlice reverses a slice IN-PLACE using the two-pointer technique.
 //
 // LESSON: Two-pointer pattern — one pointer from each end, swap and move inward.
@@ -23,10 +23,12 @@ package arrays_slices
 //	       L=R       → stop
 func ReverseSlice(s []int) {
 	// TODO: implement two-pointer reverse
-	panic("not implemented")
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
 }
 
-// Exercise 2:
+// RemoveDuplicates Exercise 2:
 // RemoveDuplicates removes duplicates from a SORTED slice in-place.
 //
 // LESSON: Write-pointer pattern (also called "slow/fast pointer").
@@ -40,10 +42,17 @@ func ReverseSlice(s []int) {
 //	 ...
 func RemoveDuplicates(s []int) []int {
 	// TODO: implement write-pointer deduplication on sorted input
-	panic("not implemented")
+	write := 1
+	for i := 1; i < len(s); i++ {
+		if s[i] != s[i-1] {
+			s[write] = s[i]
+			write++
+		}
+	}
+	return append([]int(nil), s[:write:write]...)
 }
 
-// Exercise 3:
+// Make2D Exercise 3:
 // Make2D allocates a rows×cols matrix of zeros.
 //
 // LESSON: You CANNOT do `var m [rows][cols]int` — array sizes must be compile-time constants.
@@ -53,10 +62,14 @@ func RemoveDuplicates(s []int) []int {
 // You must allocate each row separately.
 func Make2D(rows, cols int) [][]int {
 	// TODO: allocate outer slice, then each inner row
-	panic("not implemented")
+	var m = make([][]int, rows)
+	for i := 0; i < rows; i++ {
+		m[i] = make([]int, cols)
+	}
+	return m
 }
 
-// Exercise 4:
+// RotateLeft Exercise 4:
 // RotateLeft rotates s LEFT by k positions IN-PLACE using the three-reversal trick.
 //
 // LESSON: Three-reversal trick — no extra space needed.
@@ -72,7 +85,7 @@ func RotateLeft(s []int, k int) {
 	panic("not implemented")
 }
 
-// Exercise 5:
+// Filter Exercise 5:
 // Filter returns a new slice containing only elements where fn(element) is true.
 //
 // LESSON: Higher-order functions. Go doesn't have built-in map/filter/reduce,
@@ -82,7 +95,7 @@ func Filter(s []int, fn func(int) bool) []int {
 	panic("not implemented")
 }
 
-// Exercise 6:
+// MergeSorted Exercise 6:
 // MergeSorted merges two sorted slices into one sorted slice.
 //
 // LESSON: Classic two-pointer merge — the foundation of merge sort.
@@ -98,7 +111,7 @@ func MergeSorted(a, b []int) []int {
 // PART B — Slice Internals
 // ============================================================
 
-// Exercise 7:
+// SafeDelete Exercise 7:
 // SafeDelete deletes the element at index i from s (order-preserving) and returns
 // the shortened slice WITHOUT mutating the original backing array that the caller holds.
 //
@@ -117,7 +130,7 @@ func SafeDelete(s []int, i int) []int {
 	panic("not implemented")
 }
 
-// Exercise 8:
+// CopySlice Exercise 8:
 // CopySlice creates a completely independent copy of src using the copy() built-in.
 // The returned slice must have the same length and elements as src, but a different
 // backing array.
@@ -134,7 +147,7 @@ func CopySlice(src []int) []int {
 	panic("not implemented")
 }
 
-// Exercise 9:
+// NilVsEmpty Exercise 9:
 // NilVsEmpty returns two slices: one nil and one empty (non-nil).
 // This exercise tests your understanding of the difference.
 //
@@ -151,7 +164,7 @@ func NilVsEmpty() ([]int, []int) {
 	panic("not implemented")
 }
 
-// Exercise 10:
+// ExtractWithoutLeak Exercise 10:
 // ExtractWithoutLeak takes a large slice and an index range [from, to),
 // and returns a NEW slice containing only those elements.
 // The returned slice must NOT hold a reference to the original's backing array.
@@ -174,7 +187,7 @@ func ExtractWithoutLeak(s []int, from, to int) []int {
 	panic("not implemented")
 }
 
-// Exercise 11:
+// ObserveGrowth Exercise 11:
 // ObserveGrowth appends n elements (values 0 to n-1) to an initially empty slice
 // and returns a slice of every capacity value observed after each append.
 //
@@ -199,7 +212,7 @@ func ObserveGrowth(n int) []int {
 	panic("not implemented")
 }
 
-// Exercise 12:
+// DetachSlice Exercise 12:
 // DetachSlice takes a slice and returns a new slice with the same elements
 // but limited capacity, so that appending to the returned slice cannot
 // accidentally overwrite elements in the original backing array.
