@@ -22,7 +22,6 @@ package arrays_slices
 //	    L     R      → swap(2,4)
 //	       L=R       → stop
 func ReverseSlice(s []int) {
-	// TODO: implement two-pointer reverse
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
 	}
@@ -41,15 +40,17 @@ func ReverseSlice(s []int) {
 //	 w=1, r=2: write=2
 //	 ...
 func RemoveDuplicates(s []int) []int {
-	// TODO: implement write-pointer deduplication on sorted input
-	write := 1
+	writePointer := 1
+	if len(s) == 0 {
+		return s
+	}
 	for i := 1; i < len(s); i++ {
 		if s[i] != s[i-1] {
-			s[write] = s[i]
-			write++
+			s[writePointer] = s[i]
+			writePointer++
 		}
 	}
-	return append([]int(nil), s[:write:write]...)
+	return append([]int(nil), s[:writePointer]...)
 }
 
 // Make2D Exercise 3:
@@ -61,7 +62,6 @@ func RemoveDuplicates(s []int) []int {
 // TRAP: `make([][]int, rows)` allocates the outer slice, but each inner slice is nil.
 // You must allocate each row separately.
 func Make2D(rows, cols int) [][]int {
-	// TODO: allocate outer slice, then each inner row
 	var m = make([][]int, rows)
 	for i := 0; i < rows; i++ {
 		m[i] = make([]int, cols)
@@ -81,7 +81,6 @@ func Make2D(rows, cols int) [][]int {
 //
 // Hint: write a helper func reverseRange(s []int, l, r int)
 func RotateLeft(s []int, k int) {
-	// TODO: implement three-reversal trick
 	k = k % len(s)
 	reverseRange(s, 0, k-1)
 	reverseRange(s, k, len(s)-1)
@@ -100,7 +99,6 @@ func reverseRange(s []int, l, r int) {
 // LESSON: Higher-order functions. Go doesn't have a built-in map / filter /reduce,
 // but you can write them easily. Note we build a new slice — we don't modify the original.
 func Filter(s []int, fn func(int) bool) []int {
-	// TODO: build and return a new slice with matching elements
 	var result []int
 	for _, v := range s {
 		if fn(v) {
@@ -117,7 +115,6 @@ func Filter(s []int, fn func(int) bool) []int {
 // Compare front elements, take the smaller, advance that pointer.
 // Then drain whichever slice still has elements.
 func MergeSorted(a, b []int) []int {
-	// TODO: implement two-pointer merge
 	// Hint: pre-allocate with make([]int, 0, len(a)+len(b))
 	var mergedSlice = make([]int, 0, len(a)+len(b))
 	var p1, p2 = 0, 0
@@ -154,7 +151,6 @@ func MergeSorted(a, b []int) []int {
 //	// result   = [10, 20, 40, 50]
 //	// original = [10, 20, 30, 40, 50] ← must be unchanged!
 func SafeDelete(s []int, i int) []int {
-	// TODO: create an independent copy, then delete index i from the copy
 	var copiedSlice = make([]int, len(s))
 	copy(copiedSlice, s)
 	copiedSlice = append(copiedSlice[:i], copiedSlice[i+1:]...)
@@ -174,7 +170,6 @@ func SafeDelete(s []int, i int) []int {
 //   - Returned slice must have the same len as src
 //   - Modifying the returned slice must NOT affect src
 func CopySlice(src []int) []int {
-	// TODO: allocate a new slice with make(), then use copy()
 	var copiedSlice = make([]int, len(src))
 	copy(copiedSlice, src)
 	return copiedSlice
@@ -193,7 +188,6 @@ func CopySlice(src []int) []int {
 //
 // Returns: (nilSlice, emptySlice)
 func NilVsEmpty() ([]int, []int) {
-	// TODO: return a nil slice and an empty (non-nil) slice
 	return []int(nil), []int{}
 }
 
@@ -216,8 +210,9 @@ func NilVsEmpty() ([]int, []int) {
 //	// small has len=3, cap=3, independent backing array
 //	// huge can now be garbage collected
 func ExtractWithoutLeak(s []int, from, to int) []int {
-	// TODO: extract s[from:to] into a new slice with its own backing array
-	panic("not implemented")
+	newSlice := make([]int, to-from)
+	copy(newSlice, s[from:to])
+	return newSlice
 }
 
 // ObserveGrowth Exercise 11:
@@ -244,7 +239,6 @@ func ExtractWithoutLeak(s []int, from, to int) []int {
 // NOTE: You'll never see cap=1 or cap=2 for []int because the smallest
 // allocator size class that holds int (8 bytes) is 32 bytes = 4 ints.
 func ObserveGrowth(n int) []int {
-	// TODO: start with a nil slice, append values 0..n-1,
 	// record cap(s) after each append into a result slice
 	var output []int = make([]int, 0, n)
 	var s []int
@@ -273,7 +267,6 @@ func ObserveGrowth(n int) []int {
 //	detached = append(detached, 99)
 //	// original is still [10, 20, 30, 40, 50] — not corrupted
 func DetachSlice(s []int) []int {
-	// TODO: return s with cap limited to len using full slice expression
 	// Hint: s[0:len(s):len(s)]
 	var detached = s[0:len(s):len(s)]
 	return detached
