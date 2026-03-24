@@ -16,7 +16,6 @@ import (
 // Divide Exercise 1: Divide returns error if b == 0
 // LESSON: The most basic pattern. Return (value, error). The caller MUST check the error.
 func Divide(a, b float64) (float64, error) {
-	// TODO: implement
 	if b == 0 {
 		return b, errors.New("cannot divide by zero")
 	}
@@ -37,7 +36,6 @@ func (e *ValidationError) Error() string {
 }
 
 func Validate(name string) error {
-	// TODO: return &ValidationError if name is empty, nil otherwise
 	if name == "" {
 		return &ValidationError{Field: "name", Message: "cannot be empty"}
 	}
@@ -48,7 +46,6 @@ func Validate(name string) error {
 // LESSON: Add context to errors so they're useful when they bubble up.
 // Use fmt.Errorf to create an error with the key name embedded.
 func SafeGet(m map[string]int, key string) (int, error) {
-	// TODO: return value if key exists, descriptive error if not
 	if value, found := m[key]; found {
 		return value, nil
 	}
@@ -63,8 +60,6 @@ var ErrUserNotFound = errors.New("user not found")
 var ErrAccessDenied = errors.New("access denied")
 
 func FindUser(id int) (string, error) {
-	// TODO: return ErrUserNotFound if id <= 0, ErrAccessDenied if id == 999,
-	//       otherwise return "User<id>" with nil error
 	if id <= 0 {
 		return "", ErrUserNotFound
 	}
@@ -78,7 +73,6 @@ func FindUser(id int) (string, error) {
 // LESSON: %w (not %v!) wraps the error so errors.Is/errors.As can still find
 // the original inside the chain. This is how you add context without losing identity.
 func WrapError(err error, context string) error {
-	// TODO: wrap err with context string using fmt.Errorf and %w
 	return fmt.Errorf("%s: %w", context, err)
 }
 
@@ -103,8 +97,11 @@ func WrapError(err error, context string) error {
 //	field, msg, ok := ClassifyError(wrapped)
 //	// field="email", msg="invalid format", ok=true
 func ClassifyError(err error) (field string, message string, ok bool) {
-	// TODO: use errors.As to extract *ValidationError from err chain
-	panic("not implemented")
+	var ve *ValidationError
+	if errors.As(err, &ve) {
+		return ve.Field, ve.Message, true
+	}
+	return "", "", false
 }
 
 // RetryableError Exercise 7: Custom error type with Unwrap method
@@ -124,12 +121,15 @@ type RetryableError struct {
 
 func (e *RetryableError) Error() string {
 	// TODO: return "retryable: <Err>" or "permanent: <Err>" based on Retryable flag
-	panic("not implemented")
+	if e.Retryable {
+		return fmt.Sprintf("retryable: %s", e.Err)
+	}
+	return fmt.Sprintf("permanent: %s", e.Err)
 }
 
 func (e *RetryableError) Unwrap() error {
 	// TODO: return the wrapped inner error
-	panic("not implemented")
+	return e.Err
 }
 
 // NewRetryableError wraps an error as retryable or permanent.
@@ -160,7 +160,16 @@ func NewRetryableError(err error, retryable bool) error {
 //	// (each errors.New creates a unique pointer)
 func CollectErrors(inputs []string, validate func(string) error) error {
 	// TODO: run validate on each input, collect errors, return errors.Join(...)
-	panic("not implemented")
+	var errs []error
+	for _, input := range inputs {
+		if err := validate(input); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	if len(errs) == 0 {
+		return nil
+	}
+	return errors.Join(errs...)
 }
 
 // SafeDivide Exercise 9: Recover from panic and convert to error
@@ -179,7 +188,12 @@ func CollectErrors(inputs []string, validate func(string) error) error {
 //   - Do NOT check b==0 yourself — let the panic happen and recover from it
 func SafeDivide(a, b int) (result int, err error) {
 	// TODO: defer a recovery function, then do a/b
-	panic("not implemented")
+	defer func() {
+		if panicValue := recover(); panicValue != nil {
+			err = fmt.Errorf("panic: %v", panicValue)
+		}
+	}()
+	return a / b, nil
 }
 
 // MultiLayerOperation Exercise 10: Multi-layer error wrapping chain
@@ -199,17 +213,28 @@ func SafeDivide(a, b int) (result int, err error) {
 // even though the error has been wrapped twice.
 func Repository(id int) (string, error) {
 	// TODO: return ErrUserNotFound if id <= 0, return "User<id>" otherwise
-	panic("not implemented")
+	if id <= 0 {
+		return "", fmt.Errorf("repository: UserID : %d, %w", id, ErrUserNotFound)
+	}
+	return "User" + strconv.Itoa(id), nil
 }
 
 func Service(id int) (string, error) {
 	// TODO: call Repository, wrap error with service context using %w
-	panic("not implemented")
+	if userFoundInfo, err := Repository(id); err != nil {
+		return "", fmt.Errorf("service: get user %d: %w", id, err)
+	} else {
+		return userFoundInfo, nil
+	}
 }
 
 func Handler(id int) (string, error) {
 	// TODO: call Service, wrap error with handler context using %w
-	panic("not implemented")
+	if serviceUser, err := Service(id); err != nil {
+		return "", fmt.Errorf("handler: process request: %w", err)
+	} else {
+		return serviceUser, nil
+	}
 }
 
 // StatusCodeError Exercise 11: Custom Is() method for flexible error matching
@@ -222,7 +247,7 @@ func Handler(id int) (string, error) {
 // Implement StatusCodeError with:
 //   - Fields: Code int, Msg string
 //   - Error() string → "<Code>: <Msg>"
-//   - Is(target error) bool → returns true if target is also *StatusCodeError
+//   - Is(target error) bool → returns true if the target is also *StatusCodeError
 //     with the same Code (ignore Msg). This lets you match by status code
 //     regardless of the message.
 //
@@ -238,10 +263,13 @@ type StatusCodeError struct {
 
 func (e *StatusCodeError) Error() string {
 	// TODO: return "<Code>: <Msg>"
-	panic("not implemented")
+	return fmt.Sprintf("%d: %s", e.Code, e.Msg)
 }
 
 func (e *StatusCodeError) Is(target error) bool {
 	// TODO: return true if target is *StatusCodeError with same Code
-	panic("not implemented")
+	if e.Code == target.(*StatusCodeError).Code {
+		return true
+	}
+	return false
 }
