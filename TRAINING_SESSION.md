@@ -3692,5 +3692,198 @@ Trade-off phrases that impress interviewers:
      ATP cache — a 100ms lag is fine if I use safety stock buffers."
 ```
 
+---
+
+## Session 6: The `any` Type, Interface Boxing & Mixed-Type Collections ✅
+
+### The Question That Started It All
+
+*"Can I have a mixed-type slice in Go?"*
+
+Yes — `[]any` works. But the real lesson isn't the syntax. It's **what the runtime does** when you put a value into `any`, and **what it costs**.
+
+### `any` = `interface{}` — Nothing More
+
+```go
+// In Go source: builtin/builtin.go
+type any = interface{}  // type alias — identical at compiler level
+```
+
+`any` has zero methods → every type satisfies it → it accepts anything. But Go Proverb #7 warns: *"interface{} says nothing."*
+
+### The `eface` Runtime Struct
+
+When you assign a value to `any`, Go creates an `eface`:
+
+```
+runtime.eface (16 bytes)
+┌──────────────────────┬──────────────────────┐
+│  _type  *_type       │  data unsafe.Pointer │
+│  (what type is it?)  │  (where is the data?)│
+└──────────────────────┴──────────────────────┘
+```
+
+So `[]any` is really an array of 16-byte `eface` structs — NOT the actual values:
+
+```go
+mixed := []any{42, "hello", true}
+// Runtime sees: [{intType, ptrTo42}, {stringType, ptrToHello}, {boolType, ptrToTrue}]
+```
+
+### Boxing: The Three Paths
+
+**"Boxing"** = wrapping a concrete value into an interface value. The cost depends entirely on what type you're boxing:
+
+```
+                 Boxing a value into any
+                        │
+          ┌─────────────┴─────────────┐
+          │                           │
+    Pointer-shaped?             Value type?
+    (*T, map, chan, func)       (int, string, struct, etc.)
+          │                           │
+          ▼                    Small int 0-255?
+    ZERO COST                  ┌──────┴──────┐
+    (pointer IS the value)    YES            NO
+                               │              │
+                               ▼              ▼
+                         ZERO COST        HEAP ALLOC
+                         (staticuint64s)  (mallocgc)
+```
+
+### Path 1: Direct Interface (Pointer Types) — FREE
+
+Types whose values are already pointers store directly in `eface.data`:
+
+```go
+var a any = &User{Name: "sam"}  // *User → pointer value goes in data. FREE.
+var b any = myMap               // map is *runtime.hmap. FREE.
+var c any = myChan              // chan is *runtime.hchan. FREE.
+var d any = myFunc              // func is *runtime.funcval. FREE.
+```
+
+### Path 2: `staticuint64s` (Small Values 0-255) — FREE
+
+Go pre-allocates a static array of 256 values in the binary:
+
+```go
+// runtime/iface.go
+var staticuint64s = [256]uint64{0, 1, 2, 3, ..., 255}
+```
+
+When you box a small value:
+
+```go
+var a any = 42     // data → &staticuint64s[42]. No allocation!
+var b any = true   // data → &staticuint64s[1]. No allocation!
+var c any = byte('A') // data → &staticuint64s[65]. No allocation!
+```
+
+**But `float64` doesn't benefit!** `float64(1.0)` has bits `0x3FF0000000000000` — way beyond 255. Even `var a any = 1.0` allocates.
+
+### Path 3: Heap Allocation — The Expensive Path
+
+Everything else gets heap-allocated via the `convT` family:
+
+```go
+var a any = 256         // int > 255 → convT64 → mallocgc(8 bytes)
+var b any = 3.14        // float64 → convT64 → mallocgc(8 bytes)
+var c any = "hello"     // string → convTstring → mallocgc(16 bytes, GC scans!)
+var d any = []int{1,2}  // slice → convTslice → mallocgc(24 bytes, GC scans!)
+var e any = BigStruct{} // struct → convT → mallocgc(sizeof, GC scans if has ptrs)
+```
+
+### The Complete Cost Table
+
+```
+🟢 FREE (zero allocation):
+   *T, map, chan, func        → pointer-shaped, direct interface
+   int/uint 0-255             → staticuint64s
+   bool                       → 0 or 1, always in staticuint64s
+   byte (uint8)               → full range covered
+
+🟡 CHEAP (small heap alloc, no GC scanning):
+   int/float64 > 255          → 8B alloc, but noscan (no pointers)
+   struct{x, y int}           → alloc, but noscan
+
+🔴 EXPENSIVE (heap alloc + GC scanning):
+   string                     → 16B header copy, has pointer → GC scans
+   slice                      → 24B header copy, has pointer → GC scans
+   struct with pointer fields  → full copy, GC must scan all pointers
+```
+
+### The Equality Trap — Interview Favorite
+
+```go
+var a any = 42
+var b any = 42
+fmt.Println(a == b)  // true ✅ — ints are comparable
+
+var c any = []int{1, 2}
+var d any = []int{1, 2}
+fmt.Println(c == d)  // 💥 PANIC — slices are NOT comparable
+```
+
+**Rule:** `==` on `any` values is a **runtime check**. If the underlying type isn't
+comparable (slices, maps, funcs), it panics. The compiler can't catch this!
+
+### JSON Unmarshalling into `any` — Know the Types
+
+```go
+var data any
+json.Unmarshal([]byte(`{"age": 30, "scores": [95, 87]}`), &data)
+// age is float64(30), NOT int!
+// scores is []any{float64(95), float64(87)}, NOT []int!
+```
+
+**Trap:** JSON numbers are ALWAYS `float64`. JSON objects → `map[string]any`. Arrays → `[]any`.
+
+### Generics Replaced Most `any` Uses (Go 1.18+)
+
+```go
+// ❌ Pre-generics — type-unsafe, boxing cost
+func Contains(slice []any, target any) bool { ... }
+
+// ✅ Post-generics — type-safe, ZERO boxing, inlineable
+func Contains[T comparable](slice []T, target T) bool { ... }
+```
+
+The decision tree:
+- Know the type? → Use concrete type
+- Need to support multiple types? → Use generics with constraints
+- Truly dynamic/unknown type? → Use `any` (rare in well-designed code)
+
+### Performance Chain: Why Boxing Matters at Scale
+
+```
+Boxing → heap allocation → GC scanning → pointer indirection → cache misses → no inlining
+         ↑                  ↑              ↑                     ↑
+    convT/mallocgc    GC must trace    CPU follows pointer    Data not contiguous
+                      all pointers     to read actual value   in memory
+```
+
+In a hot loop processing 1M items:
+- `[]int` → contiguous memory, CPU cache-friendly, zero GC → **fast**
+- `[]any` → scattered heap objects, GC scans every pointer → **5-10x slower**
+
+### Interview Trap: `fmt.Sprintf` vs `strconv.Itoa`
+
+```go
+fmt.Sprintf("%d", n)   // n gets boxed into any (variadic ...any) → allocation
+strconv.Itoa(n)        // no interface, no boxing → zero allocation
+```
+
+This is why `strconv` functions exist alongside `fmt` — for hot paths where boxing cost matters.
+
+### 📖 Deep Dive
+
+Full reference document: [`learnings/12_any_type_boxing.md`](learnings/12_any_type_boxing.md)
+Covers: `convT` family internals, `staticuint64s` implementation, GC shape stenciling for generics, benchmark patterns.
+
+### Check Questions
+
+1. You have `var a any = myStruct` where `myStruct` has 3 string fields. How many allocations happen and why?
+2. Why does `var a any = 1.0` allocate but `var a any = 0` does not?
+3. You're building a high-throughput event pipeline processing 100k events/sec. Someone suggests using `[]any` to hold mixed event types. What's wrong and what do you suggest instead?
 
 
