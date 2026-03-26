@@ -53,22 +53,6 @@ import "gointerviewprep/utils"
 //   Input:  nums = [1]     (n = 1)
 //   Output: []
 
-// ! ─── KEY INSIGHT: USING THE ARRAY AS A HASH MAP ─────────────
-
-//   Since values are in [1, n] and indices are in [0, n-1],
-//   there is a natural mapping:  value v → index (v - 1).
-//
-//   If value v is present, "mark" index (v-1) by negating the value there.
-//   Use absolute value when reading, because a slot may already be negated.
-//   After marking, any index i still positive means (i+1) is missing.
-
-// ? ─── THINGS TO THINK ABOUT ────────────────────────────────
-// ?  1. The hash set approach works but uses O(n) space. Can you avoid that?
-// ?  2. How can you use the ARRAY ITSELF as a marking structure?
-// ?  3. Why do we use absolute values when reading during the mark pass?
-// ?  4. After marking, how do you identify which numbers are missing?
-// ?  5. Target: O(n) time, O(1) extra space.
-
 // FindDisappearedNumbers returns missing numbers using O(1) extra space.
 // Time: O(n)  Space: O(1) extra
 func FindDisappearedNumbers(nums []int) []int {

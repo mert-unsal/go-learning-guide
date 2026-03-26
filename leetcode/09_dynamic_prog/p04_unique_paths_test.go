@@ -1,6 +1,9 @@
 package dynamic_prog
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestUniquePaths(t *testing.T) {
 	tests := []struct {
@@ -13,9 +16,11 @@ func TestUniquePaths(t *testing.T) {
 		{7, 3, 28},
 	}
 	for _, tt := range tests {
-		got := UniquePaths(tt.m, tt.n)
-		if got != tt.want {
-			t.Errorf("UniquePaths(%d, %d) = %d, want %d", tt.m, tt.n, got, tt.want)
-		}
+		t.Run(fmt.Sprintf("UniquePaths(%d,%d)", tt.m, tt.n), func(t *testing.T) {
+			got := UniquePaths(tt.m, tt.n)
+			if got != tt.want {
+				t.Errorf("UniquePaths(%d, %d) = %d, want %d", tt.m, tt.n, got, tt.want)
+			}
+		})
 	}
 }

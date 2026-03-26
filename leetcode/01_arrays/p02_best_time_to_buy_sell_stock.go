@@ -77,5 +77,17 @@ package arrays
 // Time: O(n)  Space: O(1)
 func MaxProfit(prices []int) int {
 	// TODO: implement
-	return 0
+	maxProfit := 0
+	if len(prices) == 0 {
+		return maxProfit
+	}
+	var minPrice = prices[0]
+	for _, price := range prices {
+		if price < minPrice {
+			minPrice = price
+		} else if price-minPrice > maxProfit {
+			maxProfit = price - minPrice
+		}
+	}
+	return maxProfit
 }

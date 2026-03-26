@@ -7,6 +7,7 @@
 
 ## Table of Contents
 
+0. [Why Interfaces? — The 6 Motivations](#0-why-interfaces--the-6-motivations)
 1. [The Two Runtime Structs: `iface` and `eface`](#1-the-two-runtime-structs-iface-and-eface)
 2. [The `itab` — The Method Dispatch Table](#2-the-itab--the-method-dispatch-table)
 3. [Compile Time vs Runtime — Who Does What?](#3-compile-time-vs-runtime--who-does-what)
@@ -18,6 +19,708 @@
 9. [Type Assertions Under the Hood](#9-type-assertions-under-the-hood)
 10. [Performance Implications](#10-performance-implications)
 11. [Quick Reference Card](#11-quick-reference-card)
+
+---
+
+## 0. Why Interfaces? — The 6 Motivations
+
+Before diving into runtime internals, it's essential to understand **why** interfaces
+exist in Go and what problems they solve. Interfaces are not just a language feature —
+they are the **only mechanism for abstraction and polymorphism** in Go.
+
+### Key Prerequisite: Methods Don't Require Interfaces
+
+A struct can have methods without any interface being involved:
+
+```go
+type User struct{ Name string }
+
+func (u User) Greet() string { return "Hello, " + u.Name }
+
+u := User{Name: "Mert"}
+u.Greet() // works — no interface needed, direct call, inlineable
+```
+
+Methods belong to **types**. Interfaces define **contracts for consumers**. They are
+separate concepts that the compiler connects when needed.
+
+---
+
+### Motivation 1: Polymorphism Without Inheritance
+
+Go has no classes, no inheritance, no `extends`. Interfaces are the **only way** to write
+a function that accepts multiple types based on shared behavior:
+
+```go
+func Process(r io.Reader) error {
+    buf := make([]byte, 1024)
+    _, err := r.Read(buf) // works for *os.File, *http.Response.Body,
+    return err            // *bytes.Buffer, *gzip.Reader, *tls.Conn...
+}
+```
+
+Without interfaces, you'd need a separate `ProcessFile()`, `ProcessHTTP()`,
+`ProcessBuffer()` — one per type. Interfaces let you write one function that works
+with any type sharing the same behavior.
+
+**Under the hood:** The compiler verifies at the assignment site that the concrete type
+has the required methods. At runtime, the `itab` dispatches the correct method pointer.
+This is **structural typing** — no `implements` keyword, no registration.
+
+---
+
+### Motivation 2: Decoupling — Consumer Defines the Contract
+
+This is Go's **most important interface design decision** and the biggest departure
+from Java/C#. Understanding this deeply changes how you design entire systems.
+
+#### The Java/C# Way: Producer Declares (Coupled)
+
+In Java, the **producer** must know about and declare every interface it implements:
+
+```java
+// The interface lives in a shared/common package
+public interface UserRepository {
+    User getByID(int id);
+}
+
+// The producer MUST import and declare the interface
+class PostgresRepo implements UserRepository {  // ← explicit declaration
+    public User getByID(int id) { ... }
+}
+```
+
+**The problem:** `PostgresRepo` is **coupled** to `UserRepository` at compile time.
+If `UserRepository` adds a method, `PostgresRepo` breaks. If you want `PostgresRepo`
+to satisfy a new interface from a different package, you must modify `PostgresRepo`'s
+source code. The producer must know about every consumer upfront.
+
+#### The Go Way: Consumer Defines (Decoupled)
+
+In Go, the **consumer** defines what it needs. The producer is completely unaware:
+
+```go
+// ─── package postgres (the producer) ───────────────────────
+// Knows NOTHING about any interface. Just a struct with methods.
+package postgres
+
+type UserRepo struct {
+    db *sql.DB
+}
+
+func (r *UserRepo) GetByID(ctx context.Context, id int) (*User, error) {
+    // query database...
+}
+
+func (r *UserRepo) Create(ctx context.Context, u *User) error {
+    // insert into database...
+}
+
+func (r *UserRepo) Delete(ctx context.Context, id int) error {
+    // delete from database...
+}
+
+// ─── package service (consumer A) ──────────────────────────
+// Defines ONLY what it needs — 1 method out of 3
+package service
+
+type UserReader interface {
+    GetByID(ctx context.Context, id int) (*User, error)
+}
+
+func NewUserService(reader UserReader) *UserService { ... }
+
+// ─── package admin (consumer B) ────────────────────────────
+// Defines what IT needs — different subset
+package admin
+
+type UserManager interface {
+    GetByID(ctx context.Context, id int) (*User, error)
+    Delete(ctx context.Context, id int) error
+}
+
+func NewAdminService(mgr UserManager) *AdminService { ... }
+```
+
+**Key observations:**
+- `postgres.UserRepo` never imports `service` or `admin` packages
+- `service` only asks for `GetByID` — it can't accidentally call `Delete`
+- `admin` asks for `GetByID` + `Delete` — a different, broader contract
+- Both interfaces are satisfied by the **same** `*UserRepo` without it knowing
+- Each consumer gets the **narrowest interface** it needs (Interface Segregation)
+
+#### The Import Graph: Dependencies Point Inward
+
+This is the architectural consequence. Compare the import graphs:
+
+```
+JAVA — dependencies point outward (producer → consumer's interface):
+
+  ┌────────────────┐         ┌────────────────────┐
+  │  PostgresRepo  │────────▶│  UserRepository     │
+  │  (producer)    │imports  │  (shared interface)  │
+  └────────────────┘         └────────────────────┘
+                                      ▲
+  ┌────────────────┐                  │
+  │  UserService   │──────────────────┘
+  │  (consumer)    │imports
+  └────────────────┘
+
+
+GO — dependencies point inward (consumer defines what it needs):
+
+  ┌────────────────┐
+  │  PostgresRepo  │  ← knows nothing about anyone
+  │  (producer)    │
+  └────────────────┘
+          ▲ (no import — compiler matches structurally)
+          │
+  ┌────────────────┐
+  │  UserService   │  ← defines its own UserReader interface
+  │  (consumer)    │
+  └────────────────┘
+```
+
+In Go, there is **no shared interface package**. Each consumer defines exactly
+what it needs. The producer doesn't import the consumer. The consumer doesn't
+import the producer (in the interface definition — only at the wiring site in `main()`).
+
+#### Why This Matters in Practice
+
+**1. You can satisfy interfaces that don't exist yet.**
+
+If someone writes a new package next year with an interface containing `GetByID`,
+your `postgres.UserRepo` already satisfies it — without any modification. In Java,
+you'd need to go back and add `implements NewInterface`.
+
+**2. Each consumer gets the minimal contract (Interface Segregation).**
+
+In Java, if `UserRepository` has 10 methods, every consumer sees all 10 — even if
+it only uses 1. In Go, each consumer defines a 1-2 method interface with just what
+it needs. This makes code easier to understand, test, and refactor.
+
+**3. No "shared interface" package that everything depends on.**
+
+In Java/C# enterprise projects, you often see a `common` or `contracts` package
+that every module imports. Change one interface there → rebuild everything. In Go,
+each consumer's interface is local and independent — changing one doesn't affect others.
+
+**4. Swapping implementations requires zero changes in business logic.**
+
+```go
+// main.go — the composition root, the ONLY place that knows concrete types
+func main() {
+    var repo service.UserReader
+
+    if cfg.UseCache {
+        repo = redis.NewCachedRepo(postgres.NewUserRepo(db))  // stacked!
+    } else {
+        repo = postgres.NewUserRepo(db)
+    }
+
+    svc := service.NewUserService(repo)  // service doesn't care which one
+}
+```
+
+The `service` package never changes. It doesn't know Redis exists. It doesn't
+know PostgreSQL exists. It only knows `UserReader` — an interface it defined itself.
+
+#### The Go Proverb
+
+> *"Accept interfaces, return concrete types."*
+
+This means:
+- **Function parameters**: use interfaces (accept any type with matching behavior)
+- **Function return values**: return the concrete type (give the caller full access)
+
+```go
+// ✅ Idiomatic Go
+func NewUserService(store UserReader) *UserService { ... }
+//                  ^^^^^^^^^^^         ^^^^^^^^^^^^
+//                  interface (input)   concrete (output)
+
+// ❌ Over-abstracted
+func NewUserService(store UserReader) UserServiceInterface { ... }
+//                                    ^^^^^^^^^^^^^^^^^^^^
+//                  returning an interface hides the concrete type unnecessarily
+```
+
+Return concrete types so callers can access all methods, not just the interface subset.
+Let the **next consumer** decide what interface to narrow it down to.
+
+#### Comparison Table
+
+| Aspect | Java/C# (Producer Declares) | Go (Consumer Defines) |
+|--------|----------------------------|----------------------|
+| Who defines the interface? | Shared package or the producer | The consumer, locally |
+| Producer imports interface? | Yes — must declare `implements` | No — unaware of any interface |
+| Adding a method to interface | Breaks all producers | Only affects consumers who defined it |
+| Satisfying a new interface | Modify producer source code | Automatic — if methods match, it works |
+| Shared interface package | Common pattern (`contracts`, `api`) | Not needed — no shared dependency |
+| Minimal contracts per consumer | Hard — everyone sees the full interface | Natural — each consumer defines just what it needs |
+
+---
+
+### Motivation 3: Testability
+
+This follows directly from Motivation 2. When a function depends on an interface,
+you can inject a test double with zero frameworks:
+
+```go
+// Production
+func NewService(store UserStore) *Service { ... }
+
+// Test — 10 lines, no mocking library
+type fakeStore struct {
+    users map[int]*User
+}
+
+func (f *fakeStore) GetByID(_ context.Context, id int) (*User, error) {
+    u, ok := f.users[id]
+    if !ok {
+        return nil, ErrNotFound
+    }
+    return u, nil
+}
+
+func TestService(t *testing.T) {
+    svc := NewService(&fakeStore{users: map[int]*User{1: {Name: "Mert"}}})
+    // test svc methods...
+}
+```
+
+Without the interface, `NewService` would take `*sql.DB` or `*PostgresRepo` — and
+your unit tests would need a real database.
+
+---
+
+### Motivation 4: Stdlib Integration Points
+
+The standard library defines **small interfaces as extension hooks**. Implement them
+and the entire Go ecosystem works with your type automatically:
+
+| Interface | Method(s) | What You Unlock |
+|-----------|-----------|-----------------|
+| `fmt.Stringer` | `String() string` | Custom output in `fmt.Println`, `%v`, `%s` |
+| `error` | `Error() string` | Entire error handling ecosystem (`errors.Is`, `errors.As`, `%w`) |
+| `io.Reader` | `Read([]byte) (int, error)` | Every I/O function: `bufio`, `gzip`, `json.Decoder`, `io.Copy` |
+| `io.Writer` | `Write([]byte) (int, error)` | `fmt.Fprintf`, `json.Encoder`, `http.ResponseWriter` |
+| `sort.Interface` | `Len`, `Less`, `Swap` | `sort.Sort()` for any collection |
+| `json.Marshaler` | `MarshalJSON() ([]byte, error)` | Custom JSON encoding |
+| `json.Unmarshaler` | `UnmarshalJSON([]byte) error` | Custom JSON decoding |
+| `http.Handler` | `ServeHTTP(w, r)` | HTTP server routing, middleware |
+| `encoding.TextMarshaler` | `MarshalText() ([]byte, error)` | Used as map keys in JSON, YAML, etc. |
+
+**Key insight:** `Error()` and `String()` are **not special built-in methods**. They are
+ordinary methods that satisfy ordinary interfaces (`error` and `fmt.Stringer`). The
+"magic" is that `fmt.Println` internally does a type assertion to `Stringer` — if your
+type satisfies it, the custom output is used. No registration, no annotation.
+
+**Your type can satisfy interfaces it has never heard of.** If someone writes a new
+interface tomorrow with a `String() string` method, your type already satisfies it —
+without changing a single line of your code. This is implicit satisfaction in action.
+
+---
+
+### Motivation 5: Behavioral Abstraction at Architecture Boundaries
+
+In a production service, code is organized into **layers**. Each layer has a single
+responsibility. The critical question is: **how do layers talk to each other?**
+
+#### The Problem: Without Interfaces, Layers Are Welded Together
+
+Imagine a simple order service with no interfaces:
+
+```go
+// ─── handler layer ─────────────────────────────
+package handler
+
+import "myapp/internal/service"  // ← imports concrete service
+import "myapp/internal/postgres" // ← imports concrete repo (indirectly, through service)
+
+func CreateOrder(w http.ResponseWriter, r *http.Request) {
+    svc := service.OrderService{Repo: &postgres.OrderRepo{DB: db}}
+    //                                 ^^^^^^^^^^^^^^^^
+    //     handler knows about postgres! If we switch to MongoDB,
+    //     handler code changes too.
+    svc.Create(order)
+}
+
+// ─── service layer ─────────────────────────────
+package service
+
+import "myapp/internal/postgres"  // ← welded to postgres
+
+type OrderService struct {
+    Repo *postgres.OrderRepo  // ← concrete type, not an interface
+}
+
+func (s *OrderService) Create(o Order) error {
+    return s.Repo.Insert(o)  // directly calls postgres
+}
+```
+
+**What's wrong here:**
+- `service` imports `postgres` — business logic is coupled to infrastructure
+- Changing the database means modifying `service` AND `handler`
+- You can't test `service` without a running PostgreSQL instance
+- Every package knows about every other package — a dependency web
+
+#### The Solution: Interfaces as Seams Between Layers
+
+Each layer defines an interface for what it **needs from the layer below**.
+Each layer **never imports** the layer below — only the interface it defined:
+
+```go
+// ─── domain layer (innermost — no dependencies) ───────────
+package domain
+
+type Order struct {
+    ID     string
+    UserID string
+    Amount float64
+    Status string
+}
+
+// ─── service layer (defines what it needs from persistence) ─
+package service
+
+// The service defines this interface — NOT the repo package
+type OrderRepository interface {
+    Insert(ctx context.Context, o *domain.Order) error
+    GetByID(ctx context.Context, id string) (*domain.Order, error)
+    UpdateStatus(ctx context.Context, id, status string) error
+}
+
+// The service also defines this — what it needs from payment
+type PaymentGateway interface {
+    Charge(ctx context.Context, userID string, amount float64) (txID string, err error)
+}
+
+type OrderService struct {
+    repo    OrderRepository  // interface — doesn't know if it's Postgres, Mongo, or a mock
+    payment PaymentGateway   // interface — doesn't know if it's Stripe, PayPal, or a mock
+}
+
+func NewOrderService(repo OrderRepository, pay PaymentGateway) *OrderService {
+    return &OrderService{repo: repo, payment: pay}
+}
+
+func (s *OrderService) PlaceOrder(ctx context.Context, o *domain.Order) error {
+    txID, err := s.payment.Charge(ctx, o.UserID, o.Amount)
+    if err != nil {
+        return fmt.Errorf("payment failed: %w", err)
+    }
+    o.Status = "paid"
+    if err := s.repo.Insert(ctx, o); err != nil {
+        // In production: refund the payment here
+        return fmt.Errorf("save order: %w", err)
+    }
+    return nil
+}
+
+// ─── postgres package (implements OrderRepository) ─────────
+package postgres
+
+// Knows NOTHING about the service package or its interface.
+// Just a struct with methods that happen to match.
+type OrderRepo struct {
+    db *sql.DB
+}
+
+func (r *OrderRepo) Insert(ctx context.Context, o *domain.Order) error {
+    _, err := r.db.ExecContext(ctx,
+        "INSERT INTO orders (id, user_id, amount, status) VALUES ($1,$2,$3,$4)",
+        o.ID, o.UserID, o.Amount, o.Status)
+    return err
+}
+
+func (r *OrderRepo) GetByID(ctx context.Context, id string) (*domain.Order, error) { ... }
+func (r *OrderRepo) UpdateStatus(ctx context.Context, id, status string) error { ... }
+
+// ─── stripe package (implements PaymentGateway) ────────────
+package stripe
+
+// Also knows NOTHING about the service package.
+type Client struct {
+    apiKey string
+}
+
+func (c *Client) Charge(ctx context.Context, userID string, amount float64) (string, error) {
+    // call Stripe API...
+    return txID, nil
+}
+```
+
+#### The Import Graph: Clean Layer Separation
+
+```
+                    ┌────────────┐
+                    │   domain   │  ← no imports (pure business entities)
+                    └────────────┘
+                          ▲
+                          │ imports domain only
+                    ┌────────────┐
+                    │  service   │  ← defines interfaces, contains business logic
+                    │            │     does NOT import postgres or stripe
+                    └────────────┘
+                          ▲
+          ┌───────────────┼───────────────┐
+          │               │               │
+    ┌───────────┐  ┌────────────┐  ┌────────────┐
+    │  postgres  │  │   stripe   │  │   handler   │
+    │ (repo impl)│  │(pay impl)  │  │ (HTTP layer)│
+    └───────────┘  └────────────┘  └────────────┘
+          │               │               │
+          └───────────────┼───────────────┘
+                          │ all wired together in
+                    ┌────────────┐
+                    │   main()   │  ← the composition root
+                    └────────────┘
+```
+
+**Notice:** `service` has **zero imports** from infrastructure packages. The arrows
+point **inward** — outer layers depend on inner layers, never the reverse. This is
+the **Dependency Inversion Principle** — and in Go, it happens naturally through
+consumer-defined interfaces without any DI framework.
+
+#### The Composition Root: `main()` Wires Everything
+
+`main()` is the **only place** in the entire codebase that knows all concrete types:
+
+```go
+func main() {
+    // --- infrastructure ---
+    db, _ := sql.Open("postgres", cfg.DatabaseURL)
+    repo := postgres.NewOrderRepo(db)
+    pay := stripe.NewClient(cfg.StripeKey)
+
+    // --- business logic ---
+    svc := service.NewOrderService(repo, pay)
+    //                             ^^^^  ^^^
+    //     *postgres.OrderRepo satisfies service.OrderRepository ✓
+    //     *stripe.Client satisfies service.PaymentGateway ✓
+    //     compiler checks this HERE, at the wiring site
+
+    // --- transport layer ---
+    h := handler.NewOrderHandler(svc)
+    http.ListenAndServe(":8080", h)
+}
+```
+
+No DI container. No annotations. No reflection. Explicit constructor injection.
+If the types don't match, you get a **compile-time error** right here in `main()`.
+
+#### What This Enables in Practice
+
+**1. Swap infrastructure without touching business logic.**
+
+Migrating from PostgreSQL to MongoDB? Write a new `mongo.OrderRepo` with the same
+methods. Change one line in `main()`. The `service` package never changes:
+
+```go
+// Before
+repo := postgres.NewOrderRepo(db)
+
+// After
+repo := mongo.NewOrderRepo(client)
+
+// service.NewOrderService(repo, pay) — unchanged, doesn't care
+```
+
+**2. Test business logic in complete isolation.**
+
+```go
+func TestPlaceOrder(t *testing.T) {
+    // Fake repo — 5 lines, no database
+    fakeRepo := &fakeOrderRepo{
+        insertFn: func(ctx context.Context, o *domain.Order) error {
+            return nil
+        },
+    }
+    // Fake payment — 5 lines, no Stripe
+    fakePay := &fakePayment{
+        chargeFn: func(ctx context.Context, uid string, amt float64) (string, error) {
+            return "tx-123", nil
+        },
+    }
+
+    svc := service.NewOrderService(fakeRepo, fakePay)
+    err := svc.PlaceOrder(ctx, &domain.Order{Amount: 99.99})
+    if err != nil {
+        t.Fatal(err)
+    }
+}
+```
+
+Tests run in milliseconds. No database. No network. No Stripe sandbox.
+
+**3. Teams work on layers independently.**
+
+- **Team A** works on the `postgres` package — implements new query optimizations
+- **Team B** works on the `service` package — adds new business rules
+- Neither team touches the other's code. The interface is the contract between them.
+- As long as `postgres.OrderRepo` still has the matching methods, everything compiles.
+
+**4. Feature flags and gradual migrations.**
+
+```go
+func main() {
+    var repo service.OrderRepository
+
+    if cfg.UseNewDB {
+        repo = cockroachdb.NewOrderRepo(newDB)  // new implementation
+    } else {
+        repo = postgres.NewOrderRepo(oldDB)     // old implementation
+    }
+
+    svc := service.NewOrderService(repo, pay)   // service is unaware
+}
+```
+
+Route 5% of traffic to CockroachDB, 95% to PostgreSQL. The service layer has
+**no idea** this is happening. The interface makes both implementations interchangeable.
+
+**5. Observability wrappers without modifying business logic.**
+
+```go
+// A logging wrapper that satisfies the same interface
+type loggingRepo struct {
+    next   service.OrderRepository  // wraps the real repo via interface
+    logger *slog.Logger
+}
+
+func (r *loggingRepo) Insert(ctx context.Context, o *domain.Order) error {
+    start := time.Now()
+    err := r.next.Insert(ctx, o)  // delegate to real repo
+    r.logger.Info("repo.Insert", "duration", time.Since(start), "err", err)
+    return err
+}
+
+// In main() — wrap the real repo
+repo := postgres.NewOrderRepo(db)
+loggingRepo := &loggingRepo{next: repo, logger: logger}
+svc := service.NewOrderService(loggingRepo, pay)  // service sees the same interface
+```
+
+No modifications to `postgres.OrderRepo`. No modifications to `service.OrderService`.
+You added observability by stacking a wrapper — this is Motivation 6 (decoration)
+working together with Motivation 5 (architecture boundaries).
+
+#### The Layered Architecture Summary
+
+| Layer | Defines | Imports | Knows About |
+|-------|---------|---------|-------------|
+| `domain` | Entities, value objects | Nothing | Nothing |
+| `service` | Business logic + interfaces for dependencies | `domain` only | What behavior it needs, not who provides it |
+| `postgres` | Repository implementation | `domain` + `database/sql` | How to store entities, not who uses them |
+| `stripe` | Payment implementation | `domain` + Stripe SDK | How to charge, not who calls it |
+| `handler` | HTTP transport | `domain` + `service` | How to parse requests, not how business works |
+| `main()` | Wiring | Everything | All concrete types — the only place that does |
+
+#### Why This Needs Interfaces (Not Just Structs)
+
+If `OrderService` held `*postgres.OrderRepo` (a concrete type) instead of
+`OrderRepository` (an interface):
+
+- `service` would import `postgres` → coupled to infrastructure
+- Testing requires a real database → slow, flaky tests
+- Swapping to MongoDB → change `service` package → change `handler` package → ripple
+- No logging wrapper possible without modifying `postgres.OrderRepo`
+- Feature flags for gradual migration → impossible without `if/else` in service code
+
+The interface is the **architectural boundary**. Without it, the layers collapse
+into a monolithic dependency chain.
+
+---
+
+### Motivation 6: Composition Through Decoration (Wrapper Pattern)
+
+Interfaces enable **stacking behavior in layers** — the decorator pattern. Each wrapper
+adds one capability and delegates everything else to the inner interface.
+
+**The `context.Context` example:**
+
+```go
+ctx := context.Background()                       // emptyCtx — does nothing
+ctx  = context.WithValue(ctx, "userID", 42)        // valueCtx wraps emptyCtx
+ctx  = context.WithCancel(ctx)                     // cancelCtx wraps valueCtx
+ctx  = context.WithValue(ctx, "traceID", "abc")    // valueCtx wraps cancelCtx
+```
+
+Each wrapper struct holds the parent as the **`Context` interface**, not as a concrete type:
+
+```go
+type cancelCtx struct {
+    Context             // ← parent as INTERFACE
+    done    chan struct{}
+    err     error
+}
+```
+
+It only overrides the methods it cares about (`Done()`, `Err()`). Everything else
+(`Deadline()`, `Value()`) delegates to the parent via the embedded interface.
+
+**The same pattern in `io.Reader`:**
+
+```go
+file, _ := os.Open("data.gz")        // *os.File       → io.Reader
+buf := bufio.NewReader(file)           // bufio.Reader   → wraps io.Reader
+gz, _ := gzip.NewReader(buf)           // gzip.Reader    → wraps io.Reader
+limited := io.LimitReader(gz, 1024)    // LimitedReader  → wraps io.Reader
+```
+
+**The same pattern in `http.Handler` middleware:**
+
+```go
+handler := myHandler{}                 // implements http.Handler
+handler = loggingMiddleware(handler)    // wraps http.Handler → returns http.Handler
+handler = authMiddleware(handler)       // wraps http.Handler → returns http.Handler
+```
+
+**Why this requires an interface:** If the parent field were a concrete type
+(e.g., `*cancelCtx`), you couldn't wrap a `valueCtx` inside a `timerCtx` inside a
+`cancelCtx`. The interface makes the layers **infinitely composable** — each wrapper
+doesn't know or care what's inside it.
+
+> See [12_context_interface_deep_dive.md](./12_context_interface_deep_dive.md) for a
+> complete walkthrough of how `context.Context` uses this pattern.
+
+---
+
+### When NOT to Use Interfaces
+
+Equally important — interfaces have costs. Don't use them reflexively:
+
+| Anti-Pattern | Why It's Wrong |
+|-------------|----------------|
+| **Preemptive interfaces** — creating an interface before you have 2+ consumers | You're guessing at the contract. Wait until a real second use case appears |
+| **Fat interfaces** — 8+ methods | *"The bigger the interface, the weaker the abstraction."* Likely a concrete type in disguise |
+| **Interfaces in hot paths** — tight loops, high-frequency calls | Interface method calls go through `itab` indirection — **not inlineable** by the compiler |
+| **Interfaces for the sake of "clean code"** | If there's only one implementation and you don't need testability, a concrete type is simpler and faster |
+| **Using `interface{}` / `any` everywhere** | You lose type safety. Generics (Go 1.18+) solve most cases where `any` was previously needed |
+
+**The rule:** Create an interface when you need **polymorphism, testability, or
+composability**. If you're reaching for an interface with one implementation that you
+don't need to test in isolation — you don't need an interface.
+
+---
+
+### Summary Table
+
+| # | Motivation | Core Benefit | Key Example |
+|---|-----------|--------------|-------------|
+| 1 | Polymorphism without inheritance | One function, many types | `io.Reader` accepted everywhere |
+| 2 | Consumer-defined contracts | Dependencies point inward, packages decoupled | Service defines `UserStore`, doesn't import repo |
+| 3 | Testability | Inject fakes without frameworks | 10-line fake struct in test file |
+| 4 | Stdlib integration hooks | Implement a method, unlock an ecosystem | `Error()` → error handling, `String()` → printing |
+| 5 | Architecture boundary abstraction | Layers separated, swappable, independently deployable | Handler → Service → Repository pattern |
+| 6 | Composition through decoration | Stack behaviors in layers, infinitely composable | `context.Context`, `io.Reader` chains, HTTP middleware |
+
+---
+
+*Now that we understand **why** interfaces exist, the following sections explain
+**how they work under the hood** at the runtime level.*
 
 ---
 

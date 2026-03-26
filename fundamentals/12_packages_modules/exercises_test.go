@@ -1,6 +1,9 @@
 package packages_modules
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestIsExported(t *testing.T) {
 	tests := []struct {
@@ -15,12 +18,14 @@ func TestIsExported(t *testing.T) {
 		{"", false},
 	}
 	for _, tt := range tests {
-		got := IsExported(tt.name)
-		if got != tt.want {
-			t.Errorf("❌ IsExported(%q) = %v, want %v  ← Hint: check name[0] >= 'A' && name[0] <= 'Z'", tt.name, got, tt.want)
-		} else {
-			t.Logf("✅ IsExported(%q) = %v", tt.name, got)
-		}
+		t.Run(fmt.Sprintf("IsExported(%q)", tt.name), func(t *testing.T) {
+			got := IsExported(tt.name)
+			if got != tt.want {
+				t.Errorf("❌ IsExported(%q) = %v, want %v  ← Hint: check name[0] >= 'A' && name[0] <= 'Z'", tt.name, got, tt.want)
+			} else {
+				t.Logf("✅ IsExported(%q) = %v", tt.name, got)
+			}
+		})
 	}
 }
 

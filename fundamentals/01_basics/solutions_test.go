@@ -1,6 +1,7 @@
 package basics
 
 import (
+	"fmt"
 	"testing"
 )
 
@@ -22,12 +23,14 @@ func TestCelsiusToFahrenheit(t *testing.T) {
 		{37, 98.6},
 	}
 	for _, tt := range tests {
-		got := CelsiusToFahrenheit(tt.celsius)
-		if got != tt.fahrenheit {
-			t.Errorf("❌ CelsiusToFahrenheit(%v) = %v, want %v", tt.celsius, got, tt.fahrenheit)
-		} else {
-			t.Logf("✅ CelsiusToFahrenheit(%v) = %v", tt.celsius, got)
-		}
+		t.Run(fmt.Sprintf("CelsiusToFahrenheit(%v)", tt.celsius), func(t *testing.T) {
+			got := CelsiusToFahrenheit(tt.celsius)
+			if got != tt.fahrenheit {
+				t.Errorf("❌ CelsiusToFahrenheit(%v) = %v, want %v", tt.celsius, got, tt.fahrenheit)
+			} else {
+				t.Logf("✅ CelsiusToFahrenheit(%v) = %v", tt.celsius, got)
+			}
+		})
 	}
 }
 
@@ -53,12 +56,14 @@ func TestCharacterCount(t *testing.T) {
 		{"", 0},
 	}
 	for _, tt := range tests {
-		got := CharacterCount(tt.input)
-		if got != tt.want {
-			t.Errorf("❌ CharacterCount(%q) = %v, want %v  ← Hint: use []rune(s) not len(s)", tt.input, got, tt.want)
-		} else {
-			t.Logf("✅ CharacterCount(%q) = %v", tt.input, got)
-		}
+		t.Run(fmt.Sprintf("CharacterCount(%q)", tt.input), func(t *testing.T) {
+			got := CharacterCount(tt.input)
+			if got != tt.want {
+				t.Errorf("❌ CharacterCount(%q) = %v, want %v  ← Hint: use []rune(s) not len(s)", tt.input, got, tt.want)
+			} else {
+				t.Logf("✅ CharacterCount(%q) = %v", tt.input, got)
+			}
+		})
 	}
 }
 
@@ -73,12 +78,14 @@ func TestMinMax(t *testing.T) {
 		{-1, -5, 0, -5, 0},
 	}
 	for _, tt := range cases {
-		gotMin, gotMax := MinMax(tt.a, tt.b, tt.c)
-		if gotMin != tt.wantMin || gotMax != tt.wantMax {
-			t.Errorf("❌ MinMax(%v,%v,%v) = (%v,%v), want (%v,%v)", tt.a, tt.b, tt.c, gotMin, gotMax, tt.wantMin, tt.wantMax)
-		} else {
-			t.Logf("✅ MinMax(%v,%v,%v) = (%v,%v)", tt.a, tt.b, tt.c, gotMin, gotMax)
-		}
+		t.Run(fmt.Sprintf("MinMax(%v,%v,%v)", tt.a, tt.b, tt.c), func(t *testing.T) {
+			gotMin, gotMax := MinMax(tt.a, tt.b, tt.c)
+			if gotMin != tt.wantMin || gotMax != tt.wantMax {
+				t.Errorf("❌ MinMax(%v,%v,%v) = (%v,%v), want (%v,%v)", tt.a, tt.b, tt.c, gotMin, gotMax, tt.wantMin, tt.wantMax)
+			} else {
+				t.Logf("✅ MinMax(%v,%v,%v) = (%v,%v)", tt.a, tt.b, tt.c, gotMin, gotMax)
+			}
+		})
 	}
 }
 
@@ -94,11 +101,13 @@ func TestDirectionName(t *testing.T) {
 		{West, "West"},
 	}
 	for _, tt := range cases {
-		got := DirectionName(tt.dir)
-		if got != tt.want {
-			t.Errorf("❌ DirectionName(%v) = %q, want %q  ← Hint: use a switch statement", tt.dir, got, tt.want)
-		} else {
-			t.Logf("✅ DirectionName(%v) = %q", tt.dir, got)
-		}
+		t.Run(fmt.Sprintf("DirectionName(%v)", tt.dir), func(t *testing.T) {
+			got := DirectionName(tt.dir)
+			if got != tt.want {
+				t.Errorf("❌ DirectionName(%v) = %q, want %q  ← Hint: use a switch statement", tt.dir, got, tt.want)
+			} else {
+				t.Logf("✅ DirectionName(%v) = %q", tt.dir, got)
+			}
+		})
 	}
 }

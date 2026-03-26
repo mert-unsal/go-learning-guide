@@ -305,6 +305,69 @@ for i := 0; i < 5; i++ {
 // Actual caps: 1, 2, 4, 4, 8 — rounded up to size class boundaries
 ```
 
+### Append Cost Analysis: Two Paths, Vastly Different Costs
+
+A common misconception is that `append` is always expensive. It's not.
+`append` has **two completely different execution paths**:
+
+```
+                    append(s, elem)
+                         │
+                   ┌─────┴─────┐
+                   │ len < cap? │
+                   └─────┬─────┘
+                  yes/         \no
+                  │             │
+          ┌───────▼──────┐  ┌──▼──────────────────────────────────┐
+          │ FAST PATH     │  │ SLOW PATH (growslice)               │
+          │ ~2-5ns        │  │ ~100-500ns+                         │
+          │               │  │                                     │
+          │ 1. Write elem │  │ 1. Compute new capacity             │
+          │    at s[len]  │  │ 2. mallocgc: allocate NEW array     │
+          │ 2. len++      │  │ 3. memmove: copy all old elements   │
+          │ 3. Done       │  │ 4. Write new element                │
+          │               │  │ 5. Return new slice header          │
+          │ No allocation │  │ 6. Old array → garbage collector    │
+          │ No copy       │  │                                     │
+          │ No GC work    │  │ Allocation + copy + GC pressure     │
+          └───────────────┘  └─────────────────────────────────────┘
+```
+
+**Fast path (len < cap):** Nearly free. Just writes to the next slot in the
+already-allocated backing array and increments `len`. No allocation, no copy,
+no GC involvement. This is comparable to `s[i] = elem` in cost.
+
+**Slow path (len == cap):** Expensive. Allocates an entirely new backing array,
+copies every existing element via `memmove`, writes the new element, and leaves
+the old array for GC to collect. The cost grows with slice size — copying 1M
+elements is far more expensive than copying 10.
+
+### The Practical Lesson: Pre-Allocate to Stay on the Fast Path
+
+```go
+// ❌ Starts at cap=0 — triggers growslice repeatedly
+// For 1000 elements: ~10 growslice calls, ~10 dead arrays for GC
+results := []int{}
+for i := 0; i < 1000; i++ {
+    results = append(results, i)
+}
+
+// ✅ Starts at cap=1000 — every append hits the fast path
+// For 1000 elements: 0 growslice calls, 0 dead arrays, 1 allocation total
+results := make([]int, 0, 1000)
+for i := 0; i < 1000; i++ {
+    results = append(results, i)
+}
+```
+
+**When you know the size** (or even a rough estimate), `make([]T, 0, n)` eliminates
+the slow path entirely. Every `append` becomes a ~2ns slot write instead of a
+potential allocation+copy+GC event.
+
+**When you don't know the size**, `append` is still safe — the amortized cost is O(1)
+per element thanks to the exponential growth strategy. But in hot paths processing
+thousands of requests per second, those growslice allocations add up as GC pressure.
+
 ---
 
 ## 5. The Full Slice Expression: `s[low:high:max]`
@@ -550,6 +613,102 @@ Understanding their allocation behavior is critical for hot paths.
 ```go
 s = append(s[:i], s[i+1:]...)   // O(n), 0 allocs, modifies original
 ```
+
+This one-liner does a lot. Let's break it apart step by step.
+
+#### What Each Part Means
+
+```go
+s[:i]       // slice from start up to (not including) index i
+s[i+1:]     // slice from index i+1 to end
+...         // spread operator — unpacks s[i+1:] into individual arguments for append
+append(a, b...)  // append all elements of b onto a
+```
+
+#### Step-by-Step Example: Delete Index 2 from `[10, 20, 30, 40, 50]`
+
+```go
+s := []int{10, 20, 30, 40, 50}   // len=5, cap=5
+i := 2                            // delete element 30
+
+s = append(s[:2], s[3:]...)
+//         ^^^^   ^^^^^
+//       [10,20]  [40,50]
+```
+
+**Step 1 — `s[:2]` creates a sub-slice:**
+```
+s[:2] = [10, 20]    (len=2, cap=5, shares backing array with s)
+```
+
+**Step 2 — `s[3:]` creates another sub-slice:**
+```
+s[3:] = [40, 50]    (len=2, shares backing array with s)
+```
+
+**Step 3 — `append(s[:2], 40, 50)` writes into the backing array:**
+
+Since `s[:2]` has `len=2, cap=5`, there's room. `append` writes `40` at index 2
+and `50` at index 3 — directly in the **original backing array**:
+
+```
+BEFORE:
+┌─────┬─────┬─────┬─────┬─────┐
+│ 10  │ 20  │ 30  │ 40  │ 50  │
+└─────┴─────┴─────┴─────┴─────┘
+  [0]   [1]   [2]   [3]   [4]
+
+AFTER append(s[:2], s[3:]...):
+┌─────┬─────┬─────┬─────┬─────┐
+│ 10  │ 20  │ 40  │ 50  │ 50  │
+└─────┴─────┴─────┴─────┴─────┘
+  [0]   [1]   [2]   [3]   [4]
+                          ▲
+               s has len=4, this slot is
+               inaccessible but still exists
+```
+
+The returned slice has `len=4`: `[10, 20, 40, 50]`. Element `30` is gone.
+Element `50` is duplicated at index 4 but inaccessible (beyond `len`).
+
+#### Why It's O(n) and 0 Allocations
+
+- **O(n):** `append` must shift every element after index `i` one position left.
+  Internally this is a `memmove` of `(len - i - 1)` elements.
+- **0 allocations:** `s[:i]` has the same backing array with enough capacity,
+  so `append` uses the fast path — no `growslice`, no new array.
+
+#### The Gotcha: Original Slice Is Modified
+
+Because this operates on the **same backing array**, any other slice sharing that
+backing array sees the mutation:
+
+```go
+original := []int{10, 20, 30, 40, 50}
+alias := original[:]                    // shares backing array
+
+original = append(original[:2], original[3:]...)
+// original = [10, 20, 40, 50]
+// alias    = [10, 20, 40, 50, 50]  ← corrupted! alias still has len=5
+```
+
+If other slices reference the same backing array, **copy first**:
+
+```go
+s2 := make([]int, len(s))
+copy(s2, s)
+s2 = append(s2[:i], s2[i+1:]...)  // safe — independent backing array
+```
+
+#### Go 1.21+: `slices.Delete`
+
+```go
+s = slices.Delete(s, i, i+1)   // same operation, clearer intent
+```
+
+Under the hood, `slices.Delete` does the same `append` trick but also **zeroes the
+vacated slot** at the end to prevent memory leaks when the slice holds pointers or
+structs with pointer fields.
 
 ### Delete Element at Index i (Unordered — Fast)
 

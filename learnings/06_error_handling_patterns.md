@@ -15,6 +15,9 @@
 5. [Error Wrapping — The `%w` Verb](#5-error-wrapping--the-w-verb)
 6. [`errors.Is()` — Sentinel Matching Through the Chain](#6-errorsis--sentinel-matching-through-the-chain)
 7. [`errors.As()` — Type Extraction Through the Chain](#7-errorsas--type-extraction-through-the-chain)
+    - [7b. Type Assertions — The Runtime Machinery](#7b-type-assertions--the-runtime-machinery-behind-error-inspection)
+    - [7c. Why Errors Are Interfaces, Not Strings](#7c-why-errors-are-interfaces-not-strings)
+    - [7d. Java-to-Go Error Model Mental Bridge](#7d-java-to-go-error-model-mental-bridge)
 8. [`errors.Join()` (Go 1.20+)](#8-errorsjoin-go-120)
 9. [Enterprise Error Handling Strategy](#9-enterprise-error-handling-strategy)
 10. [Panic and Recover](#10-panic-and-recover)
@@ -369,6 +372,63 @@ Step 2: err = &os.PathError{Op:"open", Path:"/etc/secret"}
         pe.Op = "open", pe.Path = "/etc/secret", pe.Err = os.ErrPermission
 ```
 
+### `errors.As()` Runtime Internals — What Actually Happens
+
+`errors.As` uses `reflectlite` (a slimmed-down reflection package) to inspect types
+at runtime. Here's the simplified source from `src/errors/wrap.go`:
+
+```go
+func As(err error, target any) bool {
+    val := reflectlite.ValueOf(target)       // reflection on target pointer
+    targetType := val.Type().Elem()          // the type target points to (*DNSError → DNSError)
+
+    for {
+        // KEY: type assignability check via reflection
+        if reflectlite.TypeOf(err).AssignableTo(targetType) {
+            val.Elem().Set(reflectlite.ValueOf(err))   // set *target = err
+            return true
+        }
+        // Check if err implements custom As(target) method
+        if x, ok := err.(interface{ As(any) bool }); ok {
+            if x.As(target) { return true }
+        }
+        // Unwrap and continue down the chain
+        err = Unwrap(err)
+        if err == nil { return false }
+    }
+}
+```
+
+**What's happening at the iface/itab level:**
+
+```
+errors.As(err, &dnsErr)
+  │
+  ├─ reflectlite reads err's iface → itab → _type (concrete type descriptor)
+  ├─ compares _type against *DNSError's type descriptor
+  │   ├─ match? → set target via reflection, return true
+  │   └─ no match? → type-assert err.(interface{ Unwrap() error })
+  │                    └─ itab lookup: does concrete type have Unwrap()?
+  │                        ├─ yes → call Unwrap(), loop with inner error
+  │                        └─ no → return false
+  └─ walks the entire wrap chain until match or nil
+```
+
+**Performance note:** `errors.As` uses reflection, making it ~10× slower than a direct
+type assertion. In hot paths where you know the error isn't wrapped, prefer direct:
+
+```go
+// Fast — direct itab lookup, pointer comparison, no reflection (~5ns):
+if dnsErr, ok := err.(*DNSError); ok { ... }
+
+// Slower but walks wrapped chains — reflection at each level (~50-100ns per level):
+var dnsErr *DNSError
+if errors.As(err, &dnsErr) { ... }
+```
+
+Use `errors.As` when errors might be wrapped with `fmt.Errorf("%w")`.
+Use direct type assertions when you know the error is unwrapped.
+
 ### `errors.Is()` vs `errors.As()`
 
 ```
@@ -377,6 +437,157 @@ errors.Is(err, target)   → "Does the chain contain this VALUE?"
 errors.As(err, &target)  → "Does the chain contain this TYPE?"
                             Use with custom types: errors.As(err, &ve)
 ```
+
+---
+
+## 7b. Type Assertions — The Runtime Machinery Behind Error Inspection
+
+Type assertions are a **Go 1.0 language feature** — they've existed since Go's first release
+(2012). They work **only on interface values** because that's the only case where the
+concrete type is unknown at compile time.
+
+### Why Only Interfaces?
+
+With a concrete type (`var x int`), the compiler already knows the type — there's nothing
+to "assert." With an interface, the concrete type is hidden behind the `iface`/`eface`
+wrapper, so runtime machinery is needed to recover it.
+
+### How It Works at Runtime
+
+```go
+var err error = &DNSError{Host: "example.com"}
+dnsErr, ok := err.(*DNSError)   // type assertion
+```
+
+```
+err is an iface { tab *itab, data unsafe.Pointer }
+                    │
+                    └─ itab { inter *interfacetype,  // error interface
+                              _type *_type,           // concrete: *DNSError
+                              fun   [1]uintptr }      // method: Error()
+
+Type assertion does:
+1. Read itab._type from the iface
+2. Compare itab._type against the _type descriptor for *DNSError
+3. This is a POINTER COMPARISON — each type has exactly one _type in the binary
+4. Match? → return ((*DNSError)(iface.data), true)
+5. No match? → return (nil, false)
+```
+
+**Cost:** Essentially a pointer comparison + pointer cast. Near zero (~1-2ns).
+Much cheaper than Java's `instanceof` which may walk the class hierarchy.
+
+### The Two Forms
+
+```go
+// Safe form — program continues:
+val, ok := iface.(ConcreteType)   // ok=false if wrong type
+
+// Panic form — crashes if wrong:
+val := iface.(ConcreteType)       // panics if assertion fails — avoid in production
+```
+
+### Connection to errors.As
+
+`errors.As` is essentially a loop of type-assertion-like checks using reflection,
+walking the `Unwrap()` chain. A direct type assertion is the fast path; `errors.As`
+is the general-purpose path for wrapped error chains.
+
+```
+Direct type assertion:  iface._type == target._type         → ~1-2ns
+errors.As:              reflectlite.TypeOf(err) per level    → ~50-100ns × chain depth
+```
+
+---
+
+## 7c. Why Errors Are Interfaces, Not Strings
+
+If `error` were just a `string`, you could only read the message. The interface enables
+**programmatic inspection**:
+
+```go
+// With strings — fragile string matching:
+if err == "connection refused" { retry() }   // breaks if wording changes
+
+// With error interface — carry structured data + identity:
+type DNSError struct {
+    Host    string
+    Timeout bool
+}
+func (e *DNSError) Error() string { return "dns lookup failed: " + e.Host }
+
+var dnsErr *DNSError
+if errors.As(err, &dnsErr) {
+    if dnsErr.Timeout { retry() }        // structured inspection
+    else { alertOncall() }               // branch on data, not strings
+}
+```
+
+**What the interface buys over strings:**
+
+| Strings                       | `error` Interface                              |
+|-------------------------------|------------------------------------------------|
+| Compare by text (fragile)     | Compare by identity with `errors.Is()`         |
+| No metadata                   | Carry fields: status codes, retry info, context|
+| Can't type-switch             | `errors.As()` unwraps to concrete types        |
+| Can't wrap                    | `fmt.Errorf("ctx: %w", err)` builds chains     |
+| Dead data                     | Programmable: store in maps, send on channels  |
+
+**Design insight:** `Error() string` is for **humans** (logging, display).
+The **type itself** is for **code** (branching, inspection, wrapping).
+That separation is the entire design.
+
+---
+
+## 7d. Java-to-Go Error Model Mental Bridge
+
+For engineers coming from Java/C#, the error model is the biggest mental shift.
+
+### Mapping Table
+
+| Java/C#                           | Go                              | Key Difference                          |
+|-----------------------------------|---------------------------------|-----------------------------------------|
+| `throw new Exception("msg")`      | `return fmt.Errorf("msg")`      | Java unwinds stack; Go just returns     |
+| `try { ... } catch (E e) { ... }` | `if err != nil { ... }`         | Go has no implicit control flow         |
+| `throws IOException` in signature | `error` as return type          | Both visible; Go is simpler             |
+| Unchecked `RuntimeException`      | `panic()` (rare, not for errors)| Go reserves panic for truly fatal bugs  |
+| `finally { ... }`                 | `defer func() { ... }()`        | Go's defer runs on ALL exit paths       |
+| `instanceof` (class hierarchy)    | Type assertion (pointer compare)| Go is faster: no hierarchy walk         |
+| Stack trace captured at creation  | No stack trace by default       | Go errors are cheap; add context via %w |
+
+### The Fundamental Shift
+
+```
+Java:   CREATING an exception and THROWING it are separate but almost always paired.
+        The "throw" triggers stack unwinding — an expensive, invisible control flow jump.
+
+Go:     There is NO "throw" step. You create the error and RETURN it.
+        The caller checks it explicitly. No invisible jumps, no unwinding.
+        The only thing that gives errors power is YOUR CODE checking them.
+```
+
+### What Happens When You Ignore an Error
+
+```go
+// Java — compiler forces you to handle checked exceptions:
+file.read();   // won't compile without try/catch or throws declaration
+
+// Go — compiles and runs fine, error silently dropped:
+divide(10, 0)              // both return values discarded — no warning
+fmt.Println("life goes on") // runs as if nothing happened
+
+// The danger in production:
+db.Exec("DELETE FROM users WHERE id = $1", userID)   // what if this failed?
+fmt.Println("user deleted!")                           // lies.
+```
+
+Go's compiler **trusts you**. The language enforces that declared variables are used,
+but if you never assign the returns, it's legal. Tooling catches this:
+- `go vet` — warns about some ignored errors
+- `errcheck` linter — catches ALL unhandled error returns
+- `golangci-lint` — bundles errcheck and more
+
+**In enterprise Go, running linters in CI is non-negotiable.**
 
 ---
 
@@ -542,7 +753,7 @@ Defers run in LIFO order during unwind. If no `recover()` is found, program cras
 
 ### `recover()` — Catching a Panic
 
-Only works **inside a deferred function**:
+Only works **inside a deferred function**. This is Go's equivalent of try/catch.
 
 ```go
 func safeOperation() (err error) {
@@ -555,6 +766,129 @@ func safeOperation() (err error) {
     return nil
 }
 ```
+
+### Why `recover()` MUST Be Inside `defer`
+
+When `panic()` fires, execution **jumps** — lines after the panic never run.
+The **only** code that executes during a panic unwind is **deferred functions**.
+
+```go
+func broken() {
+    recover()        // ❌ useless — normal execution, no panic is happening
+    riskyCode()      // panic here — stack starts unwinding
+    recover()        // ❌ never reached — we already panicked past this line
+}
+
+func works() {
+    defer func() {
+        recover()    // ✅ runs during unwind — catches the panic
+    }()
+    riskyCode()      // panic here — defer runs, recover() catches it
+}
+```
+
+### Why the Anonymous Function?
+
+`defer` needs a **function call**. You can't write meaningful recovery without one:
+
+```go
+defer recover()           // ❌ recovers but throws away the value — can't log, can't set err
+
+defer fmt.Println("bye")  // ✅ valid but only one statement — can't do recovery logic
+
+defer func() {            // ✅ anonymous function lets you:
+    r := recover()        //    1. capture the panic value
+    err = fmt.Errorf(...) //    2. assign to the named return
+    log.Error(...)        //    3. log it
+    metrics.Inc(...)      //    4. record metrics
+}()                       //    ← note the () — you're CALLING the function
+```
+
+### How Named Returns Make This Work
+
+The critical question: **how does the defer set the return value without a `return` statement?**
+
+Named return values are the answer. With `(err error)` in the signature, `err` is not
+a local variable — it IS the **return slot** on the stack frame:
+
+```
+Stack frame of safeOperation:
+┌─────────────────────────┐
+│  return slot: err error  │  ← allocated at function entry, initialized to nil
+├─────────────────────────┤
+│  local variables...      │
+└─────────────────────────┘
+```
+
+The deferred closure **captures** `err` — the same memory location as the return slot.
+Writing to `err` inside the defer directly modifies what the caller will receive:
+
+```go
+func safeOperation() (err error) {       // return slot: err = nil
+    defer func() {                        // closure captures &err (the return slot)
+        if r := recover(); r != nil {
+            err = fmt.Errorf("panic: %v", r)  // writes directly to the return slot
+            // NO return needed — we're modifying the slot, not a local copy
+        }
+    }()
+    riskyCode()    // PANIC! → defer runs → recover → err = error → function exits
+    return nil     // never reached on panic path
+}
+// function exits → caller reads the return slot → finds the error we wrote
+```
+
+**Step-by-step trace — panic path:**
+
+```
+① func safeOperation() (err error)    → return slot allocated, err = nil
+② defer func() { ... }()              → anonymous function registered (not run yet)
+③ riskyCode()                         → PANIC! stack starts unwinding
+④ defer fires                         → anonymous function runs
+⑤ r := recover()                      → catches panic, r = the panic value
+⑥ err = fmt.Errorf("panic: %v", r)   → writes error to return slot
+⑦ function exits                      → caller reads return slot → gets the error
+```
+
+**Step-by-step trace — happy path:**
+
+```
+① func safeOperation() (err error)    → return slot allocated, err = nil
+② defer func() { ... }()              → registered
+③ riskyCode()                         → completes normally
+④ return nil                          → writes nil to return slot
+⑤ defer fires                         → recover() returns nil → if block skipped
+⑥ function exits                      → caller reads return slot → gets nil
+```
+
+**This would NOT work without named returns:**
+
+```go
+func broken() error {           // unnamed return — no variable to reference
+    defer func() {
+        if r := recover(); r != nil {
+            // HOW do I set the return value?
+            // There's no variable name to write to.
+            // I can't "return" from inside a defer — return exits the DEFER, not the outer func.
+        }
+    }()
+    riskyCode()
+    return nil
+}
+```
+
+**The Java parallel:**
+
+```
+Java:   try { riskyCode(); } catch (Exception e) { return new Error("recovered: " + e); }
+Go:     defer func() { if r := recover(); r != nil { err = fmt.Errorf("recovered: %v", r) } }()
+```
+
+Both achieve the same result. Go is more explicit — no hidden control flow, the recovery
+mechanism is visible as a deferred function call.
+
+**Production rule:** You almost never call `recover()` in business logic. It belongs in:
+1. **HTTP middleware** — recover panics so one bad request doesn't crash the server
+2. **Goroutine launchers** — a panic in a goroutine kills the **entire program**, not just that goroutine
 
 ### HTTP Recovery Middleware
 

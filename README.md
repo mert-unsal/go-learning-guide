@@ -98,6 +98,9 @@ go-interview-prep/
 | 03 | `docker` | Single-stage & multi-stage Dockerfiles, docker-compose, hot reload |
 | 04 | `debugging` | Delve debugger, GoLand/VSCode setup, pprof, race detector, slog |
 | 05 | `config_env_json_yaml` | `os.Getenv`, `.env` files, JSON config, YAML config, 12-factor pattern |
+| 06 | `concurrency_patterns` | Worker pool, job/result channels, graceful shutdown |
+| 07 | `performance_tuning` | Escape analysis, sync.Pool, struct padding, GC pressure |
+| 08 | `error_recovery_retry` | defer/recover (Go's try-catch), retry with backoff, permanent vs retryable errors, context-aware retry |
 
 ---
 

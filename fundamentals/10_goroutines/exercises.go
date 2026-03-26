@@ -5,19 +5,13 @@ import "sync"
 // ============================================================
 // EXERCISES — 10 Goroutines
 // ============================================================
+
 // Exercise 1:
 // Run fn concurrently n times using goroutines + WaitGroup.
 // Wait for all goroutines to finish before returning.
 func RunConcurrently(n int, fn func(id int)) {
-	var wg sync.WaitGroup
-	for i := 0; i < n; i++ {
-		wg.Add(1)
-		go func(id int) {
-			defer wg.Done()
-			fn(id)
-		}(i)
-	}
-	wg.Wait()
+	// TODO: use sync.WaitGroup to launch n goroutines and wait
+	panic("not implemented")
 }
 
 // Exercise 2:
@@ -29,49 +23,28 @@ type ExCounter struct {
 }
 
 func (c *ExCounter) Inc() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.value++
+	// TODO: lock, increment, unlock
+	panic("not implemented")
 }
 
 func (c *ExCounter) Value() int {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	return c.value
+	// TODO: lock, read, unlock, return
+	panic("not implemented")
 }
 
 // Exercise 3:
 // SumConcurrent splits nums into two halves, sums each half
 // in a separate goroutine, then returns the total.
 func SumConcurrent(nums []int) int {
-	if len(nums) == 0 {
-		return 0
-	}
-	mid := len(nums) / 2
-	var sum1, sum2 int
-	var wg sync.WaitGroup
-
-	wg.Add(2)
-	go func() {
-		defer wg.Done()
-		for _, v := range nums[:mid] {
-			sum1 += v
-		}
-	}()
-	go func() {
-		defer wg.Done()
-		for _, v := range nums[mid:] {
-			sum2 += v
-		}
-	}()
-	wg.Wait()
-	return sum1 + sum2
+	// TODO: split at midpoint, sum each half in a goroutine, combine
+	panic("not implemented")
 }
-
-var runOnce sync.Once
 
 // Exercise 4:
 // RunOnce calls setup exactly once using sync.Once.
+var runOnce sync.Once
+
 func RunOnce(setup func()) {
-	runOnce.Do(setup)
+	// TODO: use runOnce.Do(...)
+	panic("not implemented")
 }
