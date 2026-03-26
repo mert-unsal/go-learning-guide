@@ -1,0 +1,89 @@
+{
+  "title": "Go Under the Hood",
+  "subtitle": "Deep Dive Series",
+  "author": "Go Interview Prep",
+  "description": "Runtime-level explanations of Go's core systems &mdash;<br>what the compiler and runtime <em>actually do</em> with your code.<div style='margin-top:18px;font-size:10pt;color:#666;letter-spacing:0.3px'>Slices &middot; Maps &middot; Strings &middot; Pointers &middot; Closures &middot; Interfaces &middot; Generics &middot; Error Handling<br>Goroutines &middot; Channels &middot; GC &middot; Memory &middot; Testing &middot; Debugging &middot; Production Patterns</div>",
+  "subject": "Runtime-level explanations of Go's core systems",
+  "keywords": "Go, Golang, internals, runtime, compiler, concurrency, goroutines, channels, GC, memory, production",
+  "source_dir": "../learnings",
+  "output": "../Go_Under_the_Hood.pdf",
+
+  "parts": [
+    {
+      "name": "Part I \u2014 Data Structures In Depth",
+      "chapters": [
+        {"file": "01_slices_three_word_header.md",       "short": "Slices: The Three-Word Header"},
+        {"file": "02_maps_buckets_and_growth.md",        "short": "Maps: Buckets & Growth"},
+        {"file": "03_strings_immutability_and_utf8.md",  "short": "Strings: Immutability & UTF-8"}
+      ]
+    },
+    {
+      "name": "Part II \u2014 Functions & Closures",
+      "chapters": [
+        {"file": "04_variables_var_vs_short_decl.md",       "short": "Variables: var vs :="},
+        {"file": "05_pointers_auto_deref.md",               "short": "Pointers & Auto-Deref"},
+        {"file": "06_closures_funcval_and_capture.md",      "short": "Closures: funcval & Capture"},
+        {"file": "07_loop_capture_and_fanin.md",            "short": "Loop Capture & Fan-In"}
+      ]
+    },
+    {
+      "name": "Part III \u2014 Type System",
+      "chapters": [
+        {"file": "08_interfaces_iface_eface_nil_trap.md",  "short": "Interfaces: iface, eface & Nil Trap"},
+        {"file": "09_any_type_boxing_and_cost.md",         "short": "any Type: Boxing & Cost"},
+        {"file": "10_context_interface_masterclass.md",    "short": "Context Interface"}
+      ]
+    },
+    {
+      "name": "Part IV \u2014 Error Handling",
+      "chapters": [
+        {"file": "11_error_chains_wrapping_strategy.md",   "short": "Error Chains & Wrapping"},
+        {"file": "12_concurrent_errors_errgroup.md",       "short": "Concurrent Errors & errgroup"}
+      ]
+    },
+    {
+      "name": "Part V \u2014 Concurrency & Channels",
+      "chapters": [
+        {"file": "13_goroutines_gmp_scheduler.md",      "short": "Goroutines & the GMP Scheduler"},
+        {"file": "14_goroutine_stacks_growth.md",       "short": "Goroutine Stacks & Growth"},
+        {"file": "15_channels_hchan_select.md",         "short": "Channels: hchan & Select"}
+      ]
+    },
+    {
+      "name": "Part VI \u2014 Runtime & Performance",
+      "chapters": [
+        {"file": "16_memory_gc_escape_analysis.md",  "short": "Memory, GC & Escape Analysis"},
+        {"file": "17_sorting_pdqsort.md",            "short": "Sorting: pdqsort"}
+      ]
+    },
+    {
+      "name": "Part VII \u2014 Testing & Debugging",
+      "chapters": [
+        {"file": "18_testing_internals.md",      "short": "Testing Internals"},
+        {"file": "19_debugging_profiling.md",    "short": "Debugging & Profiling"}
+      ]
+    },
+    {
+      "name": "Part VIII \u2014 Production",
+      "chapters": [
+        {"file": "20_production_pitfalls_enterprise.md",  "short": "Production Pitfalls & Enterprise"}
+      ]
+    }
+  ],
+
+  "howto_text": "## Who This Is For\n\nThis book is for **senior engineers** transitioning to or deepening mastery in Go. It assumes you already know programming fundamentals and focuses on what makes Go different at the runtime and compiler level.\n\n## Structure\n\nThe book is organized in **8 parts**, each building on the previous:\n\n- **Parts I\u2013II** \u2014 Data structures & functions: how Go lays out memory\n- **Part III** \u2014 Type system: interfaces, generics, and context internals\n- **Part IV** \u2014 Error handling: wrapping chains and concurrent patterns\n- **Part V** \u2014 Concurrency: the GMP scheduler, stacks, and channel internals\n- **Parts VI\u2013VII** \u2014 Runtime, GC, testing, debugging, and profiling\n- **Part VIII** \u2014 Production patterns for enterprise Go codebases\n\n## Navigation\n\n- **Table of Contents** \u2014 Click any chapter title to jump directly to it\n- **Bookmark Panel** \u2014 Open your PDF reader's sidebar for the full Part \u2192 Chapter hierarchy\n- **Running Headers** \u2014 The current chapter name appears at the top of every page\n- **Page Numbers** \u2014 Centered at the bottom, matching your reader's page indicator\n\n## Depth Layers\n\nEvery chapter follows a consistent five-layer depth pattern:\n\n| Layer | What It Covers |\n|-------|----------------|\n| **1: WHAT** | The API and syntax (briefly \u2014 you can read docs) |\n| **2: HOW** | What the compiler and runtime do under the hood |\n| **3: WHY** | The design decision and tradeoffs behind it |\n| **4: BREAKS** | Edge cases, failure modes, production gotchas |\n| **5: AT SCALE** | Behavior at 10k goroutines, 100k connections |\n\n## Code & Diagrams\n\n- Code blocks show Go source, compiler output, and assembly\n- ASCII diagrams illustrate memory layouts and runtime structures\n- Compiler flags like `go build -gcflags='-m'` are referenced throughout\n\n## Companion Repository\n\nThis book accompanies the **go-interview-prep** repository with runnable exercises, tests, and solutions for hands-on practice.\n\n## Suggested Reading Order\n\n- **New to Go?** Start with Part I (Data Structures) and Part II (Functions)\n- **Know Go basics?** Jump to Part V (Concurrency) \u2014 where Go truly differs\n- **Production focus?** Parts VII\u2013VIII cover debugging and enterprise patterns",
+
+  "layout": {
+    "margin_top_mm": 32,
+    "margin_bottom_mm": 25,
+    "margin_lr_mm": 30,
+    "body_font_size_pt": 12,
+    "code_font_size_pt": 9,
+    "line_height": 1.5,
+    "header_font_size_pt": 8.5,
+    "footer_font_size_pt": 9,
+    "header_text_y_mm": 17,
+    "header_line_y_mm": 23,
+    "footer_text_y_mm": 291
+  }
+}
