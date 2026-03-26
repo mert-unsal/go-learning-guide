@@ -18,7 +18,8 @@
 8. [The Three Guards Against the Nil Trap](#8-the-three-guards-against-the-nil-trap)
 9. [Type Assertions Under the Hood](#9-type-assertions-under-the-hood)
 10. [Performance Implications](#10-performance-implications)
-11. [Quick Reference Card](#11-quick-reference-card)
+11. [Struct Embedding & Method Promotion](#11-struct-embedding--method-promotion)
+12. [Quick Reference Card](#12-quick-reference-card)
 
 ---
 
@@ -1389,7 +1390,169 @@ go build -gcflags='-m' ./...
 
 ---
 
-## 11. Quick Reference Card
+## 11. Struct Embedding & Method Promotion
+
+Go doesn't have inheritance. Instead, it uses **embedding** — placing one type
+inside another to "promote" its methods. This is Go's composition mechanism.
+
+### Basic Embedding
+
+```go
+type Logger struct{}
+func (l Logger) Log(msg string) { fmt.Println(msg) }
+
+type Server struct {
+    Logger           // embedded — NOT a field name, it's a TYPE
+    Addr   string
+}
+
+s := Server{Addr: ":8080"}
+s.Log("starting")     // ← promoted from Logger! As if Server had a Log method.
+```
+
+### What the Compiler Actually Does
+
+```
+  When you write:     s.Log("starting")
+  Compiler rewrites:  s.Logger.Log("starting")
+  
+  There is NO inheritance. No vtable modification. No subclassing.
+  The compiler simply forwards the call to the embedded field.
+  
+  Memory layout of Server:
+  ┌────────────────────────────┐
+  │ Server struct              │
+  │  ┌──────────────────────┐  │
+  │  │ Logger (embedded)    │  │  ← 0 bytes (empty struct)
+  │  └──────────────────────┘  │
+  │  Addr: ":8080"             │  ← string header (16 bytes)
+  └────────────────────────────┘
+  
+  Logger's methods are "promoted" — accessible through Server directly.
+```
+
+### Embedding Satisfies Interfaces
+
+This is the powerful part: if the embedded type satisfies an interface,
+the **embedding type also satisfies it** — without writing any method:
+
+```go
+type Writer interface {
+    Write([]byte) (int, error)
+}
+
+type FileWriter struct {
+    File *os.File
+}
+func (fw FileWriter) Write(data []byte) (int, error) {
+    return fw.File.Write(data)
+}
+
+type BufferedWriter struct {
+    FileWriter        // embeds FileWriter — promotes Write method
+    Buffer []byte
+}
+
+// BufferedWriter automatically satisfies Writer interface!
+var w Writer = BufferedWriter{...}   // ✅ compiles — Write is promoted
+```
+
+### Embedding Interfaces in Structs
+
+You can embed an **interface** inside a struct. This is used for partial
+implementation and testing:
+
+```go
+type ReadCloser interface {
+    io.Reader       // embedded interface — promotes Read method
+    io.Closer       // embedded interface — promotes Close method
+}
+
+// Test double — only implement what you need:
+type MockDB struct {
+    database.DB     // embed the interface, not the concrete type
+}
+
+// Only override the method you're testing:
+func (m MockDB) Query(q string) ([]Row, error) {
+    return m.fakeData, nil
+}
+// All other DB methods panic with "not implemented" — that's fine for tests
+```
+
+### Promotion Rules
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│  1. Embedded type's exported methods → promoted to outer type      │
+│  2. Embedded type's exported fields → promoted to outer type       │
+│  3. If outer type defines the same method → outer WINS (override)  │
+│  4. If two embedded types have same method → AMBIGUOUS (error)     │
+│  5. Unexported methods/fields are NOT promoted across packages     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Method Override (Shadowing)
+
+```go
+type Base struct{}
+func (Base) String() string { return "base" }
+
+type Derived struct {
+    Base
+}
+func (Derived) String() string { return "derived" }   // overrides Base.String
+
+d := Derived{}
+fmt.Println(d.String())        // "derived" — Derived's method wins
+fmt.Println(d.Base.String())   // "base" — can still access Base's directly
+```
+
+### Embedding vs Field — The Difference
+
+```go
+// EMBEDDING — methods promoted:
+type Server struct {
+    Logger        // type name only, no field name
+}
+s.Log("msg")     // ✅ works — Log is promoted
+
+// NAMED FIELD — methods NOT promoted:
+type Server struct {
+    logger Logger   // lowercase field name
+}
+s.Log("msg")        // ❌ compile error — Log is NOT promoted
+s.logger.Log("msg") // ✅ must access through field name
+```
+
+### Production Pattern: Composition over Inheritance
+
+```go
+// Java would use: class HTTPServer extends TCPServer { ... }
+// Go uses embedding:
+
+type TCPServer struct {
+    Listener net.Listener
+}
+func (s *TCPServer) Accept() (net.Conn, error) {
+    return s.Listener.Accept()
+}
+
+type HTTPServer struct {
+    *TCPServer              // embed pointer — share, don't copy
+    Router     http.Handler
+}
+
+// HTTPServer has Accept() via promotion,
+// plus its own ServeHTTP() for HTTP-specific logic.
+func (s *HTTPServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    s.Router.ServeHTTP(w, r)
+}
+```
+
+---
+
+## 12. Quick Reference Card
 
 ```
 NON-EMPTY INTERFACE (has methods)

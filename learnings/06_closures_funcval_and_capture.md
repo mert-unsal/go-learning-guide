@@ -17,7 +17,8 @@
 8. [Method Values and Method Expressions](#8-method-values-and-method-expressions)
 9. [Common Closure Patterns in Production](#9-common-closure-patterns-in-production)
 10. [Performance Implications](#10-performance-implications)
-11. [Quick Reference Card](#11-quick-reference-card)
+11. [Defer Internals — Under the Hood](#11-defer-internals--under-the-hood)
+12. [Quick Reference Card](#12-quick-reference-card)
 
 ---
 
@@ -799,7 +800,131 @@ go test -bench=. -benchmem ./...      # measure allocations per operation
 
 ---
 
-## 11. Quick Reference Card
+## 11. Defer Internals — Under the Hood
+
+`defer` is a closure mechanism — when you write `defer f()`, Go captures the function
+and its arguments for later execution. Understanding the implementation matters for
+performance in loops.
+
+### Three Implementations (Historical Evolution)
+
+```
+Go Version    Implementation           Cost per defer
+──────────    ──────────────────────   ───────────────
+Go 1.0–1.12   Heap-allocated record    ~50ns (malloc + free)
+Go 1.13       Stack-allocated record   ~35ns (no heap)
+Go 1.14+      Open-coded defer         ~0ns  (compiler inlines it)
+```
+
+### Open-Coded Defer (Go 1.14+ — Current)
+
+For simple, non-loop defers, the compiler **inlines** the deferred call directly
+at every return point. No runtime data structure needed.
+
+```go
+// What you write:
+func process(f *os.File) error {
+    defer f.Close()
+    data := read(f)
+    if err := validate(data); err != nil {
+        return err       // Close() called here
+    }
+    return save(data)    // Close() called here too
+}
+
+// What the compiler generates (conceptual):
+func process(f *os.File) error {
+    data := read(f)
+    if err := validate(data); err != nil {
+        f.Close()        // ← inlined at return point 1
+        return err
+    }
+    result := save(data)
+    f.Close()            // ← inlined at return point 2
+    return result
+}
+```
+
+**Cost: nearly zero** — just a regular function call, no heap allocation, no defer
+record management.
+
+### When Open-Coded Defer Does NOT Apply
+
+The compiler falls back to the slower record-based approach when:
+
+```
+1. Defer inside a LOOP — number of defers is unknown at compile time
+2. More than 8 defers in a function — exceeds the bit mask
+3. Defer of a closure that captures variables — complex cleanup needed
+```
+
+### Defer in Loops — The Performance Trap
+
+```go
+// ❌ SLOW — creates a defer record per iteration (not open-coded):
+func processFiles(paths []string) error {
+    for _, path := range paths {
+        f, err := os.Open(path)
+        if err != nil { return err }
+        defer f.Close()              // N defer records, all run at function return!
+    }
+    // ALL files are open simultaneously until function returns
+    // + N defer records consuming memory
+    return nil
+}
+
+// ✅ FAST — extract to helper function:
+func processFiles(paths []string) error {
+    for _, path := range paths {
+        if err := processOne(path); err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
+func processOne(path string) error {
+    f, err := os.Open(path)
+    if err != nil { return err }
+    defer f.Close()     // ← open-coded! Only 1 defer, runs at processOne return
+    // file is closed after each iteration, not held open
+    return process(f)
+}
+```
+
+### Defer Execution Order — LIFO
+
+```go
+func example() {
+    defer fmt.Println("first")     // pushed first → runs last
+    defer fmt.Println("second")    // pushed second → runs second
+    defer fmt.Println("third")     // pushed last → runs first
+}
+// Output: third, second, first
+```
+
+### Defer Argument Evaluation — At Defer Time, Not Call Time
+
+```go
+func example() {
+    x := 10
+    defer fmt.Println(x)     // x is evaluated NOW → captures 10
+    x = 20
+}
+// Output: 10  (not 20!)
+
+// But closures capture by reference:
+func example2() {
+    x := 10
+    defer func() { fmt.Println(x) }()   // closure captures &x
+    x = 20
+}
+// Output: 20  (closure reads x at call time)
+```
+
+---
+
+## 12. Quick Reference Card
 
 ```
 SCOPE CHAIN

@@ -663,6 +663,118 @@ func Max[T int | float64 | string](a, b T) T {
 **Key insight:** Generics give you type safety AND performance (no boxing, inlineable).
 `any` gives you flexibility but costs boxing, allocations, and runtime type checks.
 
+### What Is a "GC Shape"?
+
+A GC shape is determined by how the garbage collector sees a type — specifically,
+which parts are pointers (need scanning) and which are not:
+
+```
+┌──────────────────────┬────────────────────┬─────────────────────────────┐
+│ Type                 │ GC Shape           │ Compiler Action             │
+├──────────────────────┼────────────────────┼─────────────────────────────┤
+│ int, int64, uint     │ "8-byte non-ptr"   │ Share ONE specialization    │
+│ float64              │ "8-byte non-ptr"   │ (same shape as int64!)      │
+├──────────────────────┼────────────────────┼─────────────────────────────┤
+│ int32, float32       │ "4-byte non-ptr"   │ Share ONE specialization    │
+├──────────────────────┼────────────────────┼─────────────────────────────┤
+│ *User, *Order, *any  │ "pointer"          │ ALL pointers share ONE      │
+│ pointer type         │                    │ specialization              │
+├──────────────────────┼────────────────────┼─────────────────────────────┤
+│ string               │ "ptr + int"        │ Own specialization          │
+│                      │ (2-word header)    │ (unique layout)             │
+├──────────────────────┼────────────────────┼─────────────────────────────┤
+│ struct{X int; Y *T}  │ "int + ptr"        │ Own specialization          │
+│                      │ (unique layout)    │ (unique pointer map)        │
+└──────────────────────┴────────────────────┴─────────────────────────────┘
+```
+
+### Dictionary Passing — The Runtime Cost
+
+For pointer types (which share one shape), the compiler can't inline type-specific
+operations. Instead, it passes a **dictionary** at runtime:
+
+```go
+func Print[T any](v T) {
+    fmt.Println(v)
+}
+
+// For value types (int, string): fully specialized, inlineable
+// For pointer types (*User, *Order): one shared version + dictionary
+
+// The dictionary contains:
+//   - Type metadata (for fmt.Println to format correctly)
+//   - Method pointers (if T has interface constraints)
+//   - Sub-dictionaries (for nested generic calls)
+```
+
+```
+Value type instantiation:     Pointer type instantiation:
+
+Print[int](42)                Print[*User](&u)
+  │                             │
+  ▼                             ▼
+Print_int(42)                 Print_pointer(&u, dict)
+  ← specialized code             ← shared code + dictionary lookup
+  ← can be inlined               ← cannot be inlined (indirect call)
+  ← zero overhead                ← small overhead (~2-5ns)
+```
+
+### Generics vs `any` — Performance Comparison
+
+```go
+// Generic version — type-safe, no boxing:
+func SumGeneric[T int | float64](vals []T) T {
+    var total T
+    for _, v := range vals { total += v }
+    return total
+}
+
+// any version — type assertion, boxing:
+func SumAny(vals []any) any {
+    var total float64
+    for _, v := range vals {
+        switch n := v.(type) {      // type switch — runtime cost
+        case int: total += float64(n)
+        case float64: total += n
+        }
+    }
+    return total
+}
+```
+
+```
+Benchmark comparison:
+  SumGeneric[int] (1000 elements):   ~800ns,   0 allocs
+  SumAny         (1000 elements):   ~5000ns, 1000 allocs (boxing each int!)
+  
+  Generics: 6x faster, zero GC pressure
+```
+
+### Comparison with Java/C#/Rust
+
+```
+┌──────────┬──────────────────┬───────────────────────────────────────┐
+│ Language │ Strategy         │ Tradeoffs                             │
+├──────────┼──────────────────┼───────────────────────────────────────┤
+│ Java     │ Type erasure     │ Generic info LOST at runtime          │
+│          │                  │ Always boxes primitives → GC pressure │
+│          │                  │ Binary size: small (one copy)         │
+├──────────┼──────────────────┼───────────────────────────────────────┤
+│ C#       │ Reification      │ Full specialization for value types   │
+│          │                  │ Type info available at runtime        │
+│          │                  │ Binary size: larger (many copies)     │
+├──────────┼──────────────────┼───────────────────────────────────────┤
+│ Rust     │ Monomorphization │ Full specialization for EVERY type    │
+│          │                  │ Zero runtime cost, fully inlineable   │
+│          │                  │ Binary size: can be very large        │
+├──────────┼──────────────────┼───────────────────────────────────────┤
+│ Go       │ GC Shape         │ Hybrid: specialize per GC shape       │
+│          │ Stenciling       │ Value types: specialized (fast)       │
+│          │                  │ Pointer types: shared + dictionary    │
+│          │                  │ Binary size: moderate                 │
+└──────────┴──────────────────┴───────────────────────────────────────┘
+```
+
 ---
 
 ## 12. Performance Impact: Benchmarks and Escape Analysis
