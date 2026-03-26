@@ -9,17 +9,18 @@
 ## Table of Contents
 
 1. [Every Goroutine Gets Its Own Stack](#1-every-goroutine-gets-its-own-stack)
-2. [The History: Segmented Stacks (Go 1.0–1.3)](#2-the-history-segmented-stacks-go-10-13)
-3. [Contiguous Stacks (Go 1.4+) — The Current Design](#3-contiguous-stacks-go-14--the-current-design)
-4. [Stack Growth — Step by Step](#4-stack-growth--step-by-step)
-5. [Pointer Adjustment — The Critical Step](#5-pointer-adjustment--the-critical-step)
-6. [Stack Maps — How the Runtime Finds Pointers](#6-stack-maps--how-the-runtime-finds-pointers)
-7. [Stack Shrinking — During GC](#7-stack-shrinking--during-gc)
-8. [Stack Growth Detection — The Function Preamble](#8-stack-growth-detection--the-function-preamble)
-9. [Stacks and Channels — The Direct Copy Connection](#9-stacks-and-channels--the-direct-copy-connection)
-10. [Performance Implications](#10-performance-implications)
-11. [Debugging Stack Behavior](#11-debugging-stack-behavior)
-12. [Quick Reference Card](#12-quick-reference-card)
+2. [Scope vs Stack Frame vs Stack — Three Different Things](#2-scope-vs-stack-frame-vs-stack--three-different-things)
+3. [The History: Segmented Stacks (Go 1.0–1.3)](#3-the-history-segmented-stacks-go-10-13)
+4. [Contiguous Stacks (Go 1.4+) — The Current Design](#4-contiguous-stacks-go-14--the-current-design)
+5. [Stack Growth — Step by Step](#5-stack-growth--step-by-step)
+6. [Pointer Adjustment — The Critical Step](#6-pointer-adjustment--the-critical-step)
+7. [Stack Maps — How the Runtime Finds Pointers](#7-stack-maps--how-the-runtime-finds-pointers)
+8. [Stack Shrinking — During GC](#8-stack-shrinking--during-gc)
+9. [Stack Growth Detection — The Function Preamble](#9-stack-growth-detection--the-function-preamble)
+10. [Stacks and Channels — The Direct Copy Connection](#10-stacks-and-channels--the-direct-copy-connection)
+11. [Performance Implications](#11-performance-implications)
+12. [Debugging Stack Behavior](#12-debugging-stack-behavior)
+13. [Quick Reference Card](#13-quick-reference-card)
 
 ---
 
@@ -62,7 +63,224 @@ A Go stack of 2KB × 1M goroutines = 2GB — feasible on modern machines.
 
 ---
 
-## 2. The History: Segmented Stacks (Go 1.0–1.3)
+## 2. Scope vs Stack Frame vs Stack — Three Different Things
+
+A common misconception: "each scope gets its own stack." This is wrong.
+These are three entirely different concepts:
+
+```
+SCOPE        = compile-time visibility rule ("can I use this variable name here?")
+STACK FRAME  = runtime memory block for ONE function call
+STACK        = the entire memory region for ONE goroutine (holds ALL its frames)
+```
+
+### One Goroutine = One Stack = Many Frames
+
+Each **function call** pushes a new frame onto the goroutine's stack.
+Each **return** pops that frame. Scopes within a function do NOT create frames.
+
+```go
+func main() {              // frame 1 pushed
+    x := 10
+    result := doWork(x)    // frame 2 pushed on top
+    fmt.Println(result)
+}
+
+func doWork(n int) int {   // this IS a new frame
+    temp := n * 2
+    return helper(temp)    // frame 3 pushed on top
+}
+
+func helper(v int) int {   // this IS a new frame
+    return v + 1
+}
+```
+
+```
+G1's single stack:
+┌─────────────────────────────┐  ← stack top (high address)
+│  main() frame               │  ← function call = new frame
+│    x = 10                   │
+│    result = ???              │
+├─────────────────────────────┤
+│  doWork() frame              │  ← function call = new frame
+│    n = 10                   │
+│    temp = 20                │
+├─────────────────────────────┤
+│  helper() frame              │  ← function call = new frame
+│    v = 20                   │  ← SP points here
+└─────────────────────────────┘  ← stack bottom (low address, grows down)
+
+When helper() returns → SP moves up, frame disappears
+When doWork() returns → SP moves up again
+```
+
+### Scopes Within a Function — Same Frame, Same Memory
+
+```go
+func process() {
+    a := 1                    // scope: function body
+
+    if true {
+        b := 2                // scope: if block
+        _ = b
+    }
+    // b is NOT accessible here — compiler enforces this
+
+    for i := 0; i < 3; i++ { // scope: for loop
+        c := 3
+        _ = c
+    }
+    // i, c are NOT accessible here — compiler enforces this
+
+    _ = a
+}
+```
+
+**All variables live in the SAME stack frame:**
+
+```
+process() frame (one flat block of memory):
+┌─────────────────────────────────┐
+│  offset 0:  a = 1              │  ← always allocated
+│  offset 8:  b = 2              │  ← same frame! Not a new "scope stack"
+│  offset 16: i = 0,1,2          │  ← same frame!
+│  offset 24: c = 3              │  ← same frame!
+└─────────────────────────────────┘
+
+Total frame size: 32 bytes, decided at COMPILE TIME.
+The compiler knows exactly how much space all scopes need.
+```
+
+**Scope is invisible to the runtime.** The stack just sees a flat block of N bytes
+for the function. Whether `b` is in an `if` block or `c` is in a `for` loop doesn't
+matter — they're just offsets within the same frame.
+
+### Compiler Optimization: Slot Reuse for Non-Overlapping Scopes
+
+The compiler can **reuse the same stack slot** for variables in non-overlapping scopes:
+
+```go
+func example() {
+    if condition {
+        x := heavyCompute()   // x lives only in the if branch
+        use(x)
+    } else {
+        y := otherCompute()   // y lives only in the else branch
+        use(y)
+    }
+}
+```
+
+```
+x and y are NEVER alive at the same time.
+The compiler can assign them the same offset:
+
+  offset 0: x OR y   ← one slot, two names, depending on which branch runs
+
+Frame size: 8 bytes instead of 16. Less stack usage, better cache behavior.
+```
+
+### Loop Variables — Same Slot, Overwritten Each Iteration
+
+```go
+for i := 0; i < 1000; i++ {
+    temp := compute(i)
+    use(temp)
+}
+```
+
+`temp` occupies **one stack slot** reused across all 1000 iterations:
+
+```
+Iteration 0:  frame[offset 16] = compute(0)
+Iteration 1:  frame[offset 16] = compute(1)   ← same slot, overwritten
+Iteration 2:  frame[offset 16] = compute(2)   ← same slot, overwritten
+...
+```
+
+Zero additional allocation. Zero stack growth. Just one memory location rewritten.
+
+### The Closure Capture Trap — Why This Matters
+
+This is the most famous Go bug for newcomers, and it makes complete sense once
+you understand that loop variables are a single stack slot:
+
+```go
+// BUG (pre-Go 1.22):
+for i := 0; i < 5; i++ {
+    go func() {
+        fmt.Println(i)  // closure captures the ADDRESS of i
+    }()
+}
+// Prints: 5 5 5 5 5  (not 0 1 2 3 4!)
+```
+
+**Why?** Under the hood:
+
+```
+for loop frame:
+┌─────────────────────────────┐
+│  i  (at offset 0)           │  ← ONE slot, ONE address: 0xc000012000
+└─────────────────────────────┘
+
+Iteration 0: i = 0 at 0xc000012000. Closure captures ADDRESS 0xc000012000.
+Iteration 1: i = 1 at 0xc000012000. Another closure captures SAME address.
+Iteration 2: i = 2 at 0xc000012000. Another closure captures SAME address.
+...
+Loop ends:   i = 5 at 0xc000012000.
+
+All 5 goroutines start running. They all read *0xc000012000 → they all see 5.
+```
+
+The closure doesn't copy `i` — it captures a **pointer to i's stack slot** (this is
+called "capture by reference"). Since all closures point to the same slot, and the
+loop has already finished by the time goroutines execute, they all see the final value.
+
+**Source:** `runtime/runtime2.go` — closures are implemented as `funcval` structs
+that contain pointers to captured variables. The compiler allocates captured variables
+on the heap (they escape!) so they survive the function return.
+
+```go
+// What the compiler actually generates (simplified):
+i := new(int)  // i escapes to heap because closure captures it
+for *i = 0; *i < 5; (*i)++ {
+    go funcval{fn: anonFunc, captured: [i]}()  // all share same *int
+}
+```
+
+**The fix (pre-Go 1.22):**
+
+```go
+for i := 0; i < 5; i++ {
+    i := i  // shadow with a NEW variable — gets its own stack slot (or heap slot)
+    go func() {
+        fmt.Println(i)  // captures the shadow, not the loop variable
+    }()
+}
+// Prints: 0 1 2 3 4 (in some order)
+```
+
+**Go 1.22 fix:** The language changed loop variable scoping. Each iteration gets
+a **new variable** automatically. The compiler inserts the shadow for you.
+
+```go
+// Go 1.22+: this now works correctly!
+for i := 0; i < 5; i++ {
+    go func() {
+        fmt.Println(i)  // each iteration's i is a separate variable
+    }()
+}
+// Prints: 0 1 2 3 4 (in some order)
+```
+
+This was one of the most debated changes in Go's history. It broke backward
+compatibility for a tiny number of programs but fixed the most common Go bug.
+See: [Go 1.22 Release Notes — Loop Variable Change](https://go.dev/blog/loopvar-preview)
+
+---
+
+## 3. The History: Segmented Stacks (Go 1.0–1.3)
 
 Before Go 1.4, Go used **segmented stacks** — a linked list of stack segments.
 
@@ -123,7 +341,7 @@ contiguous block**. More expensive per growth event, but growth events are rare
 
 ---
 
-## 3. Contiguous Stacks (Go 1.4+) — The Current Design
+## 4. Contiguous Stacks (Go 1.4+) — The Current Design
 
 A contiguous stack is a single, unbroken block of memory. When it's full, the
 runtime allocates a new block **twice the size** and copies everything.
@@ -154,7 +372,7 @@ Before growth:                      After growth:
 
 ---
 
-## 4. Stack Growth — Step by Step
+## 5. Stack Growth — Step by Step
 
 **Source:** `runtime/stack.go` — function `newstack()` and `copystack()`
 
@@ -233,7 +451,7 @@ After 2-3 growths, the stack is big enough for the goroutine's entire lifetime.
 
 ---
 
-## 5. Pointer Adjustment — The Critical Step
+## 6. Pointer Adjustment — The Critical Step
 
 This is the most subtle part of contiguous stacks. When the stack moves,
 every pointer **into** the old stack becomes dangling. The runtime must fix them all.
@@ -320,7 +538,7 @@ OLD STACK (0x1000):                    NEW STACK (0x5000):
 
 ---
 
-## 6. Stack Maps — How the Runtime Finds Pointers
+## 7. Stack Maps — How the Runtime Finds Pointers
 
 The compiler generates a **stack map** for every function at every "safe point"
 (places where stack growth or GC can happen). Without stack maps, the runtime
@@ -382,7 +600,7 @@ collector to scan goroutine stacks.
 
 ---
 
-## 7. Stack Shrinking — During GC
+## 8. Stack Shrinking — During GC
 
 Stacks can also **shrink**. During garbage collection, the runtime checks each
 goroutine's stack utilization:
@@ -412,7 +630,7 @@ The 25% threshold is a balance — shrink only when the waste is significant.
 
 ---
 
-## 8. Stack Growth Detection — The Function Preamble
+## 9. Stack Growth Detection — The Function Preamble
 
 Every function (except `nosplit` functions) starts with a **stack check**:
 
@@ -469,7 +687,7 @@ crashes with a stack overflow. Only the runtime team and very low-level code use
 
 ---
 
-## 9. Stacks and Channels — The Direct Copy Connection
+## 10. Stacks and Channels — The Direct Copy Connection
 
 Now you can see why the channel "direct send" path is so elegant:
 
@@ -501,7 +719,7 @@ when the goroutine was parked. The sudog.elem pointer remains valid.
 
 ---
 
-## 10. Performance Implications
+## 11. Performance Implications
 
 ### Stack Growth Cost
 
@@ -564,7 +782,7 @@ growth event. For hot-path code, always prefer iteration.
 
 ---
 
-## 11. Debugging Stack Behavior
+## 12. Debugging Stack Behavior
 
 ### See Stack Size at Runtime
 
@@ -615,7 +833,7 @@ fmt.Printf("Stack from OS: %d bytes\n", m.StackSys)
 
 ---
 
-## 12. Quick Reference Card
+## 13. Quick Reference Card
 
 ```
 GOROUTINE STACKS
@@ -631,6 +849,22 @@ CONTIGUOUS STACKS (Go 1.4+)
   Replaced segmented stacks to fix the "hot split" problem
   Growth = allocate 2× buffer → copy all frames → adjust pointers → free old
   Pointer adjustment uses compiler-generated stack maps (bitmaps)
+
+SCOPE vs FRAME vs STACK
+──────────────────────
+  Scope = compile-time visibility rule (if/for/block boundaries)
+  Frame = runtime memory for one function call (all scopes share one frame)
+  Stack = entire memory region for one goroutine (holds all frames)
+  Scope does NOT create a frame. Only function calls create frames.
+  Compiler may reuse slots for variables in non-overlapping scopes.
+  Loop variable = one slot overwritten each iteration (not N allocations)
+
+CLOSURE CAPTURE TRAP
+───────────────────
+  Closures capture variable ADDRESS, not value (capture by reference)
+  Loop var = one stack slot → all closures see final value
+  Fix (pre-1.22): shadow with i := i inside loop
+  Fix (Go 1.22+): language changed — each iteration gets new variable
 
 STACK GROWTH DETECTION
 ─────────────────────
