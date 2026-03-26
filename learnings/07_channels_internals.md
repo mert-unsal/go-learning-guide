@@ -21,6 +21,7 @@
 12. [Performance Characteristics & When NOT to Use Channels](#12-performance-characteristics--when-not-to-use-channels)
 13. [Common Bugs & Gotchas](#13-common-bugs--gotchas)
 14. [Quick Reference Card](#14-quick-reference-card)
+15. [Select in Practice — Patterns, Execution Model & Production Scenarios](#15-select-in-practice--patterns-execution-model--production-scenarios)
 
 ---
 
@@ -554,8 +555,503 @@ type sudog struct {
   10. sudog returned to per-P cache for reuse
 ```
 
-**Key insight:** sudogs are **pooled per P** (logical processor), not heap-allocated
-each time. This keeps channel operations allocation-free in the common case.
+### Per-P sudog Cache — Why Channel Ops Are Allocation-Free
+
+To understand the "per-P cache", you first need to know what a **P** is.
+
+**The GMP Model (quick recap):**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        Go Scheduler: GMP Model                      │
+│                                                                     │
+│  G = Goroutine    (your code — millions of these)                  │
+│  M = Machine      (OS thread — typically tens of these)             │
+│  P = Processor    (logical CPU — count = GOMAXPROCS, e.g., 8)      │
+│                                                                     │
+│  Rule: A goroutine (G) can only run when an M has a P.             │
+│  Each P has its own LOCAL resources to avoid global locks.          │
+│                                                                     │
+│   P0                P1                P2                P3          │
+│   ┌─────────┐      ┌─────────┐      ┌─────────┐      ┌─────────┐ │
+│   │ run queue│      │ run queue│      │ run queue│      │ run queue│ │
+│   │ mcache   │      │ mcache   │      │ mcache   │      │ mcache   │ │
+│   │ sudog    │      │ sudog    │      │ sudog    │      │ sudog    │ │
+│   │  cache   │      │  cache   │      │  cache   │      │  cache   │ │
+│   └────┬────┘      └────┬────┘      └────┬────┘      └────┬────┘ │
+│        │                │                │                │        │
+│        ▼                ▼                ▼                ▼        │
+│   M0 (thread)      M1 (thread)     M2 (thread)      M3 (thread)  │
+│   running G5       running G12     running G3       running G8    │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+Each P has its own **sudog free list** — a stack of pre-allocated, reusable sudog structs.
+
+**Why "per-P" instead of one global pool?**
+
+```
+Global pool approach (BAD):
+  ┌──────────────────────────┐
+  │  Global sudog free list  │  ← single lock protects this
+  │  ┌───┬───┬───┬───┬───┐  │
+  │  │ s │ s │ s │ s │ s │  │
+  │  └───┴───┴───┴───┴───┘  │
+  └──────────────────────────┘
+       ▲    ▲    ▲    ▲
+       │    │    │    │
+      P0   P1   P2   P3      ALL P's compete for ONE lock
+                              → contention at high throughput!
+
+Per-P pool approach (GOOD — what Go actually does):
+  P0 sudog cache    P1 sudog cache    P2 sudog cache    P3 sudog cache
+  ┌───┬───┬───┐    ┌───┬───┬───┐    ┌───┬───┬───┐    ┌───┬───┬───┐
+  │ s │ s │ s │    │ s │ s │ s │    │ s │ s │ s │    │ s │ s │ s │
+  └───┴───┴───┘    └───┴───┴───┘    └───┴───┴───┘    └───┴───┴───┘
+       ▲                ▲                ▲                ▲
+       │                │                │                │
+      P0 only          P1 only          P2 only          P3 only
+      NO lock needed!  NO lock needed!  NO lock needed!  NO lock needed!
+```
+
+**The key insight:** When a goroutine running on P2 needs a sudog (because it's
+about to block on a channel), it grabs one from P2's local cache — **no lock,
+no contention, no heap allocation**. When the sudog is returned (after the
+goroutine is woken), it goes back to P2's cache for reuse.
+
+This is the same design pattern used throughout the Go runtime:
+- **Per-P sudog cache** — for channel blocking (this section)
+- **Per-P mcache** — for small memory allocations (avoids global allocator lock)
+- **Per-P run queue** — for goroutine scheduling (avoids global queue lock)
+- **Per-P defer pool** — for defer struct allocation
+
+The design philosophy: **"If each CPU core has its own resources, cores don't
+fight over shared locks."**
+
+### sudog Cache Lifecycle — Full Picture
+
+```
+  ┌─────────────────────────────────────────────────────────────────────────┐
+  │                    sudog Cache Lifecycle                                │
+  │                                                                         │
+  │  STEP 1: Goroutine G (running on P2) needs to block on channel ch      │
+  │                                                                         │
+  │    P2's sudog cache: [s1, s2, s3]   ← 3 sudogs available              │
+  │                                                                         │
+  │    Runtime pops s1 from P2's cache   ← NO lock, NO heap allocation     │
+  │    Fills in: s1.g = G, s1.elem = &value, s1.c = ch                    │
+  │    Enqueues s1 onto ch.sendq                                           │
+  │    Parks G (gopark)                                                    │
+  │                                                                         │
+  │    P2's sudog cache: [s2, s3]        ← 2 remaining                    │
+  │                                                                         │
+  │  STEP 2: A receiver on P0 dequeues s1 from ch.sendq                   │
+  │                                                                         │
+  │    Copies value from s1.elem                                           │
+  │    Wakes G (goready) → G goes to a run queue                           │
+  │    Returns s1 to... which P's cache?                                    │
+  │                                                                         │
+  │    → The P that is running the wakeup code (P0 in this case)           │
+  │    → s1 goes to P0's cache, NOT P2's!                                  │
+  │    → This is fine — sudogs are fungible (interchangeable)              │
+  │                                                                         │
+  │  STEP 3: If a P's cache is empty?                                      │
+  │                                                                         │
+  │    → Allocate a new sudog from the heap (mallocgc)                     │
+  │    → This is the SLOW path — only happens when the cache is exhausted  │
+  │    → In practice, sudogs are quickly returned and reused               │
+  │                                                                         │
+  │  STEP 4: If a P's cache is too full?                                   │
+  │                                                                         │
+  │    → Excess sudogs are returned to a global pool                       │
+  │    → Other P's with empty caches can take from the global pool         │
+  │    → Global pool access DOES require a lock, but rarely happens        │
+  │                                                                         │
+  └─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Why This Matters for Performance
+
+```
+Channel send to full buffer (common case):
+  1. Need a sudog → grab from P's cache → ~5ns (pointer pop from list)
+  2. Park goroutine → ~50ns (scheduler state change)
+  3. ... blocked ...
+  4. Woken by receiver → ~50ns
+  5. Return sudog to P's cache → ~5ns (pointer push to list)
+
+  Total sudog overhead: ~10ns. NO heap allocation. NO GC pressure.
+
+Without per-P cache (hypothetical):
+  1. Need a sudog → mallocgc(sizeof(sudog)) → ~200-500ns (heap alloc)
+  2. ... same blocking ...
+  3. sudog becomes garbage → GC must scan and collect → adds GC pressure
+
+  Total sudog overhead: ~500ns+ and GC work.
+  At 1M channel ops/sec, that's 1M allocations/sec → significant GC pressure.
+```
+
+---
+
+## 5b. Visual Guide: Channel Operations End-to-End
+
+The following diagrams show the complete lifecycle of channel operations,
+combining hchan, ring buffer, sudog, and goroutine state transitions.
+
+### Scenario 1: Buffered Channel — Happy Path (No Blocking)
+
+```
+   ch := make(chan int, 3)      ← create channel with buffer of 3
+   ch <- 10                     ← send (buffer has space)
+   ch <- 20                     ← send (buffer has space)
+   v := <-ch                    ← receive (buffer has data)
+
+   ═══════════════════════════════════════════════════════════════
+   AFTER make(chan int, 3):
+
+   ch ──► hchan {
+            qcount: 0          ← empty
+            dataqsiz: 3        ← capacity
+            buf: ──► [ _ | _ | _ ]
+            sendx: 0   recvx: 0
+            sendq: ∅   recvq: ∅
+            closed: 0
+          }
+
+   ═══════════════════════════════════════════════════════════════
+   AFTER ch <- 10:
+
+   hchan {
+     qcount: 1                 ← one element
+     buf: ──► [ 10 | _ | _ ]
+               ▲recvx  ▲sendx=1
+     sendq: ∅   recvq: ∅      ← nobody waiting, no sudogs needed
+   }
+
+   G1 (sender) continues immediately — NOT blocked.
+
+   ═══════════════════════════════════════════════════════════════
+   AFTER ch <- 20:
+
+   hchan {
+     qcount: 2
+     buf: ──► [ 10 | 20 | _ ]
+               ▲recvx     ▲sendx=2
+     sendq: ∅   recvq: ∅
+   }
+
+   ═══════════════════════════════════════════════════════════════
+   AFTER v := <-ch:
+
+   hchan {
+     qcount: 1
+     buf: ──► [ _ | 20 | _ ]
+                    ▲recvx=1  ▲sendx=2
+     sendq: ∅   recvq: ∅
+   }
+
+   v = 10 (the oldest value — FIFO order)
+   G2 (receiver) continues immediately.
+```
+
+### Scenario 2: Unbuffered Channel — Direct Transfer
+
+```
+   ch := make(chan int)         ← unbuffered (no buffer at all)
+
+   ═══════════════════════════════════════════════════════════════
+   GOROUTINE G1: v := <-ch     (receiver arrives first, nobody sending)
+
+   Step 1: G1 checks recvq → sendq is empty, no buffer → must BLOCK
+
+   Step 2: Runtime gets sudog from P's cache:
+     P2's cache: [s4, s5, s6] → pop s4
+     Fill in: s4 = { g: G1, elem: &v, c: ch }
+
+   Step 3: Enqueue s4 onto ch.recvq:
+
+   hchan {
+     dataqsiz: 0          ← unbuffered
+     buf: nil
+     recvq: ──► ┌────────┐
+                │ sudog  │──► nil
+                │ g: G1  │
+                │ elem:&v│ ← points to v on G1's STACK
+                └────────┘
+     sendq: ∅
+   }
+
+   Step 4: gopark(G1) — G1 state: _Grunning → _Gwaiting
+           G1 is now sleeping. M (OS thread) picks another goroutine.
+
+   ═══════════════════════════════════════════════════════════════
+   LATER — GOROUTINE G2: ch <- 42     (sender arrives)
+
+   Step 1: G2 locks hchan.lock
+   Step 2: G2 checks recvq → found s4 (G1 is waiting!)
+   Step 3: DIRECT COPY — bypasses buffer entirely:
+
+     G2's stack                G1's stack (frozen — G1 is parked)
+     ┌──────────────┐          ┌──────────────┐
+     │  val = 42    │ ─────►  │  v = 42      │
+     └──────────────┘ typedmemmove()  └──────────────┘
+                      (copies 8 bytes directly from stack to stack)
+
+   Step 4: Dequeue s4 from recvq. Return s4 to P's cache.
+   Step 5: goready(G1) — G1 state: _Gwaiting → _Grunnable
+           G1 is placed on a run queue, will resume soon.
+   Step 6: G2 unlocks hchan.lock. G2 continues immediately.
+
+   ═══════════════════════════════════════════════════════════════
+   G1 WAKES UP:
+
+   G1 resumes execution at the point after <-ch.
+   v is already 42 on its stack (written directly by G2).
+   G1 continues with v = 42. No buffer was involved.
+```
+
+### Scenario 3: Buffered Channel Full — Sender Blocks, Then Receiver Arrives
+
+```
+   ch := make(chan int, 2)
+   ch <- 10   ← buffer: [10, _]
+   ch <- 20   ← buffer: [10, 20] — FULL
+
+   ═══════════════════════════════════════════════════════════════
+   GOROUTINE G1: ch <- 30     (sender, but buffer is full!)
+
+   Step 1: G1 checks — no waiting receivers, buffer FULL → must BLOCK
+
+   Step 2: Get sudog from P's cache:
+     s1 = { g: G1, elem: &(30), c: ch }
+
+   Step 3: Enqueue s1 onto sendq:
+
+   hchan {
+     qcount: 2 / dataqsiz: 2    ← buffer is full
+     buf: ──► [ 10 | 20 ]
+               ▲recvx  ▲sendx=0 (wrapped!)
+     sendq: ──► ┌────────┐
+                │ sudog  │──► nil
+                │ g: G1  │
+                │ elem:30│ ← the value G1 wants to send
+                └────────┘
+     recvq: ∅
+   }
+
+   Step 4: gopark(G1) — G1 sleeps.
+
+   ═══════════════════════════════════════════════════════════════
+   GOROUTINE G2: v := <-ch    (receiver arrives!)
+
+   This case is special — buffer is full AND a sender is waiting.
+   The runtime does a clever optimization:
+
+   Step 1: G2 takes the OLDEST value from the buffer:
+     v = buf[recvx] = buf[0] = 10
+
+   Step 2: G1's value (30) fills the slot that was just freed:
+     buf[recvx] = 30  (from s1.elem)
+
+   Step 3: Advance recvx:
+
+   hchan {
+     qcount: 2 / dataqsiz: 2    ← still full!
+     buf: ──► [ 30 | 20 ]       ← 30 replaced 10's slot
+                    ▲recvx=1 ▲sendx=1
+     sendq: ∅                    ← s1 removed
+     recvq: ∅
+   }
+
+   Step 4: Wake G1, return sudog to cache.
+
+   Result:
+     v = 10 (G2 got the OLDEST value — FIFO maintained!)
+     G1 unblocked (its value 30 is now in the buffer)
+     Buffer is still full: [30, 20] — the receiver took one, sender added one
+```
+
+### Scenario 4: Select with Multiple Channels — Goroutine on Multiple Wait Queues
+
+```
+   select {
+   case v := <-ch1:     // case 0
+   case v := <-ch2:     // case 1
+   case ch3 <- 42:      // case 2
+   }
+
+   None of the channels are ready. Goroutine G5 must block on ALL of them.
+
+   ═══════════════════════════════════════════════════════════════
+   Step 1: Runtime creates 3 sudogs (from P's cache):
+     s1 = { g: G5, c: ch1 }    ← for receive on ch1
+     s2 = { g: G5, c: ch2 }    ← for receive on ch2
+     s3 = { g: G5, c: ch3 }    ← for send on ch3
+
+   Step 2: Enqueue each on its channel:
+
+   ch1.recvq: [..., s1{g:G5}]    ← G5 is waiting to receive from ch1
+   ch2.recvq: [..., s2{g:G5}]    ← G5 is waiting to receive from ch2
+   ch3.sendq: [..., s3{g:G5}]    ← G5 is waiting to send to ch3
+
+   Step 3: gopark(G5) — G5 sleeps on ALL three channels simultaneously.
+
+   ═══════════════════════════════════════════════════════════════
+   LATER: Someone sends a value to ch2.
+
+   ch2 processing:
+     1. Dequeue s2 from ch2.recvq
+     2. Copy value to G5's variable
+     3. Wake G5
+
+   G5 wakes up and CLEANS UP the other sudogs:
+     4. Remove s1 from ch1.recvq  ← G5 is no longer waiting on ch1
+     5. Remove s3 from ch3.sendq  ← G5 is no longer waiting on ch3
+     6. Return s1, s2, s3 to P's cache
+
+   selectgo() returns case index 1 (ch2 was ready).
+
+   ═══════════════════════════════════════════════════════════════
+   VISUAL: G5 parked on 3 channels, then woken by ch2:
+
+   BEFORE (G5 sleeping):
+
+   ch1.recvq: ─── ... ─── s1{G5} ───
+   ch2.recvq: ─── ... ─── s2{G5} ───   ← all three queues have G5
+   ch3.sendq: ─── ... ─── s3{G5} ───
+
+           ┌────────────────┐
+           │  G5 (_Gwaiting)│   sleeping, waiting for ANY channel
+           └────────────────┘
+
+   AFTER (ch2 delivers value, G5 wakes):
+
+   ch1.recvq: ─── ... ───           ← s1 removed (cleanup)
+   ch2.recvq: ─── ... ───           ← s2 removed (delivered)
+   ch3.sendq: ─── ... ───           ← s3 removed (cleanup)
+
+           ┌──────────────────┐
+           │  G5 (_Grunnable) │   awake, processing case 1 (ch2)
+           └──────────────────┘
+```
+
+### Scenario 5: Close Channel with Waiting Receivers
+
+```
+   ch := make(chan int, 3)
+   ch <- 10
+   ch <- 20
+   // 2 goroutines are waiting to receive:
+
+   hchan {
+     qcount: 2
+     buf: ──► [ 10 | 20 | _ ]
+     recvq: ──► s1{G3} ──► s2{G7} ──► nil
+     closed: 0
+   }
+
+   ═══════════════════════════════════════════════════════════════
+   close(ch):
+
+   Step 1: Set closed = 1
+
+   Step 2: Wake ALL receivers in recvq:
+     G3: receives 10 from buffer (ok=true, buffer had data)
+     G7: receives 20 from buffer (ok=true, buffer had data)
+
+   Step 3: If there were MORE receivers than buffered values:
+     Remaining receivers get (zero value, ok=false)
+
+   Step 4: If there were senders in sendq:
+     All senders PANIC: "send on closed channel"
+
+   ═══════════════════════════════════════════════════════════════
+   AFTER close:
+
+   hchan {
+     qcount: 0
+     buf: ──► [ _ | _ | _ ]       ← drained
+     recvq: ∅                      ← all receivers woken
+     sendq: ∅
+     closed: 1                     ← permanently closed
+   }
+
+   Any future <-ch returns (0, false) immediately.
+   Any future ch <- val PANICS.
+```
+
+### Master Diagram: Complete Channel State Machine
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    CHANNEL OPERATION STATE MACHINE                       │
+│                                                                         │
+│  SEND (ch <- val):                                                      │
+│  ═════════════════                                                      │
+│                                                                         │
+│    ┌──────────────┐     YES    ┌──────────────────────────┐             │
+│    │ ch == nil?   ├──────────► │ BLOCK FOREVER (gopark)   │             │
+│    └──────┬───────┘            └──────────────────────────┘             │
+│           │ NO                                                          │
+│           ▼                                                             │
+│    ┌──────────────┐     YES    ┌──────────────────────────┐             │
+│    │ ch.closed?   ├──────────► │ PANIC "send on closed"   │             │
+│    └──────┬───────┘            └──────────────────────────┘             │
+│           │ NO                                                          │
+│           ▼                                                             │
+│    ┌──────────────────┐  YES   ┌──────────────────────────┐             │
+│    │ recvq non-empty? ├──────► │ DIRECT SEND to receiver  │  (fastest) │
+│    └──────┬───────────┘        │ Copy val → receiver stack│             │
+│           │ NO                  │ Wake receiver goroutine  │             │
+│           ▼                    └──────────────────────────┘             │
+│    ┌──────────────────┐  YES   ┌──────────────────────────┐             │
+│    │ buffer has space?├──────► │ BUFFER SEND              │  (fast)    │
+│    │ qcount<dataqsiz  │        │ Copy val → buf[sendx]    │             │
+│    └──────┬───────────┘        │ sendx++, qcount++        │             │
+│           │ NO                  └──────────────────────────┘             │
+│           ▼                                                             │
+│    ┌──────────────────────────┐                                         │
+│    │ BLOCK (sudog + gopark)  │  (slow — goroutine sleeps)              │
+│    │ Get sudog from P's cache│                                         │
+│    │ Enqueue on sendq        │                                         │
+│    │ G state → _Gwaiting     │                                         │
+│    └──────────────────────────┘                                         │
+│                                                                         │
+│  RECEIVE (v := <-ch):                                                   │
+│  ════════════════════                                                   │
+│                                                                         │
+│    ┌──────────────┐     YES    ┌──────────────────────────┐             │
+│    │ ch == nil?   ├──────────► │ BLOCK FOREVER (gopark)   │             │
+│    └──────┬───────┘            └──────────────────────────┘             │
+│           │ NO                                                          │
+│           ▼                                                             │
+│    ┌───────────────────────┐ YES ┌────────────────────────┐             │
+│    │ closed && qcount==0?  ├───► │ Return (zero, false)   │  (instant) │
+│    └──────┬────────────────┘     └────────────────────────┘             │
+│           │ NO                                                          │
+│           ▼                                                             │
+│    ┌──────────────────┐  YES   ┌──────────────────────────┐             │
+│    │ sendq non-empty? ├──────► │ DIRECT RECV from sender  │  (fastest) │
+│    │ (unbuf or full)  │        │ If unbuf: copy from sender│            │
+│    └──────┬───────────┘        │ If full: take buf, put    │            │
+│           │ NO                  │ sender's val in freed slot│            │
+│           ▼                    └──────────────────────────┘             │
+│    ┌──────────────────┐  YES   ┌──────────────────────────┐             │
+│    │ buffer has data? ├──────► │ BUFFER RECV              │  (fast)    │
+│    │ qcount > 0       │        │ Copy buf[recvx] → v      │             │
+│    └──────┬───────────┘        │ recvx++, qcount--        │             │
+│           │ NO                  └──────────────────────────┘             │
+│           ▼                                                             │
+│    ┌──────────────────────────┐                                         │
+│    │ BLOCK (sudog + gopark)  │  (slow — goroutine sleeps)              │
+│    │ Get sudog from P's cache│                                         │
+│    │ Enqueue on recvq        │                                         │
+│    │ G state → _Gwaiting     │                                         │
+│    └──────────────────────────┘                                         │
+│                                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -1364,3 +1860,499 @@ TOOLS
 > (direct transfer → buffer → park), select multiplexes by parking on all channels
 > simultaneously, and nil channels block forever — a feature, not a bug, for dynamic
 > select control.
+
+---
+
+## 15. Select in Practice — Patterns, Execution Model & Production Scenarios
+
+### Select Executes ONCE — It Is NOT a Loop
+
+This is the most common misconception. A `select` statement is like a `switch` — it
+evaluates once, picks one case, executes it, and is done. **There is no implicit looping.**
+
+```go
+select {
+case v := <-ch1:
+    fmt.Println("got from ch1:", v)
+case v := <-ch2:
+    fmt.Println("got from ch2:", v)
+default:
+    fmt.Println("nothing ready")
+}
+fmt.Println("select is DONE — execution continues here")
+```
+
+```
+  Execution flow:
+  
+  ┌──────────────────────────────────────┐
+  │            select { ... }            │
+  │                                      │
+  │  Are any cases ready?                │
+  │  ├── YES → pick one (random if many) │
+  │  │         execute its body          │
+  │  │         EXIT select               │
+  │  └── NO  → is there a default?       │
+  │       ├── YES → execute default body │
+  │       │         EXIT select          │
+  │       └── NO  → BLOCK (gopark)       │
+  │                 wait until a case     │
+  │                 becomes ready         │
+  │                 execute its body      │
+  │                 EXIT select          │
+  └──────────────────────────────────────┘
+  │
+  ▼
+  Next line of code runs here
+```
+
+### The `for-select` Loop — YOU Add the Loop
+
+When you want continuous listening, you wrap `select` in a `for` loop yourself:
+
+```go
+for {
+    select {
+    case v := <-ch:
+        process(v)
+    case <-ctx.Done():
+        return   // breaks out of BOTH select and for
+    }
+}
+```
+
+**Critical distinction:**
+
+```
+  select { ... }              → runs ONCE, like switch
+  for { select { ... } }     → runs FOREVER, you must break/return to stop
+  for v := range ch { ... }  → runs until channel is closed (simpler for single channel)
+```
+
+**When to use which:**
+
+```
+  ┌─────────────────────────────────┬─────────────────────────────────────────────┐
+  │ Pattern                         │ When to Use                                 │
+  ├─────────────────────────────────┼─────────────────────────────────────────────┤
+  │ v := <-ch                       │ Single blocking receive, you know data      │
+  │                                 │ will come, no cancellation needed            │
+  ├─────────────────────────────────┼─────────────────────────────────────────────┤
+  │ for v := range ch               │ Drain a single channel until it closes      │
+  │                                 │ (simplest consumer pattern)                  │
+  ├─────────────────────────────────┼─────────────────────────────────────────────┤
+  │ select { cases... }             │ ONE-TIME check across multiple channels     │
+  │ (no loop)                       │ or non-blocking tryReceive/trySend          │
+  ├─────────────────────────────────┼─────────────────────────────────────────────┤
+  │ for { select { cases... } }     │ Continuous listening on multiple channels   │
+  │                                 │ with cancellation — the EVENT LOOP pattern  │
+  └─────────────────────────────────┴─────────────────────────────────────────────┘
+```
+
+### Random Selection — Why and How
+
+When multiple cases are ready simultaneously, `select` picks one **uniformly at random**:
+
+```go
+ch1 := make(chan string, 1)
+ch2 := make(chan string, 1)
+ch1 <- "from ch1"
+ch2 <- "from ch2"
+
+// Both cases are ready — which one runs?
+select {
+case v := <-ch1:
+    fmt.Println(v)    // ~50% of the time
+case v := <-ch2:
+    fmt.Println(v)    // ~50% of the time
+}
+```
+
+**Under the hood** (from `selectgo` in `runtime/select.go`):
+
+```
+  Phase 1: SHUFFLE — Fisher-Yates shuffle on case order
+  
+  Cases in source order:  [ch1, ch2]
+  After shuffle:          [ch2, ch1]   ← random permutation
+  
+  Phase 3: POLL — walk cases in SHUFFLED order
+  
+  First shuffled case (ch2) → ready? YES → execute it, done.
+  
+  Next run, shuffle might produce [ch1, ch2]:
+  First shuffled case (ch1) → ready? YES → execute it, done.
+```
+
+**Why random, not first-case-wins?**
+
+```
+  If select always chose the first ready case:
+  
+  for {
+      select {
+      case v := <-highPriority:     // always checked first
+          process(v)
+      case v := <-lowPriority:      // STARVED if highPriority is always busy
+          process(v)
+      }
+  }
+  
+  With a busy highPriority channel, lowPriority would NEVER be selected.
+  Random selection guarantees fairness — both channels get served.
+```
+
+**What if you WANT priority?** Use nested selects:
+
+```go
+for {
+    // Try high priority first (non-blocking)
+    select {
+    case v := <-highPriority:
+        process(v)
+        continue       // go back to top, check high priority again
+    default:
+    }
+    
+    // Nothing high-priority — wait for anything
+    select {
+    case v := <-highPriority:
+        process(v)
+    case v := <-lowPriority:
+        process(v)
+    case <-ctx.Done():
+        return
+    }
+}
+```
+
+### The `default` Case — Behavior and Dangers
+
+`default` turns `select` from a blocking operation into a **non-blocking poll**:
+
+```
+  WITHOUT default:                     WITH default:
+  ──────────────────                   ──────────────────
+  select {                             select {
+  case v := <-ch:                      case v := <-ch:
+      process(v)                           process(v)
+  }                                    default:
+  // goroutine SLEEPS here                 // runs immediately
+  // until ch has data                 }
+  // (gopark → wait queue)             // goroutine NEVER sleeps
+                                       // checks once, moves on
+```
+
+**The `for-select-default` danger — busy spin:**
+
+```go
+// ❌ CPU KILLER — this burns 100% CPU on one core
+for {
+    select {
+    case v := <-ch:
+        process(v)
+    default:
+        // nothing ready — loop immediately checks again
+        // millions of iterations per second, all doing nothing
+    }
+}
+
+// ✅ FIX 1: Remove default — let select block
+for {
+    select {
+    case v := <-ch:
+        process(v)
+    case <-ctx.Done():
+        return
+    }
+    // goroutine sleeps until ch or ctx.Done() is ready — zero CPU
+}
+
+// ✅ FIX 2: If you need default, add a sleep or yield
+for {
+    select {
+    case v := <-ch:
+        process(v)
+    default:
+        time.Sleep(10 * time.Millisecond)   // back off, don't spin
+    }
+}
+
+// ✅ FIX 3: Use default only for ONE-TIME checks, not in loops
+select {
+case v := <-ch:
+    process(v)
+default:
+    fallback()     // runs once, no loop
+}
+```
+
+### Production Scenario 1: HTTP Handler — Try Cache, Fall Back to DB
+
+```go
+func getUser(w http.ResponseWriter, r *http.Request) {
+    userID := r.PathValue("id")
+    
+    // Try the cache channel (non-blocking):
+    select {
+    case cached := <-cacheResults:
+        if cached.ID == userID {
+            json.NewEncoder(w).Encode(cached)
+            return
+        }
+    default:
+        // cache miss — fall through to DB
+    }
+    
+    // Blocking wait with request deadline:
+    resultCh := make(chan User, 1)
+    go func() { resultCh <- queryDB(userID) }()
+    
+    select {
+    case user := <-resultCh:
+        json.NewEncoder(w).Encode(user)
+    case <-r.Context().Done():
+        // client disconnected or request timeout
+        http.Error(w, "timeout", http.StatusGatewayTimeout)
+    }
+}
+```
+
+```
+  Flow:
+  ┌──────────────────────────────────────────────────────────┐
+  │  Request arrives                                          │
+  │  ├── select + default: check cache (non-blocking)        │
+  │  │   ├── HIT  → respond immediately, done                │
+  │  │   └── MISS → fall through                              │
+  │  │                                                        │
+  │  └── select + ctx.Done(): wait for DB (bounded)          │
+  │      ├── DB responds   → respond with data, done          │
+  │      └── ctx cancelled → respond 504, done                │
+  │                                                           │
+  │  No goroutine leak: either DB finishes or context cancels │
+  └──────────────────────────────────────────────────────────┘
+```
+
+### Production Scenario 2: Worker Event Loop
+
+```go
+func worker(ctx context.Context, jobs <-chan Job, ticker *time.Ticker) {
+    for {
+        select {
+        case job := <-jobs:
+            // Process incoming work
+            process(job)
+            
+        case <-ticker.C:
+            // Periodic maintenance (flush buffers, report metrics)
+            flushBuffers()
+            reportMetrics()
+            
+        case <-ctx.Done():
+            // Graceful shutdown — drain remaining jobs
+            for {
+                select {
+                case job := <-jobs:
+                    process(job)     // finish in-flight work
+                default:
+                    return           // no more jobs, exit cleanly
+                }
+            }
+        }
+    }
+}
+```
+
+```
+  This is the classic "event loop" in Go:
+  
+  ┌─────────── for-select loop ───────────┐
+  │                                        │
+  │  JOBS ──────► process(job)             │  ← primary work
+  │                                        │
+  │  TICKER ────► flush + metrics          │  ← periodic maintenance
+  │                                        │
+  │  CTX.DONE ──► drain remaining → exit   │  ← graceful shutdown
+  │                                        │
+  │  The goroutine SLEEPS between events.  │
+  │  Zero CPU when idle. Wakes instantly   │
+  │  when any channel has data.            │
+  └────────────────────────────────────────┘
+  
+  Note the drain loop on shutdown: it uses select+default
+  (non-blocking) to process remaining jobs without blocking
+  forever on an empty channel.
+```
+
+### Production Scenario 3: Rate Limiter (tryAcquire)
+
+```go
+type RateLimiter struct {
+    tokens chan struct{}
+}
+
+func NewRateLimiter(rate int) *RateLimiter {
+    rl := &RateLimiter{tokens: make(chan struct{}, rate)}
+    // Fill with initial tokens
+    for i := 0; i < rate; i++ {
+        rl.tokens <- struct{}{}
+    }
+    // Refill tokens periodically
+    go func() {
+        ticker := time.NewTicker(time.Second / time.Duration(rate))
+        defer ticker.Stop()
+        for range ticker.C {
+            select {
+            case rl.tokens <- struct{}{}:
+                // token added
+            default:
+                // bucket full, discard — this is tryAcquire in reverse (trySend)
+            }
+        }
+    }()
+    return rl
+}
+
+// TryAcquire — non-blocking check: is a token available?
+func (rl *RateLimiter) TryAcquire() bool {
+    select {
+    case <-rl.tokens:
+        return true    // got a token — proceed
+    default:
+        return false   // no tokens — reject request
+    }
+}
+
+// Acquire — blocking wait: wait until a token is available (with deadline)
+func (rl *RateLimiter) Acquire(ctx context.Context) error {
+    select {
+    case <-rl.tokens:
+        return nil     // got a token
+    case <-ctx.Done():
+        return ctx.Err()   // deadline exceeded or cancelled
+    }
+}
+```
+
+```
+  TryAcquire (select+default):
+    "Is a token available RIGHT NOW? Yes → take it. No → reject."
+    Used for: immediate reject (HTTP 429 Too Many Requests)
+  
+  Acquire (select+ctx.Done):
+    "Wait for a token, but respect my deadline."
+    Used for: queue the request, serve when capacity is available
+```
+
+### Production Scenario 4: Heartbeat / Health Monitor
+
+```go
+func monitorService(ctx context.Context, healthCh <-chan struct{}) {
+    timeout := 5 * time.Second
+    timer := time.NewTimer(timeout)
+    defer timer.Stop()
+    
+    for {
+        select {
+        case <-healthCh:
+            // Got heartbeat — service is alive, reset timer
+            if !timer.Stop() {
+                <-timer.C     // drain the channel if timer already fired
+            }
+            timer.Reset(timeout)
+            
+        case <-timer.C:
+            // No heartbeat for 5 seconds — service is dead
+            alertOps("service unresponsive")
+            timer.Reset(timeout)
+            
+        case <-ctx.Done():
+            return
+        }
+    }
+}
+```
+
+```
+  Timeline:
+
+  ──heartbeat────heartbeat────────────────heartbeat──────────
+       │              │            │           │
+       ▼              ▼            ▼           ▼
+     reset          reset       TIMEOUT!     reset
+     timer          timer       alert ops    timer
+
+  Three channels, one goroutine — the for-select event loop handles
+  all three concerns cleanly.
+```
+
+### Production Scenario 5: First Response Wins (Fan-Out to Multiple Backends)
+
+```go
+func queryFastest(ctx context.Context, query string, backends []Backend) (Result, error) {
+    ctx, cancel := context.WithCancel(ctx)
+    defer cancel()   // cancel all other backends when one responds
+    
+    resultCh := make(chan Result, len(backends))   // buffered — no goroutine leak
+    
+    for _, b := range backends {
+        go func(backend Backend) {
+            if r, err := backend.Query(ctx, query); err == nil {
+                select {
+                case resultCh <- r:
+                default:
+                    // another result already sent — discard this one
+                }
+            }
+        }(b)
+    }
+    
+    select {
+    case r := <-resultCh:
+        return r, nil          // first response wins
+    case <-ctx.Done():
+        return Result{}, ctx.Err()
+    }
+}
+```
+
+```
+  ┌────────────┐
+  │ Backend A  │──► 50ms  ──► resultCh ──► WINNER (first in)
+  ├────────────┤
+  │ Backend B  │──► 120ms ──► select+default → discarded (already have result)
+  ├────────────┤
+  │ Backend C  │──► ctx cancelled (cancel() called after A responded)
+  └────────────┘
+  
+  Key details:
+  - Buffered channel (len(backends)) prevents goroutine leak
+    if multiple backends respond before the select reads
+  - select+default inside goroutines prevents blocking on send
+    when result channel already has a value
+  - defer cancel() cleans up slow backends via context
+```
+
+### Select Execution Model — Complete Mental Model
+
+```
+  ┌──────────────────────────────────────────────────────────────────────┐
+  │                      SELECT EXECUTION SUMMARY                       │
+  │                                                                     │
+  │  1. select runs ONCE per encounter (like switch, not like for)      │
+  │  2. If multiple cases ready → pick one at RANDOM (fairness)         │
+  │  3. If no cases ready + default → execute default, exit             │
+  │  4. If no cases ready + no default → BLOCK (gopark on all channels) │
+  │  5. When blocked, first channel that becomes ready → wake + execute │
+  │                                                                     │
+  │  default makes it non-blocking:                                     │
+  │    select + default = tryReceive/trySend (check once, don't wait)   │
+  │    select - default = blocking wait (sleep until something happens) │
+  │                                                                     │
+  │  for-select = event loop (continuous listening):                    │
+  │    for { select { ... } }  = keep checking, handle events forever  │
+  │    for + select + default  = BUSY SPIN (danger! burns CPU)          │
+  │    for + select - default  = EFFICIENT event loop (sleeps when idle)│
+  └──────────────────────────────────────────────────────────────────────┘
+```
