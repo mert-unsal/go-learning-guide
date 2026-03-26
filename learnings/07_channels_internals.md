@@ -160,6 +160,199 @@ sem <- struct{}{}   // acquire (doesn't block — buffer has space)
 <-sem               // release
 ```
 
+### Many Senders, Many Receivers — How Channels Handle It
+
+A single channel can have **any number of goroutines** sending and receiving
+simultaneously. Each value goes to exactly **one** receiver — no duplication,
+no loss.
+
+```go
+ch := make(chan int, 5)
+
+// 3 receivers competing on the same channel
+go func() { fmt.Println("R1 got:", <-ch) }()
+go func() { fmt.Println("R2 got:", <-ch) }()
+go func() { fmt.Println("R3 got:", <-ch) }()
+
+ch <- 42  // exactly ONE of R1, R2, R3 gets this value
+```
+
+Under the hood, when all 3 receivers arrive before any value is sent,
+they each get parked on `recvq`:
+
+```
+hchan.recvq (waiting receivers — FIFO linked list):
+┌────────┐    ┌────────┐    ┌────────┐
+│ sudog  │───►│ sudog  │───►│ sudog  │───► nil
+│ g: R1  │    │ g: R2  │    │ g: R3  │
+└────────┘    └────────┘    └────────┘
+   first                      last
+
+ch <- 42 arrives:
+  1. Lock hchan.lock
+  2. Dequeue FIRST sudog (R1) from recvq    ← FIFO order
+  3. Copy 42 directly to R1's stack variable
+  4. Wake R1 (goready)
+  5. Unlock hchan.lock
+  6. R2 and R3 remain parked — they wait for the next values
+```
+
+The same applies to senders. Multiple senders park on `sendq` in FIFO order:
+
+```
+hchan.sendq (waiting senders — FIFO linked list):
+┌────────┐    ┌────────┐
+│ sudog  │───►│ sudog  │───► nil
+│ g: S1  │    │ g: S2  │
+│ elem:42│    │ elem:99│
+└────────┘    └────────┘
+
+<-ch arrives:
+  1. Lock hchan.lock
+  2. Dequeue FIRST sudog (S1) from sendq
+  3. Copy 42 from S1's stack to receiver's variable
+  4. Wake S1 (goready)
+  5. Unlock hchan.lock
+  6. S2 remains parked — waits until another receiver arrives
+```
+
+**This is the Worker Pool pattern built into the runtime:**
+
+```
+                            ┌── Worker 1 (receiver) ── process job
+ jobs channel ──────────────┼── Worker 2 (receiver) ── process job
+                            └── Worker 3 (receiver) ── process job
+
+ // All 3 workers call <-jobs — runtime distributes one job to one worker
+ for job := range jobs {
+     process(job)
+ }
+```
+
+Whichever worker finishes first and calls `<-jobs` gets the next job. The
+`hchan.lock` mutex guarantees no two receivers grab the same value. Zero
+extra code needed for work distribution.
+
+**Summary:**
+
+```
+┌─────────────────────────────────────────────────────────┐
+│           Many-to-Many Channel Guarantees                │
+│                                                          │
+│  Senders blocked?   → parked on sendq (FIFO queue)      │
+│  Receivers blocked? → parked on recvq (FIFO queue)      │
+│                                                          │
+│  Value sent     → delivered to exactly ONE receiver      │
+│  Value received → comes from exactly ONE sender          │
+│                                                          │
+│  No duplication. No loss. FIFO ordering within queues.   │
+│  All protected by a single hchan.lock mutex.             │
+└─────────────────────────────────────────────────────────┘
+```
+
+### The `hchan.lock` Mutex — How It Works Under the Hood
+
+Every channel operation (send, receive, close) acquires `hchan.lock` first.
+This is not a `sync.Mutex` — it's a lower-level **runtime mutex** (`runtime.mutex`)
+that uses a different strategy than what you get from the `sync` package.
+
+**Source:** `runtime/lock_futex.go` (Linux) / `runtime/lock_sema.go` (Windows/macOS)
+
+```go
+// runtime/runtime2.go
+type mutex struct {
+    lockRankStruct          // for debugging lock ordering
+    key uintptr             // 0 = unlocked, other values = locked state
+}
+```
+
+The runtime mutex uses a **two-phase locking strategy:**
+
+```
+Phase 1: SPIN (optimistic — bet that the lock is released quickly)
+───────────────────────────────────────────────────────────────────
+  The goroutine tries an atomic compare-and-swap (CAS) on mutex.key:
+    CAS(&key, 0, locked)  →  if key was 0, set to locked. Done!
+
+  If CAS fails (someone else holds the lock):
+    Spin for a few iterations — execute PAUSE instructions (busy-wait).
+    Why? If the lock holder is on another CPU core and will release
+    in nanoseconds, spinning is FASTER than sleeping.
+
+    Spin count is limited (~4 iterations on most architectures).
+    Spinning only helps for very short critical sections.
+
+Phase 2: SLEEP (pessimistic — lock is contended, stop wasting CPU)
+───────────────────────────────────────────────────────────────────
+  If spinning didn't acquire the lock:
+
+  On Linux:
+    futex(FUTEX_WAIT) — kernel puts the thread to sleep on the mutex address.
+    When the lock holder unlocks: futex(FUTEX_WAKE) wakes ONE sleeping thread.
+    Cost: ~1-2 microseconds (kernel context switch).
+
+  On Windows:
+    Uses OS semaphore — similar mechanism, different syscall.
+
+  On macOS:
+    Uses pthread_mutex or os_unfair_lock depending on Go version.
+```
+
+**Why does this matter for channels?**
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ Every channel send/receive locks hchan.lock:                        │
+│                                                                     │
+│   Uncontended (one goroutine using the channel):                    │
+│     → CAS succeeds immediately → ~5-10ns overhead                  │
+│     → This is the fast path. Channels are cheap when not contested. │
+│                                                                     │
+│   Low contention (a few goroutines):                                │
+│     → Short spin → CAS succeeds → ~20-50ns overhead                │
+│     → Still fast. The spin avoids the expensive kernel call.        │
+│                                                                     │
+│   High contention (100 goroutines on one channel):                  │
+│     → Spin fails → futex sleep → kernel wakeup → ~1-2μs overhead   │
+│     → The channel becomes a BOTTLENECK.                             │
+│     → All goroutines serialize through one mutex.                   │
+│     → Solution: shard into multiple channels, or use sync primitives│
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Comparison: `hchan.lock` (runtime mutex) vs `sync.Mutex`:**
+
+```
+┌──────────────────────┬─────────────────────────┬──────────────────────────┐
+│                      │ runtime.mutex            │ sync.Mutex               │
+│                      │ (used by channels)       │ (used by your code)      │
+├──────────────────────┼─────────────────────────┼──────────────────────────┤
+│ Where used           │ Internal runtime only    │ User-space Go code       │
+│ Goroutine-aware?     │ No — blocks the OS       │ Yes — parks the          │
+│                      │ thread (M), not just     │ goroutine (G), releases  │
+│                      │ the goroutine            │ the thread (M) for       │
+│                      │                          │ other goroutines         │
+│ Spin phase           │ Yes (limited)            │ Yes (adaptive since      │
+│                      │                          │ Go 1.9, starvation mode) │
+│ Blocking mechanism   │ futex / OS semaphore     │ runtime.gopark (parks G, │
+│                      │ (puts OS thread to       │ M picks another G from   │
+│                      │ sleep)                   │ run queue)               │
+│ Why different?       │ Runtime can't use its    │ Built on top of the      │
+│                      │ own scheduler to park    │ runtime scheduler — can   │
+│                      │ goroutines while inside  │ cooperatively yield      │
+│                      │ the scheduler code       │                          │
+└──────────────────────┴─────────────────────────┴──────────────────────────┘
+```
+
+**The critical insight:** `hchan.lock` blocks the **OS thread**, not just the goroutine.
+This is necessary because channel operations are part of the scheduler itself — you can't
+use the scheduler to sleep while you're inside scheduler code. This is why high-contention
+channels are expensive: they waste OS threads, not just goroutines.
+
+However, the lock is held for an extremely short time (copy a value, update an index,
+maybe wake a goroutine). So in practice, contention only matters when you have many
+goroutines hammering the same channel at extreme throughput (>1M ops/sec).
+
 ---
 
 ## 3. Step-by-Step: Send Operation
@@ -1088,7 +1281,22 @@ runtime.hchan { buf, qcount, dataqsiz, sendx, recvx, sendq, recvq, lock, closed 
   └─ Channel variable is a pointer to hchan (8 bytes)
   └─ buf is a circular ring buffer (nil for unbuffered)
   └─ sendq/recvq are doubly-linked lists of sudog (parked goroutines)
-  └─ Every operation acquires hchan.lock (mutex)
+  └─ Every operation acquires hchan.lock (runtime mutex)
+
+MANY-TO-MANY
+─────────────
+  Multiple senders OK → parked on sendq in FIFO order
+  Multiple receivers OK → parked on recvq in FIFO order
+  Each value → exactly ONE receiver. No duplication, no loss.
+  Worker pool = multiple goroutines ranging over same channel
+
+HCHAN.LOCK (runtime mutex internals)
+─────────────────────────────────────
+  Phase 1: Spin — atomic CAS on mutex.key (~5-10ns if uncontended)
+  Phase 2: Sleep — futex/semaphore (OS puts thread to sleep, ~1-2μs)
+  Key: blocks the OS THREAD, not just the goroutine
+  Why: channel code IS scheduler code, can't use scheduler to park
+  Impact: high contention (100 goroutines, 1 channel) wastes OS threads
 
 SEND PATHS (ch <- value)
 ────────────────────────
