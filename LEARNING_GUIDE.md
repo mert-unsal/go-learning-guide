@@ -144,6 +144,8 @@
 | Document | Key Topics |
 |----------|-----------|
 | [`learnings/09_memory_gc_and_escape_analysis.md`](learnings/09_memory_gc_and_escape_analysis.md) | Stack vs heap, escape analysis rules, tri-color GC, write barrier, `GOGC`/`GOMEMLIMIT`, `sync.Pool` |
+| [`learnings/13_goroutine_stacks_contiguous.md`](learnings/13_goroutine_stacks_contiguous.md) | Contiguous stacks (Go 1.4+), stack growth/shrink, pointer adjustment, stack maps, hot split problem |
+| [`learnings/12_any_type_boxing.md`](learnings/12_any_type_boxing.md) | `any`/`interface{}` boxing, `eface` internals, `staticuint64s`, `convT` family, generics vs `any` |
 
 ### 🔬 Practice — Complete All 8 Performance Exercises
 
@@ -180,6 +182,11 @@ go tool trace trace.out                   # visual goroutine timeline
 3. Your service has 200ms p99 spikes every 2 min — diagnose with GC trace.
 4. Explain `sync.Pool`'s victim cache. When do objects get collected?
 5. Why is `fmt.Sprintf("%d", n)` slower than `strconv.Itoa(n)` in hot paths?
+6. What was the "hot split" problem with segmented stacks? How do contiguous stacks fix it?
+7. When a goroutine stack grows, how does the runtime find and update all pointers into the old stack?
+8. Why does Go NOT have tail call optimization? What's the trade-off?
+9. Which types are free to box into `any`? Which are expensive? Why?
+10. Why does `var a any = 1.0` allocate but `var a any = 42` does not?
 
 ---
 
