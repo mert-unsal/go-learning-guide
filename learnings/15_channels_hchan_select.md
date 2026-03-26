@@ -1322,6 +1322,70 @@ Without nil channel semantics, you'd need complex flag logic. Setting `ch1 = nil
 makes `select` naturally skip that case forever — the runtime says "nil channel
 will never be ready" and excludes it from polling.
 
+### Why `nil` Instead of `close`? — The Critical Difference
+
+This is a common question: "Why not just close the channel instead of setting it to nil?"
+Because they have **opposite behavior** inside a `for-select` loop:
+
+```
+  Closed channel in select:
+  ┌────────────────────────────────────────────────┐
+  │  <-closedCh  →  returns (zero, false) INSTANTLY │
+  │                  select sees it as "ready"      │
+  │                  picks it over and over and over │
+  │                  CPU: 100% 🔥 (infinite loop)   │
+  └────────────────────────────────────────────────┘
+
+  Nil channel in select:
+  ┌────────────────────────────────────────────────┐
+  │  <-nilCh     →  blocks FOREVER                  │
+  │                  select SKIPS this case entirely │
+  │                  as if the case doesn't exist    │
+  │                  CPU: 0% ✅                      │
+  └────────────────────────────────────────────────┘
+```
+
+```go
+// ❌ WRONG — closing inside for-select creates infinite busy loop:
+for {
+    select {
+    case v, ok := <-ch:
+        if !ok {
+            // ch is closed, but select will pick this case
+            // EVERY iteration — returns (0, false) instantly
+            // This becomes an infinite loop burning 100% CPU!
+        }
+    case v := <-other:
+        process(v)    // never gets a chance — closed ch always "wins"
+    }
+}
+
+// ✅ CORRECT — setting to nil disables the case:
+for ch != nil || other != nil {
+    select {
+    case v, ok := <-ch:
+        if !ok {
+            ch = nil       // select ignores this case from now on
+            continue
+        }
+        process(v)
+    case v, ok := <-other:
+        if !ok {
+            other = nil
+            continue
+        }
+        process(v)
+    }
+}
+```
+
+**One-line rule:**
+
+```
+  close(ch)  = "I'm done sending"      → receivers get zero values FOREVER
+  ch = nil   = "pretend this doesn't exist" → select skips it entirely
+```
+
 ### Nil Channel Summary
 
 ```
