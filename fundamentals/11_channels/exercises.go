@@ -1,7 +1,9 @@
 package channels
 
 import (
+	"context"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -86,4 +88,263 @@ func WithTimeout(ch <-chan int, maxWaitMs int) (int, bool) {
 	case <-time.After(time.Duration(maxWaitMs) * time.Millisecond):
 		return 0, false
 	}
+}
+
+// ============================================================
+// Exercise 6: MergeN — Nil-Channel Select Pattern
+// ============================================================
+// Merge an arbitrary number of channels into one output channel.
+// As each input channel closes, disable it (set to nil) so the
+// select no longer considers it. Close the output channel when
+// ALL inputs are exhausted.
+//
+// This tests the nil-channel-in-select pattern from the internals doc §8.
+// Do NOT use sync.WaitGroup — use nil channel disabling with a counter.
+//
+// Why this matters:
+//   - Nil channels block forever in select → effectively disabling that case
+//   - This is Go's idiomatic way to dynamically control select behavior
+//   - Interview favorite: "How do you merge N channels without WaitGroup?"
+func MergeN(channels ...<-chan int) <-chan int {
+	out := make(chan int)
+	go func() {
+		defer close(out)
+		alive := len(channels)
+		for alive > 0 {
+			// We can't use a dynamic select with variable cases in Go syntax,
+			// so we use reflect.Select for truly dynamic N channels.
+			// However, for this exercise, implement it using a polling approach:
+			// iterate over channels, try non-blocking receive, nil-out closed ones.
+			for i, ch := range channels {
+				if ch == nil {
+					continue
+				}
+				select {
+				case v, ok := <-ch:
+					if !ok {
+						channels[i] = nil
+						alive--
+					} else {
+						out <- v
+					}
+				default:
+					// not ready, skip
+				}
+			}
+			if alive > 0 {
+				time.Sleep(time.Microsecond) // avoid busy spin
+			}
+		}
+	}()
+	return out
+}
+
+// ============================================================
+// Exercise 7: Semaphore — Bounded Concurrency with Channels
+// ============================================================
+// ProcessWithLimit processes each item in 'items' by calling 'fn',
+// but ensures no more than 'maxConcurrent' goroutines run simultaneously.
+// Use a buffered channel as a counting semaphore.
+// Returns when ALL items have been processed.
+//
+// Why this matters:
+//   - Buffered channels naturally model counting semaphores
+//   - Production use: limiting concurrent DB connections, HTTP requests, file handles
+//   - The buffer capacity IS the concurrency limit — elegant and zero-overhead
+func ProcessWithLimit(items []int, maxConcurrent int, fn func(int) int) []int {
+	results := make([]int, len(items))
+	sem := make(chan struct{}, maxConcurrent)
+	var wg sync.WaitGroup
+
+	for i, item := range items {
+		wg.Add(1)
+		sem <- struct{}{} // acquire — blocks when maxConcurrent goroutines are running
+		go func(idx, val int) {
+			defer wg.Done()
+			defer func() { <-sem }() // release
+			results[idx] = fn(val)
+		}(i, item)
+	}
+
+	wg.Wait()
+	return results
+}
+
+// ============================================================
+// Exercise 8: CloseDrain — Close Semantics Verification
+// ============================================================
+// SendAndClose sends the values into ch, then closes it.
+// The caller should be able to receive ALL buffered values after close,
+// and subsequent receives should return (0, false).
+//
+// This tests the close drain behavior:
+//   - Closed channel with buffered data → returns data, ok=true
+//   - Closed channel with empty buffer → returns zero value, ok=false
+//   - The test will verify both behaviors
+func SendAndClose(values []int, bufSize int) <-chan int {
+	ch := make(chan int, bufSize)
+	for _, v := range values {
+		ch <- v
+	}
+	close(ch)
+	return ch
+}
+
+// ============================================================
+// Exercise 9: TrySend / TryReceive — Non-Blocking Channel Ops
+// ============================================================
+// TrySend attempts to send val on ch without blocking.
+// Returns true if the send succeeded, false if the channel was full/not ready.
+//
+// TryReceive attempts to receive from ch without blocking.
+// Returns (value, true) if a value was available, (0, false) otherwise.
+//
+// Both use select with default — the Go idiom for non-blocking channel operations.
+//
+// Why this matters:
+//   - select+default is how Go does "try" operations on channels
+//   - Used in hot paths where blocking is unacceptable
+//   - The runtime short-circuits: polls once, returns default immediately if nothing ready
+func TrySend(ch chan<- int, val int) bool {
+	select {
+	case ch <- val:
+		return true
+	default:
+		return false
+	}
+}
+
+func TryReceive(ch <-chan int) (int, bool) {
+	select {
+	case v := <-ch:
+		return v, true
+	default:
+		return 0, false
+	}
+}
+
+// ============================================================
+// Exercise 10: LeakCheck — Goroutine Leak Detection
+// ============================================================
+// SafeGenerator returns a channel that produces integers 0, 1, 2, ...
+// It MUST stop producing and clean up its goroutine when ctx is cancelled.
+// The test will verify no goroutine leak using runtime.NumGoroutine().
+//
+// This is the context-aware version of Generate — the production-grade pattern.
+//
+// Why this matters:
+//   - Goroutine leaks are the #1 production channel bug
+//   - Every goroutine that blocks on a channel send/receive is leaked memory
+//   - Use context for cancellation — the goroutine checks ctx.Done() in select
+//   - Test with runtime.NumGoroutine() before and after
+func SafeGenerator(ctx context.Context) <-chan int {
+	ch := make(chan int)
+	go func() {
+		defer close(ch)
+		i := 0
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case ch <- i:
+				i++
+			}
+		}
+	}()
+	return ch
+}
+
+// ============================================================
+// Exercise 11: OrDone — Cancellation-Aware Channel Wrapper
+// ============================================================
+// OrDone wraps an input channel to make reads cancellation-aware.
+// It returns a new channel that:
+//   - Forwards all values from 'in' to the output
+//   - Closes the output when EITHER 'in' closes OR ctx is cancelled
+//
+// Without OrDone, a goroutine blocked on <-in won't notice ctx cancellation
+// until the next value arrives. OrDone solves this with a double-select pattern.
+//
+// Why this matters:
+//   - Production pipelines need every stage to respect cancellation
+//   - A single stage ignoring ctx.Done() can hold up graceful shutdown
+//   - This is a composable building block: orDone(ctx, stage1(stage2(input)))
+func OrDone(ctx context.Context, in <-chan int) <-chan int {
+	out := make(chan int)
+	go func() {
+		defer close(out)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case v, ok := <-in:
+				if !ok {
+					return
+				}
+				select {
+				case out <- v:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+	return out
+}
+
+// ============================================================
+// Exercise Bonus: ConcurrentCounter — Channels vs Atomics
+// ============================================================
+// Increment a shared counter from N goroutines using a channel-based approach.
+// This demonstrates when channels are the WRONG tool — atomics are better here.
+// Included so you can benchmark and feel the difference.
+//
+// ChannelCounter uses a dedicated goroutine to serialize increments via channel.
+// AtomicCounter uses sync/atomic for lock-free increments.
+// Both return the final count after 'n' increments from 'workers' goroutines.
+func ChannelCounter(workers, incrementsPerWorker int) int {
+	ch := make(chan struct{}, 100)
+	done := make(chan int)
+
+	// Counter goroutine — serializes via channel
+	go func() {
+		count := 0
+		for range ch {
+			count++
+		}
+		done <- count
+	}()
+
+	var wg sync.WaitGroup
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < incrementsPerWorker; j++ {
+				ch <- struct{}{}
+			}
+		}()
+	}
+
+	wg.Wait()
+	close(ch)
+	return <-done
+}
+
+func AtomicCounter(workers, incrementsPerWorker int) int64 {
+	var count int64
+	var wg sync.WaitGroup
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < incrementsPerWorker; j++ {
+				atomic.AddInt64(&count, 1)
+			}
+		}()
+	}
+
+	wg.Wait()
+	return count
 }

@@ -1,6 +1,6 @@
 # 📦 Module 11 — Channels
 
-> **Topics covered:** Buffered/unbuffered channels · Directional channels · `select` · Pipeline pattern · Fan-in · Timeout with `time.After`
+> **Topics covered:** Buffered/unbuffered channels · Directional channels · `select` · Pipeline pattern · Fan-in · Timeout with `time.After` · Nil-channel select · Semaphore · Close drain semantics · Non-blocking ops · Goroutine leak detection · OrDone pattern · Channels vs Atomics
 
 ---
 
@@ -26,6 +26,13 @@
 | `select` statement | `concepts.go` + Exercise 5 |
 | Timeout with `time.After` | Exercise 5 — `WithTimeout` |
 | Closing channels and `range` over channel | Exercise 2, 3 |
+| Nil-channel select pattern (dynamic disable) | Exercise 6 — `MergeN` |
+| Semaphore (bounded concurrency) | Exercise 7 — `ProcessWithLimit` |
+| Close drain semantics (buffer + closed) | Exercise 8 — `SendAndClose` |
+| Non-blocking try-send / try-receive | Exercise 9 — `TrySend` / `TryReceive` |
+| Goroutine leak detection with context | Exercise 10 — `SafeGenerator` |
+| OrDone pattern (cancellation-aware wrapper) | Exercise 11 — `OrDone` |
+| Channels vs Atomics (when NOT to use channels) | Bonus — `ChannelCounter` / `AtomicCounter` |
 
 ---
 
@@ -40,6 +47,13 @@ Open `exercises.go` and implement each function:
 | 3 | `Square(in <-chan int) <-chan int` | Square each value from input channel |
 | 4 | `Merge(a, b <-chan int) <-chan int` | Fan-in: merge two channels into one |
 | 5 | `WithTimeout(ch <-chan int, maxWaitMs int) (int, bool)` | Receive with a timeout |
+| 6 | `MergeN(channels ...<-chan int) <-chan int` | Merge N channels using nil-channel disable |
+| 7 | `ProcessWithLimit(items, max, fn)` | Semaphore: bounded concurrent processing |
+| 8 | `SendAndClose(values, bufSize)` | Close semantics: buffer drain verification |
+| 9 | `TrySend` / `TryReceive` | Non-blocking channel ops with select+default |
+| 10 | `SafeGenerator(ctx) <-chan int` | Context-aware producer (no goroutine leak) |
+| 11 | `OrDone(ctx, in) <-chan int` | Cancellation-aware channel wrapper |
+| B | `ChannelCounter` / `AtomicCounter` | When channels are the wrong tool |
 
 ---
 
@@ -70,6 +84,15 @@ go test . -v -run TestGenerate
 go test . -v -run TestSquare
 go test . -v -run TestMerge
 go test . -v -run TestWithTimeout
+go test . -v -run TestMergeN
+go test . -v -run TestProcessWithLimit
+go test . -v -run TestSendAndClose
+go test . -v -run TestTrySend
+go test . -v -run TestTryReceive
+go test . -v -run TestSafeGenerator
+go test . -v -run TestOrDone
+go test . -v -run TestChannelCounter
+go test . -v -run TestAtomicCounter
 ```
 
 ---
@@ -77,35 +100,80 @@ go test . -v -run TestWithTimeout
 ## 💡 Key Hints
 
 <details>
-<summary>Exercise 2 — Generator pattern hint</summary>
+<summary>Exercise 6 — MergeN: nil channel select pattern</summary>
 
 ```go
-func Generate(n int) <-chan int {
-    ch := make(chan int)
-    go func() {
-        defer close(ch)   // always close when done!
-        for i := 1; i <= n; i++ {
-            ch <- i
+// Setting a channel to nil in a select makes that case block forever.
+// Use this to "disable" closed channels:
+for i, ch := range channels {
+    select {
+    case v, ok := <-ch:
+        if !ok {
+            channels[i] = nil  // disable this case
+            alive--
+        } else {
+            out <- v
         }
-    }()
-    return ch
+    default:
+    }
 }
 ```
-The goroutine runs in the background; the caller ranges over the returned channel.
+This is the Go idiom for dynamically controlling select behavior without WaitGroup.
 </details>
 
 <details>
-<summary>Exercise 5 — WithTimeout select hint</summary>
+<summary>Exercise 7 — Semaphore: buffered channel as concurrency limiter</summary>
+
+```go
+sem := make(chan struct{}, maxConcurrent)
+sem <- struct{}{}         // acquire — blocks when limit reached
+defer func() { <-sem }()  // release — frees slot
+```
+Buffer capacity = max concurrent goroutines. Simple and elegant.
+</details>
+
+<details>
+<summary>Exercise 9 — TrySend/TryReceive: select with default</summary>
 
 ```go
 select {
-case v := <-ch:
-    return v, true
-case <-time.After(time.Duration(maxWaitMs) * time.Millisecond):
-    return 0, false
+case ch <- val:
+    return true   // send succeeded
+default:
+    return false  // channel not ready — don't block
 }
 ```
-`select` picks whichever case is ready first — either a value arrives, or the timeout fires.
+Under the hood: selectgo() polls once, sees default, returns immediately.
+</details>
+
+<details>
+<summary>Exercise 10 — SafeGenerator: context cancellation</summary>
+
+```go
+select {
+case <-ctx.Done():
+    return           // context cancelled — exit goroutine
+case ch <- value:
+    // sent successfully
+}
+```
+Always check `ctx.Done()` in select alongside channel ops. This prevents goroutine leaks.
+</details>
+
+<details>
+<summary>Exercise 11 — OrDone: the double-select pattern</summary>
+
+```go
+// Outer select: receive from in or notice cancellation
+case v, ok := <-in:
+    // Inner select: forward to out or notice cancellation
+    select {
+    case out <- v:
+    case <-ctx.Done():
+        return
+    }
+```
+Why inner select? Without it, blocking on `out <- v` ignores cancellation.
 </details>
 
 <details>
@@ -118,7 +186,17 @@ case <-time.After(time.Duration(maxWaitMs) * time.Millisecond):
 | Fan-out / fan-in patterns | Struct field protection |
 
 Go proverb: *"Don't communicate by sharing memory; share memory by communicating."*
+
+But also: *"Channels orchestrate; mutexes serialize."*  
+For simple counters, `sync/atomic` is 5-10x faster than channels.
 </details>
+
+---
+
+## 📖 Deep Dive
+
+For runtime internals (hchan, sudog, selectgo algorithm, performance costs):  
+[`learnings/07_channels_internals.md`](../../learnings/07_channels_internals.md)
 
 ---
 
