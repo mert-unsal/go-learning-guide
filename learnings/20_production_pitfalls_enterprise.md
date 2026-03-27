@@ -825,18 +825,158 @@ Dependencies flow inward — outer layers depend on inner layers, never the reve
   └─ cmd/main.go imports everything (the composition root)
 ```
 
-### Why `internal/` Matters
+### Why `internal/` Matters — Compiler-Enforced Privacy
 
-The `internal/` directory is **compiler-enforced** — only the parent module can import
-packages under `internal/`. This means:
+The `internal/` directory is **not a convention — it's enforced by the Go toolchain**.
+The compiler refuses to build if you violate it. No linter needed, no config file — it's
+baked into `cmd/go/internal/load/pkg.go`.
 
 ```
-  myservice/internal/domain/user.go  → importable by myservice/cmd/api-server
-  myservice/internal/domain/user.go  → NOT importable by ANY other module
+  myservice/internal/domain/user.go  → importable by myservice/cmd/api-server  ✅
+  myservice/internal/domain/user.go  → NOT importable by ANY other module      ❌
 
-  This is Go's answer to "package-private" in Java.
-  No keyword needed — just directory placement.
+  Compiler error:
+  "use of internal package myservice/internal/domain not allowed"
 ```
+
+#### The Parent-Scoping Rule
+
+This is the part most engineers miss. The `internal/` boundary is scoped to its
+**immediate parent directory**, not the module root:
+
+```
+  mymodule/
+  ├── internal/                    ← parent = mymodule/ (module root)
+  │   └── config/                  ← ANY package in mymodule can import
+  │
+  ├── api/
+  │   ├── internal/                ← parent = api/
+  │   │   └── validator/           ← ONLY api/ subtree can import
+  │   └── handler/                 ← ✅ can import api/internal/validator
+  │
+  ├── worker/
+  │   ├── internal/                ← parent = worker/
+  │   │   └── retry/               ← ONLY worker/ subtree can import
+  │   └── processor/               ← ✅ can import worker/internal/retry
+  │
+  └── cmd/
+      └── server/                  ← ✅ can import internal/config
+                                   ← ❌ CANNOT import api/internal/validator
+                                   ← ❌ CANNOT import worker/internal/retry
+```
+
+The toolchain walks the import path segments. If `internal` appears in the path,
+it checks whether the importing package's directory is a descendant of `internal/`'s
+parent. If not — **compile error, full stop**.
+
+#### Layered Privacy in Practice
+
+This enables **team-level boundaries** in large codebases:
+
+```
+  ┌─────────────────────────────────────────────────────────┐
+  │                  internal/config/                        │
+  │              module-wide shared config                   │
+  │         (any package in the module can import)           │
+  └───────────────┬─────────────────────┬───────────────────┘
+                  │                     │
+    ┌─────────────▼──────────┐ ┌───────▼─────────────────┐
+    │      api/ subtree      │ │     worker/ subtree      │
+    │                        │ │                           │
+    │  api/internal/         │ │  worker/internal/         │
+    │    validator/          │ │    retry/                  │
+    │    ratelimit/          │ │    deadletter/             │
+    │                        │ │                           │
+    │  api/handler/   ✅     │ │  worker/processor/  ✅    │
+    │  api/middleware/ ✅    │ │  worker/consumer/   ✅    │
+    └────────────────────────┘ └───────────────────────────┘
+           ❌ cross-boundary imports blocked by compiler
+```
+
+The API team's validation logic stays invisible to the worker team.
+The worker's retry/dead-letter logic stays invisible to the API team.
+Shared infrastructure (config, logging) lives in module-root `internal/`.
+
+### The `pkg/` Debate — Convention vs Noise
+
+Unlike `internal/`, the `pkg/` directory has **zero compiler enforcement**.
+It's purely a signal to humans: "these packages are designed for external consumption."
+
+```go
+  // Both are identical to the compiler:
+  import "mymodule/pkg/client"
+  import "mymodule/client"
+```
+
+#### Why The Community Is Moving Away From `pkg/`
+
+The Go community has shifted against `pkg/`. Here's the timeline:
+
+```
+  2014-2018: pkg/ widely adopted (Kubernetes, Docker, Prometheus)
+             Rationale: "clear signal of public API"
+
+  2019+:     Pushback from Go team and community
+             Russ Cox: "internal/ for private. Everything else is public.
+                        pkg/ just adds a useless directory level."
+
+  2020+:     Docker removed their pkg/ directory
+             New projects avoid it
+             Kubernetes regrets it but can't change (backward compat)
+```
+
+#### The Arguments
+
+```
+  Pro-pkg/:
+  ├─ Clear boundary: "this is our public API" vs implementation details
+  ├─ New contributors immediately know what they can depend on
+  └─ Prevents accidental exposure of internals
+
+  Anti-pkg/ (winning position):
+  ├─ Redundant: if it's NOT in internal/, it's already public
+  ├─ Adds noise: deeper import paths for no compiler benefit
+  ├─ The Go standard library doesn't use pkg/
+  ├─ Russ Cox explicitly recommends against it
+  └─ You can't un-adopt it without breaking all importers
+```
+
+#### When `pkg/` Still Makes Sense
+
+Despite the debate, `pkg/` can be valuable in **one specific case**:
+a module that is primarily a **service** (cmd/) but also exposes a **client SDK**:
+
+```
+  myservice/
+  ├── cmd/server/main.go            ← the service
+  ├── internal/                     ← service implementation (private)
+  │   ├── handler/
+  │   └── repository/
+  └── pkg/                          ← client library (public API)
+      └── client/
+          └── client.go             ← SDK for other services to call yours
+```
+
+Here `pkg/` clearly separates "this is what we export" from "this is our service."
+But if your module IS a library (no cmd/), everything is public — `pkg/` is noise.
+
+### When Do These Boundaries Matter?
+
+```
+  ┌──────────────────────────────┬────────────────────────────────┐
+  │ Scenario                     │ Do you need internal/?          │
+  ├──────────────────────────────┼────────────────────────────────┤
+  │ Learning/reference repo      │ No — nobody imports your code  │
+  │ CLI tool (single binary)     │ Yes — clean architecture       │
+  │ Library published on pkg.dev │ Absolutely — API stability     │
+  │ Microservice at company      │ Yes — prevents tight coupling  │
+  │ Monorepo with multiple teams │ Yes + nested internal/         │
+  └──────────────────────────────┴────────────────────────────────┘
+```
+
+The key insight: `internal/` is **API stability insurance**. Once you export a package,
+changing it is a breaking change. `internal/` lets you iterate freely on implementation
+without worrying about external consumers.
 
 ---
 
