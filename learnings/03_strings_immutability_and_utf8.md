@@ -366,17 +366,55 @@ for _, r := range string(b) { ... }  // compiler: decode UTF-8 in-place
 
 ### Zero-Copy Conversion (Go 1.20+ — `unsafe`)
 
-When you're **sure** the byte slice won't be modified:
+Normal `[]byte → string` conversion **always copies** to preserve immutability:
+
+```
+[]byte b                            string s = string(b)
+
+┌──────────────────┐               ┌──────────────────┐
+│ ptr ──────────┐  │               │ ptr ──────────┐  │
+│ len: 5        │  │               │ len: 5        │  │
+└───────────────┼──┘               └───────────────┼──┘
+                ↓                                  ↓
+  Memory block A:                    Memory block B:     ← NEW allocation
+  [h][e][l][l][o]                    [h][e][l][l][o]     ← bytes COPIED
+```
+
+Go must copy because `[]byte` is mutable — if they shared memory, modifying `b[0]`
+would silently change the "immutable" string.
+
+`unsafe.String` skips the copy entirely — the string header points directly at the
+byte slice's backing array:
 
 ```go
 import "unsafe"
 
 b := []byte("hello")
-s := unsafe.String(&b[0], len(b))  // zero-copy: s points to b's backing array
-// ⚠️ DANGER: modifying b now corrupts s — violates string immutability
+s := unsafe.String(&b[0], len(b))  // NO copy, NO allocation
 ```
 
-Use only in performance-critical code where you control the byte slice lifecycle.
+```
+[]byte b                          string s
+
+┌──────────────────┐             ┌──────────────────┐
+│ ptr ──────────┐  │             │ ptr ──────────┐  │
+│ len: 5        │  │             │ len: 5        │  │
+└───────────────┼──┘             └───────────────┼──┘
+                ↓                                ↓
+                └───────── SAME memory ──────────┘
+                  [h][e][l][l][o]
+```
+
+**The danger**: modifying the byte slice now corrupts the "immutable" string:
+
+```go
+b[0] = 'X'
+fmt.Println(s)   // prints "Xello" — immutability VIOLATED
+```
+
+Use only in performance-critical code where you control the byte slice lifecycle
+and can guarantee no further modifications (e.g., pprof shows `slicebytetostring`
+allocations as a bottleneck at high RPS).
 
 ---
 
@@ -458,6 +496,89 @@ s := b.String()
 same strategy as slices (2x, then ~1.25x). The final `String()` call uses
 `unsafe.String` to convert the `[]byte` to a `string` **without copying** — this is
 safe because Builder ensures the bytes won't be modified after `String()` is called.
+
+#### How Builder Uses `unsafe.String` Safely
+
+The full lifecycle, step by step:
+
+```
+Step 1: Create             var b strings.Builder        (buf is nil)
+Step 2: Write              b.WriteString("hello")       (allocates buf, appends)
+Step 3: Write more         b.WriteString(" world")      (appends to buf)
+
+  Builder b
+  ┌──────────────────────┐
+  │ buf:                 │
+  │   ptr ─────────┐     │
+  │   len: 11      │     │
+  │   cap: 16      │     │
+  └────────────────┼─────┘
+                   ↓
+    [h][e][l][l][o][ ][w][o][r][l][d][_][_][_][_][_]
+     ←──── len: 11 ────→                ←─ spare ──→
+
+Step 4: Get string         s := b.String()
+
+  Builder b.buf              returned string s
+      │                           │
+      │   ptr ────────┐           │  ptr ────────┐
+      │   len: 11     │           │  len: 11     │
+      └───────────────┼───        └──────────────┼──
+                      ↓                          ↓
+                      └──── SAME memory ─────────┘
+                      [h][e][l][l][o][ ][w][o][r][l][d]
+
+  Zero copy. Zero allocation. s shares buf's backing array.
+
+Step 5: Done               Don't write to b anymore — s is safe
+```
+
+#### Builder's Copy Protection — The `addr` Trick
+
+Builder stores a pointer to **itself** to detect if someone copies the struct:
+
+```go
+// Simplified from Go source
+type Builder struct {
+    addr *Builder   // points to itself after first use
+    buf  []byte
+}
+
+func (b *Builder) copyCheck() {
+    if b.addr == nil {
+        b.addr = b               // first use: "I live at 0xABC"
+    } else if b.addr != b {
+        panic("strings: illegal use of non-zero Builder copied by value")
+    }
+}
+```
+
+Why? If you copy a Builder, both copies share the same `buf` backing array:
+
+```go
+b1 := strings.Builder{}
+b1.WriteString("hello")
+b2 := b1                    // struct copy — b2.buf points to same array!
+b2.WriteString("DANGER")    // would corrupt b1's data → PANICS instead
+```
+
+```
+b1                                b2 (COPY)
+┌──────────────────┐             ┌──────────────────┐
+│ addr: &b1        │             │ addr: &b1 ← stale│
+│ buf → ───────┐   │             │ buf → ───────┐   │
+└──────────────┼───┘             └──────────────┼───┘
+               ↓                                ↓
+               └────── SAME backing array ──────┘
+
+copyCheck: &b2 != b2.addr (&b1) → PANIC
+```
+
+Every write method calls `copyCheck()`. Copied Builder detected → panic.
+
+> **Design insight**: This is classic Go pragmatism. Rust would prevent this at
+> compile time with ownership rules. Go says: "panic at runtime, the name is
+> `unsafe`, you've been warned." Simple, clear, your responsibility.
 
 ### `fmt.Sprintf` — Convenient But Slow
 
