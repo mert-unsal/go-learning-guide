@@ -102,6 +102,69 @@ level, the backing bytes for string literals live in the `.rodata` (read-only da
 section of the binary. Attempting to write there via `unsafe` would cause a **segfault**
 from the OS memory protection.
 
+### String Pass-By-Value and Goroutine Safety
+
+Go passes the string **header** (16 bytes) by value. But the pointer inside still
+points to the **same backing bytes**. This is safe ONLY because strings are immutable:
+
+```
+  func process(s string) { ... }
+
+  go process(greeting)
+
+  Main goroutine stack:       New goroutine stack:
+  ┌─────────────────┐        ┌─────────────────┐
+  │ greeting.ptr ────┼───┐   │ s.ptr ───────────┼───┐
+  │ greeting.len = 5 │   │   │ s.len = 5        │   │
+  └─────────────────┘   │   └─────────────────┘   │
+                         │                          │
+                         ▼                          ▼
+                  ┌──────────────────────────┐
+                  │  "hello" (read-only)     │  ← SHARED backing bytes
+                  │  in .rodata segment      │     but nobody can write
+                  └──────────────────────────┘
+```
+
+Both goroutines hold **separate header copies** pointing to the **same bytes**.
+This is a data race in languages with mutable strings — but safe in Go because:
+
+1. **Compiler blocks** `s[0] = 'X'` — won't compile
+2. **OS blocks** writes to `.rodata` — hardware-level protection (segfault)
+3. **Reassignment** `s = "world"` creates a new header + new backing bytes,
+   leaving the other goroutine's view completely untouched
+
+```go
+  greeting := "hello"
+  go func() {
+      greeting = "world"  // ← new header + new backing array allocated
+                          //   does NOT modify the "hello" bytes
+                          //   but WARNING: this IS a data race on the
+                          //   header variable itself (not the bytes)
+  }()
+```
+
+**Critical distinction:** the backing bytes are always safe to share.
+But the header variable (the 16-byte struct on the stack) is still subject to
+data races if multiple goroutines read/write it without synchronization.
+The fix: pass by value (function argument), use a channel, or use sync.
+
+**Compare with `[]byte` — why slices are dangerous to share:**
+
+```go
+  data := []byte("hello")
+  go func() {
+      data[0] = 'H'    // ← DATA RACE! Modifying shared backing array
+  }()
+  fmt.Println(data)     // ← DATA RACE! Reading while goroutine writes
+```
+
+Slices are mutable → shared backing array → data race.
+Strings are immutable → shared backing array → perfectly safe.
+
+This is Go's design: **strings trade mutation convenience for concurrency safety**.
+When you need to mutate, convert to `[]byte`, do your work, convert back to `string`.
+The conversion copies the bytes — creating a new, independent mutable buffer.
+
 ### The Cost of Immutability
 
 Every "modification" creates a **new string** with a **new backing array**:
