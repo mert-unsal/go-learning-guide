@@ -1,52 +1,67 @@
 package maps
+
 // ============================================================
 // EXERCISES — 09 Maps
 // ============================================================
+
 // Exercise 1:
-// Count the frequency of each character in a string.
-// Return a map[rune]int.
-// Example: "hello" → {h:1, e:1, l:2, o:1}
+// CharFrequency counts the frequency of each character in a string.
+//
+// LESSON: `range` over a string gives (byte index, rune) — not (index, byte).
+// Runes handle Unicode correctly. "hello" → map[rune]int{'h':1, 'e':1, 'l':2, 'o':1}
 func CharFrequency(s string) map[rune]int {
-// TODO: range over string gives (index, rune)
-return nil
+	// TODO: iterate runes, count each in a map
+	panic("not implemented")
 }
+
 // Exercise 2:
-// Given a slice of strings, group them by their first character.
-// Return map[byte][]string.
-// Example: ["ant","bat","bee","ape"] → {a:["ant","ape"], b:["bat","bee"]}
+// GroupByFirstChar groups words by their first character.
+//
+// LESSON: Map of slices — the value is itself a slice. You must append to it.
+// The zero value of a slice is nil, and append(nil, x) works fine.
 func GroupByFirstChar(words []string) map[byte][]string {
-// TODO: use map[byte][]string, append to each group
-return nil
+	// TODO: group words by w[0] (first byte — fine for ASCII)
+	panic("not implemented")
 }
+
 // Exercise 3:
-// Return the two most frequent elements in the slice.
-// If there's a tie, return either order.
-// Example: [1,1,2,2,3] → [1,2] (both have freq 2)
+// TopTwoFrequent returns the two most frequent elements.
+//
+// LESSON: Two-pass approach: first build a frequency map, then scan for top-2.
+// Alternative: use a heap (see patterns/). For exactly top-2, scanning is simpler.
 func TopTwoFrequent(nums []int) []int {
-// TODO: count frequencies, then find top 2
-return nil
+	// TODO: build frequency map, then find top two by count
+	panic("not implemented")
 }
+
 // Exercise 4:
-// Check if two strings are anagrams of each other.
-// An anagram uses the same characters the same number of times.
-// Example: "listen","silent" → true   "hello","world" → false
+// IsAnagram checks if two strings are anagrams.
+//
+// LESSON: Classic map technique — count up for s, count down for t.
+// If every count returns to 0, they use the same characters the same number of times.
+// O(n) time, O(k) space where k = number of unique characters.
 func IsAnagram(s, t string) bool {
-// TODO: count chars in s, subtract for t, check all zero
-return false
+	// TODO: count chars in s, decrement for t, check all zero
+	panic("not implemented")
 }
+
 // Exercise 5:
-// Given a slice of integers, return the first integer that appears
-// more than once. Return -1 if no duplicates exist.
-// Example: [4,3,2,7,8,2,3,1] → 2
+// FirstDuplicate returns the first integer that appears more than once.
+//
+// LESSON: "Seen set" pattern — use map[T]bool (or map[T]struct{}) as a set.
+// map[T]struct{} uses slightly less memory (empty struct = 0 bytes),
+// but map[T]bool is more readable.
 func FirstDuplicate(nums []int) int {
-// TODO: use a map[int]bool as a "seen" set
-return -1
+	// TODO: use a seen set, return first repeated element (or -1)
+	panic("not implemented")
 }
+
 // Exercise 6:
-// Word count — given a sentence, return a map of word→count.
-// Words are separated by spaces.
-// Example: "go is go" → {go:2, is:1}
+// WordCount counts occurrences of each word in a sentence.
+//
+// LESSON: strings.Fields splits on any whitespace (spaces, tabs, newlines).
+// Prefer it over strings.Split(s, " ") which doesn't handle multiple spaces.
 func WordCount(sentence string) map[string]int {
-// TODO: split by space, count each word
-return nil
+	// TODO: split sentence into words, count each
+	panic("not implemented")
 }

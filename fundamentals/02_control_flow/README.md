@@ -25,6 +25,9 @@
 | `for range` over strings/slices | `concepts.go` + Exercise 3 |
 | Early return & `break` inside loops | Exercise 4 |
 | `defer` — LIFO execution order | `concepts.go` + Exercise 5 |
+| `defer` — arguments evaluated at defer time | `concepts.go` → `DemonstrateDefereArgumentEvaluation()` |
+| `defer` — can modify named return values | `concepts.go` → `deferWithNamedReturn()` |
+| `defer` — loop gotcha & the fix | `concepts.go` → `deferInLoop()` |
 
 ---
 
@@ -118,6 +121,37 @@ for i := 2; i*i <= n; i++ {
 Defers execute in **reverse order** (last-in, first-out). The answer is simply:
 ```go
 return []string{"third", "second", "first"}
+```
+
+📌 **Bonus — Interview traps to know (see `concepts.go`):**
+
+**Trap 1 — Arguments are captured at defer time:**
+```go
+x := 10
+defer fmt.Println("x =", x) // captures x=10 RIGHT NOW
+x = 99
+// Output: "x = 10", not 99 !
+```
+
+**Trap 2 — Defer can modify named return values:**
+```go
+func foo() (result string) {
+    defer func() { result = "changed" }()
+    return "original" // gets overwritten — final return is "changed"
+}
+```
+
+**Trap 3 — Never defer inside a loop for resources:**
+```go
+for i := range files {
+    defer file.Close() // BAD: all close at end of function, not each iteration
+}
+// FIX: wrap in an anonymous function:
+for i := range files {
+    func() {
+        defer file.Close() // closes after each anonymous call
+    }()
+}
 ```
 </details>
 
