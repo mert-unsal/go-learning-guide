@@ -4,7 +4,7 @@
 
 A structured, hands-on Go curriculum with **runtime-level deep dives**. No boilerplate explanations, no trivial information — only details worth mentioning.
 
-This repository covers Go language fundamentals, runtime internals, algorithm patterns, 200+ LeetCode/HackerRank problems, and production engineering practices.
+This repository covers Go language fundamentals, runtime internals, algorithm patterns, 200+ coding problems, and production engineering practices.
 
 ---
 
@@ -16,8 +16,7 @@ go-interview-prep/
 ├── fundamentals/   ← Go language core — concepts, exercises, tests
 ├── stdlib/         ← Standard library deep-dives (7 packages, 37 exercises)
 ├── patterns/       ← Algorithm pattern templates (9 patterns)
-├── leetcode/       ← 200+ problems across 14 categories
-├── hackerrank/     ← 15 problems (Easy → Hard)
+├── problems/       ← 200+ coding problems across 14 categories
 ├── practical/      ← Real-world Go: Docker, debugging, config, performance
 ├── tools/          ← md2pdf — generates the companion PDF book
 └── utils/          ← Shared helpers (ListNode, TreeNode, etc.)
@@ -96,32 +95,24 @@ Each package contains `concepts.go` (annotated examples), `exercises.go` (implem
 | Union-Find | path compression + union by rank |
 | Heap | `container/heap` interface |
 
-### LeetCode (`leetcode/`) — 200+ Problems
+### Coding Problems (`problems/`) — 200+ Problems
 
 | # | Category | Count | Key Problems |
 |---|----------|:-----:|-------------|
-| 01 | Arrays | 34 | Two Sum, Max Subarray, Product Except Self |
-| 02 | Strings | 22 | Valid Anagram, Group Anagrams, Longest Substring |
-| 03 | Linked List | 25 | Reverse, Merge Two, Detect Cycle |
-| 04 | Stacks & Queues | 15 | Valid Parens, Min Stack, Largest Rectangle |
-| 05 | Binary Search | 15 | Search Rotated, Median of Two Arrays |
-| 06 | Sliding Window | 12 | Min Window Substring, Fruit Baskets |
-| 07 | Trees | 10 | Level Order, Validate BST, LCA |
+| 01 | Arrays | 25 | Two Sum, Max Subarray, Array Manipulation, Almost Sorted |
+| 02 | Strings | 18 | Valid Anagram, Group Anagrams, Encryption, Sherlock Valid String |
+| 03 | Linked List | 14 | Reverse, Merge Two, Detect Cycle |
+| 04 | Stacks & Queues | 10 | Valid Parens, Min Stack, Largest Rectangle |
+| 05 | Binary Search | 11 | Search Rotated, Climbing Leaderboard |
+| 06 | Sliding Window | 7 | Min Window Substring, Fruit Baskets |
+| 07 | Trees | 4 | Level Order, Validate BST, LCA |
 | 08 | Graphs | 6 | Number of Islands, Course Schedule |
-| 09 | Dynamic Prog | 7 | Coin Change, LIS, Word Break |
+| 09 | Dynamic Prog | 8 | Coin Change, LIS, Jumping on Clouds |
 | 10 | Two Pointers | 7 | 3Sum, Container With Most Water |
 | 11 | Hard | 13 | N-Queens, Edit Distance, Alien Dictionary |
 | 12 | Backtracking | 9 | Permutations, Subsets |
 | 13 | Bit Manipulation | 9 | Single Number, Counting Bits |
 | 14 | Heap | 7 | Top K Frequent, Merge K Lists |
-
-### HackerRank (`hackerrank/`)
-
-| Difficulty | Problems |
-|------------|---------|
-| Easy | Mini-Max Sum, FizzBuzz, Diagonal Difference, Counting Valleys, Caesar Cipher, Pangrams, and more |
-| Medium | Encryption, Sherlock Valid String, Climbing Leaderboard |
-| Hard | Array Manipulation (Difference Array) |
 
 ### Practical Engineering (`practical/`)
 
