@@ -18,7 +18,7 @@ debugging and enterprise patterns.
 |---|----------|-------------------|
 | 01 | [Slices: The Three-Word Header](./01_slices_three_word_header.md) | Slice header `{ptr, len, cap}`, `runtime.growslice`, append algorithm, backing array sharing, memory leaks |
 | 02 | [Maps: Buckets, Growth & the Never-Shrink Truth](./02_maps_buckets_and_growth.md) | `runtime.hmap`, buckets, tophash, load factor 6.5, incremental evacuation, concurrent access fatals |
-| 03 | [Strings: Immutability, UTF-8 & the Substring Trap](./03_strings_immutability_and_utf8.md) | 2-word header, runes vs bytes, substring memory leaks, concatenation costs, `strings.Builder` |
+| 03 | [Strings](./03_strings.md) | 2-word header, runes vs bytes, substring memory leaks, concatenation costs, `strings.Builder`, interface boxing → production logging (zap/slog case study) |
 
 ### Part II — Functions, Closures & Variables
 
