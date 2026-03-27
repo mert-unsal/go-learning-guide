@@ -77,6 +77,7 @@ debugging and enterprise patterns.
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
 | 21 | [Go Design Philosophy: The Connected Architecture](./21_go_design_philosophy.md) | How immutability, interfaces, value semantics, and CSP concurrency form one coherent system |
+| 22 | [The Middleware Pattern: Function Types, Closures & Interface Composition](./22_middleware_pattern.md) | Methods on function types, HandlerFunc adapter, closure capture in middleware, Java comparison, production middleware stacks |
 
 ---
 
