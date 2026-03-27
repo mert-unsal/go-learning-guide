@@ -684,7 +684,7 @@ func combine(a, b string) string {
 }
 ```
 
-### Passing Strings to `interface{}`
+### Passing Strings to `interface{}` — The Boxing Cost
 
 ```go
 func log(msg string) {
@@ -693,7 +693,90 @@ func log(msg string) {
 ```
 
 Same principle as slices — boxing into an `eface` requires a heap pointer.
-For hot-path logging, structured loggers like `slog` avoid this by using typed methods.
+Every value passed to `fmt.Println(a ...any)` gets boxed:
+
+```
+Your int 42:                          Boxed into any (eface):
+  just 8 bytes on stack               ┌──────────────────┐
+  ┌─────┐                             │ type: *intType   │
+  │  42 │               →             │ data: ptr ───────┼→ heap: [42]  ← allocation!
+  └─────┘                             └──────────────────┘
+
+Your string "hello":                  Boxed into any (eface):
+  16 bytes on stack                    ┌──────────────────┐
+  ┌──────────────┐                     │ type: *stringType│
+  │ ptr → bytes  │       →            │ data: ptr ───────┼→ heap: {ptr, len}  ← alloc!
+  │ len: 5       │                     └──────────────────┘
+  └──────────────┘
+```
+
+At 10k RPS logging 5 fields each → 50k interface boxing allocations/sec → GC pressure.
+
+#### How `slog` Avoids Boxing — Typed Methods
+
+`slog` defines a concrete `Value` struct that stores numeric types **directly**
+without interface boxing:
+
+```go
+// slog's Value — from log/slog/value.go
+type Value struct {
+    any  any       // only used for strings/groups (can't avoid)
+    num  uint64    // int64, float64, bool, Duration stored HERE directly
+    kind Kind      // type tag: KindString, KindInt64, KindFloat64, etc.
+}
+```
+
+The key insight: `int64`, `float64`, `bool`, and `Duration` are all ≤ 8 bytes —
+they fit directly in the `uint64` field via bit-casting:
+
+```go
+// Typed constructors — NO interface{} in the hot path for numerics
+slog.Int("status", 200)         // 200 → Value{num: 200, kind: KindInt64}   → 0 allocs
+slog.Float64("lat", 3.14)       // 3.14 → Value{num: Float64bits(3.14)}     → 0 allocs
+slog.Bool("cached", true)       // true → Value{num: 1, kind: KindBool}     → 0 allocs
+```
+
+```
+fmt approach:                         slog approach:
+
+  int 42 → box into eface:             int 42 → store directly:
+  ┌──────────────┐                     ┌──────────────────┐
+  │ type: *int   │                     │ kind: KindInt64  │
+  │ data: ptr ───┼→ heap: [42]         │ num:  42         │  ← NO heap!
+  └──────────────┘  ↑ allocation!      └──────────────────┘
+```
+
+#### Why Strings Still Box in slog
+
+A string header is 16 bytes (`{ptr, len}`). The `num` field is `uint64` — only 8 bytes.
+You can't fit 16 bytes into 8. So strings must go into the `any` field:
+
+```go
+slog.String("user", userID)     // → Value{any: userID, kind: KindString}  → 1 alloc
+```
+
+Could the Go team have added two `uint64` fields (one for pointer, one for length)?
+Yes, but that would make **every** `Value` 40 bytes instead of 32 — even for ints
+and bools. The tradeoff: optimize struct size for all types, accept one allocation
+for strings.
+
+#### The Production Math
+
+```
+Per log line with 5 fields (2 strings, 2 ints, 1 bool):
+
+  fmt.Sprintf:  reflection + parsing + 5 boxing ops      → ~8-10 allocs
+  slog:         2 string boxes + 0 numeric boxes          → 2 allocs
+  zap:          same pattern as slog (independently designed) → 2 allocs
+
+At 50k RPS:
+  fmt:  ~400k allocs/sec → GC runs frequently → p99 latency spikes
+  slog: ~100k allocs/sec → 75% reduction → smoother GC
+```
+
+This is why Uber built `zap` with the same typed-method pattern (`zap.String()`,
+`zap.Int()`) years before `slog` was added to the stdlib. The allocation cost of
+`interface{}` boxing is a known production bottleneck in high-throughput services.
 
 ---
 
