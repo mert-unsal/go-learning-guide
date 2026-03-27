@@ -72,6 +72,12 @@ debugging and enterprise patterns.
 |---|----------|-------------------|
 | 20 | [Production Pitfalls & Enterprise Patterns](./20_production_pitfalls_enterprise.md) | Top 15 production bugs, library comparison, project structure, graceful shutdown, Docker builds |
 
+### Part IX — Design Philosophy (Living Document)
+
+| # | Document | What You'll Learn |
+|---|----------|-------------------|
+| 21 | [Go Design Philosophy: The Connected Architecture](./21_go_design_philosophy.md) | How immutability, interfaces, value semantics, and CSP concurrency form one coherent system |
+
 ---
 
 ## How to Use These Documents
