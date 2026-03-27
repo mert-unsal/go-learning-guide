@@ -114,8 +114,7 @@ go test ./fundamentals/... -v
 ### Next steps — choose your path:
 | Path | Command |
 |------|---------|
-| 🧩 LeetCode problems | `go test ./leetcode/... -v` |
-| 🏆 HackerRank problems | `go test ./hackerrank/... -v` |
+| 🧩 Coding problems | `go test ./problems/... -v` |
 | 🔧 Practical Go (Docker, config, deploy) | Browse `practical/` folder |
 | 📖 Stdlib deep-dive | Browse `stdlib/` folder |
 
