@@ -112,6 +112,8 @@ class BookConfig:
         self.source_dir = "."
         self.output = "book.pdf"
         self.howto_text = ""       # Custom "How to Use" content (markdown)
+        self.author_page = ""      # "About the Author" content (markdown, after cover)
+        self.references_page = ""  # "References" content (markdown, at the end)
         self.parts = []            # [{"name": "Part I", "chapters": [{"file", "short"}, ...]}]
         self.chrome_path = ""
 
@@ -138,7 +140,8 @@ class BookConfig:
             data = json.load(f)
 
         for key in ["title", "subtitle", "author", "description", "subject",
-                     "keywords", "source_dir", "output", "howto_text", "chrome_path"]:
+                     "keywords", "source_dir", "output", "howto_text",
+                     "author_page", "references_page", "chrome_path"]:
             if key in data:
                 setattr(cfg, key, data[key])
 
@@ -397,6 +400,35 @@ h1 + *, h2 + *, h3 + *, h4 + * {{ break-before: avoid; }}
     font-weight: 700; color: #1a56db; white-space: nowrap;
 }}
 
+/* ── About the Author ──────────────────────────────────────── */
+.author-page h1 {{
+    text-align: center; border-bottom: none; margin-bottom: 28px;
+}}
+.author-page .author-name {{
+    font-size: 18pt; font-weight: 700; color: #1a56db;
+    text-align: center; margin-bottom: 4px;
+}}
+.author-page .author-role {{
+    font-size: 11pt; color: #666; text-align: center;
+    margin-bottom: 28px; font-style: italic;
+}}
+.author-page h3 {{ color: #1a56db; font-size: 13pt; margin-top: 24px; }}
+.author-page .github-link {{
+    display: inline-block; margin-top: 12px; padding: 8px 20px;
+    background: #1a56db; color: white !important; border-radius: 6px;
+    font-weight: 600; font-size: 11pt; text-decoration: none;
+}}
+
+/* ── References ────────────────────────────────────────────── */
+.references-page h1 {{
+    text-align: center; border-bottom: none; margin-bottom: 28px;
+}}
+.references-page h3 {{
+    color: #1a56db; font-size: 13pt; margin-top: 22px;
+    border-bottom: 1px solid #e0e0e0; padding-bottom: 4px;
+}}
+.references-page li {{ margin-bottom: 6px; }}
+
 /* ── Table of Contents ─────────────────────────────────────── */
 .toc h1 {{ text-align: center; border-bottom: none; margin-bottom: 28px; }}
 .toc-part-title {{
@@ -518,6 +550,22 @@ def build_howto(cfg: BookConfig) -> str:
     </div>"""
 
 
+def build_author_page(cfg: BookConfig) -> str:
+    """Build 'About the Author' page from config markdown content."""
+    if not cfg.author_page:
+        return ""
+    content = md_to_html(cfg.author_page)
+    return f'<div class="author-page chapter-break"><h1>About the Author</h1>{content}</div>'
+
+
+def build_references_page(cfg: BookConfig) -> str:
+    """Build 'References' page from config markdown content."""
+    if not cfg.references_page:
+        return ""
+    content = md_to_html(cfg.references_page)
+    return f'<div class="references-page chapter-break"><h1>References &amp; Resources</h1>{content}</div>'
+
+
 def build_toc(cfg: BookConfig, page_map: dict = None) -> str:
     """Build clickable Table of Contents. page_map: {chapter_id: page_number}."""
     entries = []
@@ -543,10 +591,23 @@ def build_toc(cfg: BookConfig, page_map: dict = None) -> str:
 def build_full_html(cfg: BookConfig, chapters_content: list, page_map: dict = None) -> str:
     """Assemble the complete HTML document."""
     css = build_css(cfg)
-    parts = [build_cover(cfg), build_howto(cfg), build_toc(cfg, page_map)]
+    parts = [build_cover(cfg)]
+
+    # Author page (right after cover, before How to Use)
+    author_html = build_author_page(cfg)
+    if author_html:
+        parts.append(author_html)
+
+    parts.append(build_howto(cfg))
+    parts.append(build_toc(cfg, page_map))
 
     for ch_id, html_content in chapters_content:
         parts.append(f'<div id="{ch_id}" class="chapter-break">\n{html_content}\n</div>')
+
+    # References page (at the very end)
+    refs_html = build_references_page(cfg)
+    if refs_html:
+        parts.append(refs_html)
 
     body = "\n".join(parts)
     # Empty <title> prevents Chrome from using it as a PDF header
@@ -744,20 +805,30 @@ def post_process(input_pdf: str, output_pdf: str, cfg: BookConfig,
                 )
 
     # ── Bookmarks ──
+    author_page = None
     howto_page = 2
     toc_page = 3
-    for pno in range(min(6, total)):
+    refs_page = None
+    for pno in range(min(8, total)):
         text = doc[pno].get_text()
+        if "About the Author" in text and pno + 1 != 1:
+            author_page = pno + 1
         if "How to Use This Book" in text and pno + 1 != 1:
             howto_page = pno + 1
         if "Table of Contents" in text and pno + 1 > 2:
             toc_page = pno + 1
+    # Search last few pages for References
+    for pno in range(max(0, total - 5), total):
+        text = doc[pno].get_text()
+        if "References" in text and "Resources" in text:
+            refs_page = pno + 1
 
-    toc_entries = [
-        [1, "Cover", 1],
-        [1, "How to Use This Book", howto_page],
-        [1, "Table of Contents", toc_page],
-    ]
+    toc_entries = [[1, "Cover", 1]]
+    if author_page:
+        toc_entries.append([1, "About the Author", author_page])
+    toc_entries.append([1, "How to Use This Book", howto_page])
+    toc_entries.append([1, "Table of Contents", toc_page])
+
     for part in cfg.parts:
         first_ch_id = part["chapters"][0]["id"]
         part_page = page_map.get(first_ch_id, 1)
@@ -765,6 +836,9 @@ def post_process(input_pdf: str, output_pdf: str, cfg: BookConfig,
         for ch in part["chapters"]:
             ch_page = page_map.get(ch["id"], 1)
             toc_entries.append([2, f'{ch["num"]} - {ch["short"]}', ch_page])
+
+    if refs_page:
+        toc_entries.append([1, "References & Resources", refs_page])
 
     doc.set_toc(toc_entries)
     print(f"  Added {len(toc_entries)} bookmarks")

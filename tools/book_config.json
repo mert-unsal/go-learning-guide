@@ -1,8 +1,8 @@
 {
   "title": "Go Under the Hood",
   "subtitle": "Deep Dive Series",
-  "author": "Go Interview Prep",
-  "description": "Runtime-level explanations of Go's core systems &mdash;<br>what the compiler and runtime <em>actually do</em> with your code.<div style='margin-top:18px;font-size:10pt;color:#666;letter-spacing:0.3px'>Slices &middot; Maps &middot; Strings &middot; Pointers &middot; Closures &middot; Interfaces &middot; Generics &middot; Error Handling<br>Goroutines &middot; Channels &middot; GC &middot; Memory &middot; Testing &middot; Debugging &middot; Production Patterns</div>",
+  "author": "Mert Unsal",
+  "description": "Runtime-level explanations of Go's core systems &mdash;<br>what the compiler and runtime <em>actually do</em> with your code.<div style='margin-top:18px;font-size:10pt;color:#666;letter-spacing:0.3px'>Slices &middot; Maps &middot; Strings &middot; Pointers &middot; Closures &middot; Interfaces &middot; Generics &middot; Error Handling<br>Goroutines &middot; Channels &middot; GC &middot; Memory &middot; Testing &middot; Debugging &middot; Production Patterns</div><div style='margin-top:24px;font-size:10pt;color:#888'>by Mert Unsal</div>",
   "subject": "Runtime-level explanations of Go's core systems",
   "keywords": "Go, Golang, internals, runtime, compiler, concurrency, goroutines, channels, GC, memory, production",
   "source_dir": "../learnings",
