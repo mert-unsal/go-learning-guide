@@ -78,6 +78,7 @@ debugging and enterprise patterns.
 |---|----------|-------------------|
 | 21 | [Go Design Philosophy: The Connected Architecture](./21_go_design_philosophy.md) | How immutability, interfaces, value semantics, and CSP concurrency form one coherent system |
 | 22 | [The Middleware Pattern: Function Types, Closures & Interface Composition](./22_middleware_pattern.md) | Methods on function types, HandlerFunc adapter, closure capture in middleware, Java comparison, production middleware stacks |
+| 23 | [Production Patterns: The Five Pillars of Go Architecture](./23_production_patterns.md) | Functional options, graceful shutdown, interface-based DI, table-driven tests — how production Go services are built |
 
 ---
 

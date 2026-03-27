@@ -1140,6 +1140,80 @@ func fanIn(sources ...<-chan int) <-chan int {
 
 `select` is the most complex channel operation. It multiplexes across multiple channels.
 
+### Select is NOT Switch — The Mental Model
+
+`switch` evaluates cases **top to bottom** and runs the first match.
+`select` evaluates ALL cases **simultaneously** and runs whichever channel is ready.
+
+```
+  switch:                          select:
+  ┌────────────────┐               ┌────────────────────────────────┐
+  │ case a:  ← 1st │               │ case <-ch1:  ← checked        │
+  │ case b:  ← 2nd │               │ case <-ch2:  ← simultaneously │
+  │ case c:  ← 3rd │               │ case ch3<-v: ← with all others│
+  │ default:       │               │ default:                       │
+  └────────────────┘               └────────────────────────────────┘
+  First true case wins.            First READY channel wins.
+  Deterministic order.             Random if multiple ready.
+```
+
+### What Each Case Type Means
+
+Every `case` in a `select` is a channel operation — either a send or a receive.
+The `select` asks: "which of these operations can proceed right now?"
+
+```go
+  select {
+  case v, ok := <-in:        // "TRY to receive from 'in'"
+                              //   ready if: in has data, or in is closed
+                              //   blocks if: in is open and empty
+
+  case out <- v:              // "TRY to send v to 'out'"
+                              //   ready if: someone is receiving, or buffer has space
+                              //   blocks if: buffer full and no receiver
+
+  case <-ctx.Done():          // "TRY to receive from ctx's internal channel"
+                              //   ready if: ctx was cancelled (channel closed)
+                              //   blocks if: ctx still active (channel open)
+
+  default:                    // "if NOTHING is ready, run this immediately"
+                              //   makes select non-blocking
+  }
+```
+
+### ctx.Done() — It's Just a Channel
+
+There is no magic signal behind context cancellation. `ctx.Done()` returns a
+plain `<-chan struct{}` that gets **closed** when someone calls `cancel()`.
+
+```
+  ctx, cancel := context.WithCancel(background)
+
+  ctx.Done() returns: <-chan struct{}
+
+  Before cancel():
+    <-ctx.Done()    → BLOCKS (channel is open, nothing sent, nobody will send)
+
+  After cancel():
+    close(done)     → happens internally when cancel() is called
+    <-ctx.Done()    → RETURNS immediately (zero value from closed channel)
+    <-ctx.Done()    → RETURNS immediately AGAIN (closed channels never block)
+```
+
+This is why `ctx.Done()` works seamlessly in `select` — the runtime treats it
+as any other channel receive. When cancelled, the closed channel is always
+"ready," so `select` picks that case.
+
+```
+  select {
+  case v := <-dataCh:       // channel receive: waiting for data
+  case <-ctx.Done():        // channel receive: waiting for cancellation
+  }
+
+  The runtime doesn't know one is "cancellation" — it just sees two
+  channels and picks whichever becomes ready first.
+```
+
 ### What the Compiler Generates
 
 ```go
@@ -1629,6 +1703,41 @@ lives until it fires — even if the select case was not chosen. This leaks time
 
 ### Pattern 7: Or-Done Channel (Elegant Cancellation)
 
+#### The Problem: Blocking Outside of Select
+
+Imagine a pipeline stage that reads from `in` and sends to `out`:
+
+```go
+  // Attempt 1: single select — BROKEN
+  for {
+      select {
+      case <-ctx.Done():
+          return                   // ✅ cancel detected while READING
+      case v, ok := <-in:
+          if !ok { return }
+          out <- v                 // ❌ BLOCKS HERE if nobody reads 'out'
+      }                            //    ctx.Done() is NOT checked!
+  }
+```
+
+The bug: after receiving `v` from `in`, we leave the select and do a plain
+`out <- v`. If downstream stopped reading from `out`, this send blocks forever.
+We're no longer inside a `select`, so `ctx.Done()` is invisible.
+
+```
+  Timeline of the goroutine leak:
+
+  1. select: picks case 2 (value arrived from 'in')     ← leave select
+  2. out <- v                                             ← BLOCKED here
+  3. ctx gets cancelled                                   ← nobody checks!
+  4. goroutine stuck forever on step 2                    ← LEAKED
+```
+
+#### The Solution: Double Select
+
+Every blocking channel operation (both read AND write) must be inside a
+`select` that also watches `ctx.Done()`:
+
 ```go
 // orDone wraps a channel read to respect cancellation
 func orDone(ctx context.Context, in <-chan int) <-chan int {
@@ -1637,12 +1746,12 @@ func orDone(ctx context.Context, in <-chan int) <-chan int {
         defer close(out)
         for {
             select {
-            case <-ctx.Done():
+            case <-ctx.Done():             // OUTER select: cancel OR read
                 return
             case v, ok := <-in:
                 if !ok { return }
                 select {
-                case out <- v:
+                case out <- v:             // INNER select: cancel OR write
                 case <-ctx.Done():
                     return
                 }
@@ -1653,9 +1762,74 @@ func orDone(ctx context.Context, in <-chan int) <-chan int {
 }
 ```
 
-This pattern wraps any channel to make it cancellation-aware. Without it,
-a goroutine blocked on `<-in` won't notice cancellation until the next value
-arrives.
+#### Every Scenario Traced
+
+```
+  Scenario 1: Normal flow (data available, downstream ready)
+  ──────────────────────────────────────────────────────────
+  outer select → case 2: v arrives from 'in'
+  inner select → case 1: out <- v succeeds (someone is reading)
+  → loop continues ✅
+
+  Scenario 2: Context cancelled while waiting to READ
+  ──────────────────────────────────────────────────
+  outer select → case 1: ctx.Done() fires
+  → return, goroutine exits cleanly ✅
+
+  Scenario 3: Context cancelled while waiting to WRITE ← the bug we fixed
+  ──────────────────────────────────────────────────────
+  outer select → case 2: v arrives from 'in'
+  inner select → case 2: ctx.Done() fires (out is blocked, nobody reading)
+  → return, goroutine exits cleanly ✅
+
+  Scenario 4: Input channel closes
+  ─────────────────────────────────
+  outer select → case 2: ok = false (in was closed)
+  → return, goroutine exits cleanly ✅
+```
+
+```
+  Visual — Single Select vs Double Select:
+
+  Single select (BROKEN):              Double select (CORRECT):
+
+  ┌──────────────────────┐             ┌──────────────────────┐
+  │ select {             │             │ select {             │ ← outer
+  │   case <-ctx.Done() │             │   case <-ctx.Done() │
+  │   case v := <-in    │             │   case v := <-in ───────┐
+  │ }                    │             │ }                    │  │
+  │                      │             │                      │  ↓
+  │ out <- v  ← DANGER! │             │   ┌────────────────┐ │
+  │ (no cancel check)   │             │   │ select {       │ │ ← inner
+  └──────────────────────┘             │   │  case out <- v │ │
+                                       │   │  case <-ctx   │ │
+                                       │   │ }              │ │
+                                       │   └────────────────┘ │
+                                       └──────────────────────┘
+```
+
+#### Why It's Called "Or-Done"
+
+The name means: forward values from `in` **or** stop when done. It's a
+**composable building block** — wrap any channel once, and downstream code
+can use simple `range`:
+
+```go
+  // Without orDone: every pipeline stage needs double-select boilerplate
+  // With orDone: wrap once, range simply
+
+  out := orDone(ctx, someChannel)
+  for v := range out {
+      // if ctx cancels → out closes → range exits naturally
+      // no double-select needed here
+      process(v)
+  }
+```
+
+`orDone` is NOT in the standard library. It's a community pattern from
+*"Concurrency in Go"* (Katherine Cox-Buday, O'Reilly 2017). Go's stdlib
+gives you the primitives (`chan`, `select`, `context`). You compose them.
+This is deliberate — *"A little copying is better than a little dependency."*
 
 ---
 
