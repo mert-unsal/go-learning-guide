@@ -1,0 +1,148 @@
+{
+  "title": "Go Under the Hood",
+  "subtitle": "Deep Dive Series",
+  "author": "Mert Unsal",
+  "description": "Runtime-level explanations of Go's core systems &mdash;<br>what the compiler and runtime <em>actually do</em> with your code.<div style='margin-top:18px;font-size:10pt;color:#666;letter-spacing:0.3px'>Slices &middot; Maps &middot; Strings &middot; Pointers &middot; Closures &middot; Interfaces &middot; Generics &middot; Error Handling<br>Goroutines &middot; Channels &middot; GC &middot; Memory &middot; Testing &middot; Debugging &middot; Production Patterns</div><div style='margin-top:24px;font-size:10pt;color:#888'>by Mert Unsal</div>",
+  "subject": "Runtime-level explanations of Go's core systems",
+  "keywords": "Go, Golang, internals, runtime, compiler, concurrency, goroutines, channels, GC, memory, production",
+  "source_dir": "../learnings",
+  "output": "../Go_Under_the_Hood.pdf",
+  "parts": [
+    {
+      "name": "Part I — Data Structures In Depth",
+      "chapters": [
+        {
+          "file": "01_slices_three_word_header.md",
+          "short": "Slices: The Three-Word Header"
+        },
+        {
+          "file": "02_maps_buckets_and_growth.md",
+          "short": "Maps: Buckets & Growth"
+        },
+        {
+          "file": "03_strings_immutability_and_utf8.md",
+          "short": "Strings: Immutability & UTF-8"
+        }
+      ]
+    },
+    {
+      "name": "Part II — Functions & Closures",
+      "chapters": [
+        {
+          "file": "04_variables_var_vs_short_decl.md",
+          "short": "Variables: var vs :="
+        },
+        {
+          "file": "05_pointers_auto_deref.md",
+          "short": "Pointers & Auto-Deref"
+        },
+        {
+          "file": "06_closures_funcval_and_capture.md",
+          "short": "Closures: funcval & Capture"
+        },
+        {
+          "file": "07_loop_capture_and_fanin.md",
+          "short": "Loop Capture & Fan-In"
+        }
+      ]
+    },
+    {
+      "name": "Part III — Type System",
+      "chapters": [
+        {
+          "file": "08_interfaces_iface_eface_nil_trap.md",
+          "short": "Interfaces: iface, eface & Nil Trap"
+        },
+        {
+          "file": "09_any_type_boxing_and_cost.md",
+          "short": "any Type: Boxing & Cost"
+        },
+        {
+          "file": "10_context_interface_masterclass.md",
+          "short": "Context Interface"
+        }
+      ]
+    },
+    {
+      "name": "Part IV — Error Handling",
+      "chapters": [
+        {
+          "file": "11_error_chains_wrapping_strategy.md",
+          "short": "Error Chains & Wrapping"
+        },
+        {
+          "file": "12_concurrent_errors_errgroup.md",
+          "short": "Concurrent Errors & errgroup"
+        }
+      ]
+    },
+    {
+      "name": "Part V — Concurrency & Channels",
+      "chapters": [
+        {
+          "file": "13_goroutines_gmp_scheduler.md",
+          "short": "Goroutines & the GMP Scheduler"
+        },
+        {
+          "file": "14_goroutine_stacks_growth.md",
+          "short": "Goroutine Stacks & Growth"
+        },
+        {
+          "file": "15_channels_hchan_select.md",
+          "short": "Channels: hchan & Select"
+        }
+      ]
+    },
+    {
+      "name": "Part VI — Runtime & Performance",
+      "chapters": [
+        {
+          "file": "16_memory_gc_escape_analysis.md",
+          "short": "Memory, GC & Escape Analysis"
+        },
+        {
+          "file": "17_sorting_pdqsort.md",
+          "short": "Sorting: pdqsort"
+        }
+      ]
+    },
+    {
+      "name": "Part VII — Testing & Debugging",
+      "chapters": [
+        {
+          "file": "18_testing_internals.md",
+          "short": "Testing Internals"
+        },
+        {
+          "file": "19_debugging_profiling.md",
+          "short": "Debugging & Profiling"
+        }
+      ]
+    },
+    {
+      "name": "Part VIII — Production",
+      "chapters": [
+        {
+          "file": "20_production_pitfalls_enterprise.md",
+          "short": "Production Pitfalls & Enterprise"
+        }
+      ]
+    }
+  ],
+  "howto_text": "## Who This Is For\n\nThis book is for **senior engineers** transitioning to or deepening mastery in Go. It assumes you already know programming fundamentals and focuses on what makes Go different at the runtime and compiler level.\n\n## Structure\n\nThe book is organized in **8 parts**, each building on the previous:\n\n- **Parts I–II** — Data structures & functions: how Go lays out memory\n- **Part III** — Type system: interfaces, generics, and context internals\n- **Part IV** — Error handling: wrapping chains and concurrent patterns\n- **Part V** — Concurrency: the GMP scheduler, stacks, and channel internals\n- **Parts VI–VII** — Runtime, GC, testing, debugging, and profiling\n- **Part VIII** — Production patterns for enterprise Go codebases\n\n## Navigation\n\n- **Table of Contents** — Click any chapter title to jump directly to it\n- **Bookmark Panel** — Open your PDF reader's sidebar for the full Part → Chapter hierarchy\n- **Running Headers** — The current chapter name appears at the top of every page\n- **Page Numbers** — Centered at the bottom, matching your reader's page indicator\n\n## Depth Layers\n\nEvery chapter follows a consistent five-layer depth pattern:\n\n| Layer | What It Covers |\n|-------|----------------|\n| **1: WHAT** | The API and syntax (briefly — you can read docs) |\n| **2: HOW** | What the compiler and runtime do under the hood |\n| **3: WHY** | The design decision and tradeoffs behind it |\n| **4: BREAKS** | Edge cases, failure modes, production gotchas |\n| **5: AT SCALE** | Behavior at 10k goroutines, 100k connections |\n\n## Code & Diagrams\n\n- Code blocks show Go source, compiler output, and assembly\n- ASCII diagrams illustrate memory layouts and runtime structures\n- Compiler flags like `go build -gcflags='-m'` are referenced throughout\n\n## Companion Repository\n\nThis book accompanies the **go-interview-prep** repository with runnable exercises, tests, and solutions for hands-on practice.\n\n## Suggested Reading Order\n\n- **New to Go?** Start with Part I (Data Structures) and Part II (Functions)\n- **Know Go basics?** Jump to Part V (Concurrency) — where Go truly differs\n- **Production focus?** Parts VII–VIII cover debugging and enterprise patterns",
+  "layout": {
+    "margin_top_mm": 32,
+    "margin_bottom_mm": 25,
+    "margin_lr_mm": 30,
+    "body_font_size_pt": 12,
+    "code_font_size_pt": 9,
+    "line_height": 1.5,
+    "header_font_size_pt": 8.5,
+    "footer_font_size_pt": 9,
+    "header_text_y_mm": 17,
+    "header_line_y_mm": 23,
+    "footer_text_y_mm": 291
+  },
+  "author_page": "### Mert Unsal\n\n*Senior Software Engineer*\n\n---\n\nI am a senior software engineer with over **7 years of experience** building production systems across multiple languages and tech stacks. When I decided to deepen my mastery of Go, I found that most resources fell into two categories: beginner tutorials that explain what a goroutine *is*, or API references that list function signatures. Neither answered the question I kept asking: **what is the runtime actually doing with my code?**\n\nThis book was born from that curiosity.\n\n### Why This Book Exists\n\nI believe that if you want to work with any programming language professionally, you must understand its **essential principles and mechanics** - not just its syntax. You need to know *why* a slice is a three-word header, *how* the scheduler decides which goroutine runs next, and *what* happens in memory when you close a channel.\n\nEvery page in this book reflects that philosophy:\n\n- **No boilerplate explanations.** If every developer already knows it, it is not here.\n- **No trivial information.** Only details that are genuinely worth mentioning.\n- **Personal perspective.** This is not a textbook - it is a working engineer's deep dive into Go's internals, written while building real systems.\n\n### What You Will Find\n\nEach chapter goes under the hood: runtime source code references, compiler flag outputs, memory layout diagrams, escape analysis traces, and production gotchas I encountered firsthand. The goal is to build the mental model that lets you **predict** what Go will do before you run the code.\n\n### Open Source\n\nThis book and its companion repository are publicly available. Contributions, corrections, and discussions are welcome:\n\n[github.com/mert-unsal/go-learning-guide](https://github.com/mert-unsal/go-learning-guide)",
+  "references_page": "This book draws on the following primary sources. All runtime source code references point to the Go standard library, which is open source and readable at [go.googlesource.com/go](https://go.googlesource.com/go).\n\n### Go Runtime Source Code\n\nThe following files from the Go runtime are referenced throughout:\n\n- **runtime/slice.go** - Slice creation, growslice(), capacity growth formulas (Chapter 01)\n- **runtime/map.go** - Map implementation: hmap, bmap, bucket arrays, evacuation (Chapter 02)\n- **runtime/string.go** - String header, immutability enforcement, conversions (Chapter 03)\n- **runtime/proc.go** - GMP scheduler: schedule(), findRunnable(), work stealing (Chapter 13)\n- **runtime/stack.go** - Contiguous stacks, newstack(), stack growth/shrinking (Chapter 14)\n- **runtime/chan.go** - Channel internals: hchan, send(), recv(), selectgo() (Chapter 15)\n- **runtime/mgc.go** - Garbage collector: tri-color marking, write barriers, pacing (Chapter 16)\n- **runtime/malloc.go** - Memory allocator: mcache, mcentral, mheap, size classes (Chapter 16)\n- **runtime/iface.go** - Interface dispatch: iface, eface, itab caching (Chapter 08)\n- **runtime/select.go** - Select statement: case shuffling, lock ordering (Chapter 15)\n- **runtime/panic.go** - Panic/recover mechanics, defer implementation (Chapter 06)\n\n### Go Language Specification\n\n- [The Go Programming Language Specification](https://go.dev/ref/spec) - The authoritative reference for Go semantics\n- [Effective Go](https://go.dev/doc/effective_go) - Idiomatic Go patterns and conventions\n\n### Official Go Blog and Design Documents\n\n- [Go Blog](https://go.dev/blog/) - Official announcements and deep-dive articles\n- [Go Slices: Usage and Internals](https://go.dev/blog/slices-intro) - Andrew Gerrand\n- [Go Maps in Action](https://go.dev/blog/maps) - Andrew Gerrand\n- [Strings, bytes, runes and characters in Go](https://go.dev/blog/strings) - Rob Pike\n- [Share Memory By Communicating](https://go.dev/blog/codelab-share) - Andrew Gerrand\n- [Go Concurrency Patterns](https://go.dev/blog/pipelines) - Sameer Ajmani\n- [Introducing the Go Race Detector](https://go.dev/blog/race-detector) - Dmitry Vyukov\n- [Profiling Go Programs](https://go.dev/blog/pprof) - Russ Cox\n- [Getting to Go: The Journey of Go's Garbage Collector](https://go.dev/blog/ismmkeynote) - Rick Hudson\n- [A Guide to the Go Garbage Collector](https://tip.golang.org/doc/gc-guide) - Official GC tuning guide\n\n### Go Proposals and Design Docs\n\n- [Contiguous Stacks Design](https://docs.google.com/document/d/1wAaf1rYoM4nQswJaxbbPcKVAMELnm9CgoAclQkXpE0s) - Chapter 14\n- [Generics: GC Shape Stenciling](https://github.com/golang/proposal/blob/master/design/generics-implementation-dictionaries-go1.18.md) - Chapter 09\n- [Loop Variable Semantics (Go 1.22)](https://go.dev/blog/loopvar-preview) - Chapter 07\n- [Structured Logging with slog](https://go.dev/blog/slog) - Chapter 20\n\n### Talks and Presentations\n\n- **Go Proverbs** - Rob Pike, GopherFest 2015 - The philosophical foundation of Go\n- **Concurrency Is Not Parallelism** - Rob Pike, Waza 2013 - CSP model and goroutine design\n- **The Scheduler Saga** - Kavya Joshi, GopherCon 2018 - Deep dive into GMP scheduling\n- **Understanding Channels** - Kavya Joshi, GopherCon 2017 - Channel internals with runtime source\n- **Garbage Collection in Go** - Rick Hudson, GopherCon 2018 - GC evolution and design\n\n### Tools Referenced\n\n- **go tool pprof** - CPU, memory, goroutine, block, and mutex profiling (Chapter 19)\n- **go tool trace** - Execution tracer with visual timeline (Chapter 19)\n- **dlv (Delve)** - Go-aware debugger: [github.com/go-delve/delve](https://github.com/go-delve/delve) (Chapter 19)\n- **go build -gcflags='-m'** - Escape analysis output (used throughout)\n- **go build -gcflags='-S'** - Assembly output for inspecting generated code\n- **go test -race** - Data race detector (Chapter 18)\n- **GODEBUG environment variable** - Runtime debugging flags: gctrace=1, schedtrace=1000 (Chapter 19)\n- **golangci-lint** - Meta-linter: [github.com/golangci/golangci-lint](https://github.com/golangci/golangci-lint)\n- **fieldalignment** - Struct field ordering optimizer from golang.org/x/tools\n\n### Books and External Resources\n\n- *The Go Programming Language* - Alan Donovan and Brian Kernighan (Addison-Wesley, 2015)\n- *Concurrency in Go* - Katherine Cox-Buday (O'Reilly, 2017)\n- *100 Go Mistakes and How to Avoid Them* - Teiva Harsanyi (Manning, 2022)\n- [Go by Example](https://gobyexample.com/) - Annotated example programs\n- [Go Wiki](https://go.dev/wiki/) - Community-maintained knowledge base\n\n### Companion Repository\n\nThe source code, exercises, and all markdown files for this book are available at:\n\n**[github.com/mert-unsal/go-learning-guide](https://github.com/mert-unsal/go-learning-guide)**\n\nContributions, corrections, and discussions are welcome."
+}
