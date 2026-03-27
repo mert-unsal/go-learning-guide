@@ -299,9 +299,46 @@ map access yourself (or use `sync.Map`).
 
 ## 5. CSP Concurrency — Share by Communicating
 
-Go's concurrency model comes from Tony Hoare's **Communicating Sequential Processes**
-(1978). The core idea: independent processes communicate through channels, never
-through shared memory.
+**CSP = Communicating Sequential Processes** — a formal model by **Tony Hoare** (1978).
+Hoare is the same computer scientist who invented quicksort and the null reference
+(which he later called his "billion-dollar mistake").
+
+The thesis: independent processes that run **sequentially internally** but communicate
+with each other through **message passing** (channels), never through shared memory.
+
+### From CSP to Go — The Lineage
+
+```
+  Tony Hoare's CSP (1978)
+      ↓
+  Newsqueak (Rob Pike, 1988) — first CSP-inspired language at Bell Labs
+      ↓
+  Alef (Phil Winterbottom, 1992) — CSP on Plan 9 OS
+      ↓
+  Limbo (Rob Pike, Sean Dorward, 1995) — CSP for Inferno OS
+      ↓
+  Go (Rob Pike, Ken Thompson, Robert Griesemer, 2009)
+      — CSP made practical for modern systems programming
+
+  Rob Pike spent 20 YEARS refining CSP-based languages before Go.
+  Go is not an experiment — it's the fifth iteration of a proven model.
+```
+
+### CSP Primitives → Go Primitives
+
+```
+  CSP (1978, Hoare)              Go (2009, Pike)
+  ─────────────────────          ────────────────────
+  processes                  →   goroutines
+  channels                   →   chan T
+  ! (send)                   →   ch <- value
+  ? (receive)                →   value = <-ch
+  guarded commands           →   select { case ... }
+  parallel composition (||)  →   go func()
+```
+
+The Go proverb *"Don't communicate by sharing memory; share memory by communicating"*
+is literally Hoare's thesis rephrased for practitioners.
 
 ### How Channels Unite Every Design Decision
 
