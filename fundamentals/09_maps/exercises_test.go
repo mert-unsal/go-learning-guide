@@ -1,6 +1,7 @@
 package maps
 
 import (
+	"fmt"
 	"reflect"
 	"sort"
 	"testing"
@@ -51,12 +52,14 @@ func TestIsAnagram(t *testing.T) {
 		{"ab", "a", false},
 	}
 	for _, tt := range tests {
-		got := IsAnagram(tt.s, tt.tt)
-		if got != tt.want {
-			t.Errorf("❌ IsAnagram(%q,%q) = %v, want %v  ← Hint: count chars in s, subtract for t", tt.s, tt.tt, got, tt.want)
-		} else {
-			t.Logf("✅ IsAnagram(%q,%q) = %v", tt.s, tt.tt, got)
-		}
+		t.Run(fmt.Sprintf("IsAnagram(%q,%q)", tt.s, tt.tt), func(t *testing.T) {
+			got := IsAnagram(tt.s, tt.tt)
+			if got != tt.want {
+				t.Errorf("❌ IsAnagram(%q,%q) = %v, want %v  ← Hint: count chars in s, subtract for t", tt.s, tt.tt, got, tt.want)
+			} else {
+				t.Logf("✅ IsAnagram(%q,%q) = %v", tt.s, tt.tt, got)
+			}
+		})
 	}
 }
 
@@ -70,12 +73,14 @@ func TestFirstDuplicate(t *testing.T) {
 		{[]int{1, 1}, 1},
 	}
 	for _, tt := range tests {
-		got := FirstDuplicate(tt.nums)
-		if got != tt.want {
-			t.Errorf("❌ FirstDuplicate(%v) = %d, want %d  ← Hint: use a map[int]bool as a seen set", tt.nums, got, tt.want)
-		} else {
-			t.Logf("✅ FirstDuplicate(%v) = %d", tt.nums, got)
-		}
+		t.Run(fmt.Sprintf("FirstDuplicate(%v)", tt.nums), func(t *testing.T) {
+			got := FirstDuplicate(tt.nums)
+			if got != tt.want {
+				t.Errorf("❌ FirstDuplicate(%v) = %d, want %d  ← Hint: use a map[int]bool as a seen set", tt.nums, got, tt.want)
+			} else {
+				t.Logf("✅ FirstDuplicate(%v) = %d", tt.nums, got)
+			}
+		})
 	}
 }
 

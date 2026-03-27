@@ -1,42 +1,53 @@
 package pointers
+
 // ============================================================
 // EXERCISES — 04 Pointers
 // ============================================================
 // Exercise 1:
 // Write a function that increments an integer through a pointer.
 func Increment(n *int) {
-// TODO: *n++
+	// TODO: *n++
+	*n++
 }
+
 // Exercise 2:
 // Write a function that swaps two integers using pointers.
 func SwapPointers(a, b *int) {
-// TODO: *a, *b = *b, *a
+	// TODO: *a, *b = *b, *a
+	*a, *b = *b, *a
 }
+
 // Exercise 3:
 // Write a pointer receiver method on ScoreBoard that adds points.
 // Write a value receiver method that returns the current score.
 type ScoreBoard struct {
-Score int
+	Score int
 }
+
 func (s *ScoreBoard) AddPoints(points int) {
-// TODO: s.Score += points
+	// TODO: s.Score += points
+	s.Score += points
 }
 func (s ScoreBoard) CurrentScore() int {
-// TODO: return s.Score
-return 0
+	// TODO: return s.Score
+	return s.Score
 }
+
 // Exercise 4:
 // NewPlayer returns a POINTER to a Player struct (constructor pattern).
 type Player struct {
-Name  string
-Level int
+	Name  string
+	Level int
 }
+
 func NewPlayer(name string, level int) *Player {
-// TODO: return &Player{...}
-return nil
+	// TODO: return &Player{...}
+	return &Player{Name: name, Level: level}
 }
+
 // Exercise 5:
 // DoubleValue doubles the value at the pointer address.
 func DoubleValue(x *int) {
-// TODO: *x = *x * 2
+	// TODO: *x = *x * 2
+	*x = *x * 2
 }

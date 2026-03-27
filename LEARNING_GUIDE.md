@@ -1,702 +1,392 @@
-# 🗺️ Your Personal Learning Roadmap
-## Go — From Beginner to Interview Ready
+# 🗺️ Go Mastery Roadmap — Interview-Ready in 7 Milestones
 
-> **How to use this guide:** Follow the phases in order. Each phase
-> has a "Why", a "What to do", and "How to verify you're done."
-> Don't skip phases — each one builds on the last.
-
----
-
-## ⚡ The Big Picture (read this first)
-
-```
-PHASE 1 ──► PHASE 2 ──► PHASE 3 ──► PHASE 4 ──► PHASE 5 ──► PHASE 6
- Language     Standard    Algorithm   LeetCode    HackerRank   Real World
- Basics       Library     Patterns    Problems    Problems     Engineering
- (2 weeks)    (1 week)    (1 week)    (4 weeks)   (1 week)     (1 week)
-```
-
-> Total: ~10 weeks at 1–2 hours/day. Adjust to your pace.
+> **Senior engineer track.** This is not a beginner guide. You already know
+> programming — this roadmap takes you from "knows Go syntax" to
+> "can explain the runtime, ace coding interviews, and ship production Go."
 
 ---
 
-## ✅ PHASE 1 — Go Language Fundamentals
-### Folder: `fundamentals/`
-### Duration: ~2 weeks
+## ⚡ Where You Are Now
 
-This is your foundation. Everything else depends on it.
-Read each `concepts.go` file slowly. **Don't just skim — type the code yourself.**
-
----
-
-### 📅 Week 1 — Core Language
-
-#### Day 1 → `fundamentals/01_basics/concepts.go`
-**What you learn:** variables, constants, types, zero values, fmt printing
-
-**Read in this order:**
-1. Section 2: Variables — understand `:=` vs `var`
-2. Section 3: Constants — understand `iota`
-3. Section 4: Basic Types — understand `int`, `string`, `bool`, `float64`
-4. Section 5: Zero Values — **this is unique to Go, very important**
-5. Section 6: fmt verbs — `%v`, `%T`, `%d`, `%s`, `%f`
-
-**Then do the exercises:**
-```bash
-# Open the exercise file
-# File: fundamentals/01_basics/exercises.go
-# Implement the TODO functions WITHOUT looking at solutions.go
-
-# Check your work:
-go test ./fundamentals/01_basics/...
-```
-
-**Key things to remember from Day 1:**
-- `:=` is shorthand for `var x type = value` (only inside functions)
-- Go NEVER implicitly converts types — you must do `float64(myInt)` explicitly
-- Zero values mean variables are ALWAYS safe to use without initializing
-- `len("hello")` returns BYTES, use `range` to iterate characters
+| Area | Status | Detail |
+|------|--------|--------|
+| Fundamentals 01-06, 12 | ✅ All exercises implemented, all tests pass | Core Go syntax mastered |
+| Fundamentals 07-11 | 🔲 Exercises reset to stubs | Error handling, slices, maps, goroutines, channels — ready to re-implement |
+| Interfaces | ✅ Deep mastery | `iface`/`eface`, nil trap, method sets, three guards |
+| HackerRank (9 problems) | ✅ Complete | All implemented and passing |
+| Deep dive docs (11 documents) | ✅ Written | 7,400+ lines of runtime internals |
+| Error Recovery & Retry | 🔲 6 exercises TODO | Try-catch equiv, retry patterns, backoff, context-aware retry |
+| Stdlib (7 packages) | 🔲 37 exercises TODO | Need implementation |
+| LeetCode (14 categories) | 🔲 207 problems TODO | All stubs, 0% implemented |
+| Performance tuning | 🔲 8 exercises TODO | Module created, not attempted |
 
 ---
 
-#### Day 2 → `fundamentals/02_control_flow/concepts.go`
-**What you learn:** if/else, switch, for loops, defer
+## 🗺️ The Roadmap
 
-**Key things that are different from other languages:**
-```go
-// Go has ONLY one loop keyword: for
-// (no while, no do-while)
-
-for i := 0; i < 10; i++ { }     // classic for
-for i < 10 { }                  // while-style
-for { }                          // infinite loop (use break to exit)
-for i, v := range slice { }     // iterate over slice/array/string/map
-
-// if with init statement (very Go-idiomatic):
-if err := doSomething(); err != nil {
-    // handle error
-}
-
-// switch — no fallthrough by default (opposite of C/Java)
-switch day {
-case "Mon", "Tue": fmt.Println("weekday")   // multiple values per case
-case "Sat", "Sun": fmt.Println("weekend")
-default:           fmt.Println("unknown")
-}
-
-// defer — runs when the surrounding function returns
-defer fmt.Println("I run last")  // used for cleanup (close files, unlock)
+```
+ M1: Data Structures    ──►  M2: Language Core    ──►  M3: Concurrency
+ (slices, maps)              (closures, ptrs, err)     (channels, goroutines)
+       │                           │                          │
+       ▼                           ▼                          ▼
+ M4: Runtime & Perf      ◄── All theory done ──►  M5: Stdlib Mastery
+ (GC, escape, profiling)                           (strings, io, json, sort)
+       │                                                  │
+       ▼                                                  ▼
+ M6: Algorithm Patterns + LeetCode  ◄────────────────────┘
+ (two-pointers, sliding-window, binary-search, DP, trees, graphs)
+       │
+       ▼
+ M7: Production Readiness & Mock Interviews
+ (pitfalls, system design, concurrency patterns)
 ```
 
-**Exercise:** Write a FizzBuzz in Go using only `for` and `switch`. 
-No if/else allowed.
+**M1-M4** = deep reading (your 11 docs are the curriculum)
+**M5** = stdlib fluency (37 coding exercises)
+**M6** = the grind (207 LeetCode problems, pattern-by-pattern)
+**M7** = synthesis (production patterns + mock interviews)
+
+> M1-M4 can overlap with M5 — read a doc, then do related stdlib exercises.
 
 ---
 
-#### Day 3 → `fundamentals/03_functions/concepts.go`
-**What you learn:** function signatures, multiple returns, closures, variadic
+## M1 — Data Structures Internals
 
-**Key things that are different:**
-```go
-// Multiple return values — used everywhere in Go
-func divide(a, b float64) (float64, error) {
-    if b == 0 {
-        return 0, errors.New("cannot divide by zero")
-    }
-    return a / b, nil
-}
+**Goal:** Understand how Go stores data at the runtime level.
 
-result, err := divide(10, 2)
-if err != nil { /* handle */ }
+### 📖 Read
 
-// Named return values (can be confusing, use sparingly)
-func minMax(nums []int) (min, max int) {
-    min, max = nums[0], nums[0]
-    for _, n := range nums[1:] {
-        if n < min { min = n }
-        if n > max { max = n }
-    }
-    return  // "naked return" — returns named values
-}
+| Document | Key Topics |
+|----------|-----------|
+| [`learnings/01_slices_internals.md`](learnings/01_slices_internals.md) | Slice header (3-word struct), `runtime.growslice`, backing array sharing, memory leaks |
+| [`learnings/02_maps_internals.md`](learnings/02_maps_internals.md) | `runtime.hmap`, buckets, tophash, load factor 6.5, incremental evacuation |
+| [`learnings/10_sorting_pdqsort.md`](learnings/10_sorting_pdqsort.md) | How `slices.Sort` adaptively picks insertion sort, quicksort, or heapsort |
 
-// Closures capture variables from outer scope
-func makeCounter() func() int {
-    count := 0
-    return func() int {
-        count++
-        return count
-    }
-}
-counter := makeCounter()
-counter() // 1
-counter() // 2
-```
+### 🔬 Practice
 
-**Exercise:** Write a function `filter(nums []int, fn func(int) bool) []int`
-that returns only elements where fn returns true.
+- Re-read `fundamentals/08_arrays_slices/concepts.go` with the internals lens
+- Re-read `fundamentals/09_maps/concepts.go` — now you know what `hmap` does under the hood
+- Run escape analysis on your code: `go build -gcflags='-m' ./fundamentals/08_arrays_slices/`
+
+### ✅ Mastery Check — Can You Answer These?
+
+1. What's the growth factor of `append()` and when does it change?
+2. Why does `s2 := s[:3]` create a memory leak risk?
+3. Why can't you write to a nil map but CAN append to a nil slice?
+4. What triggers map evacuation and how does it work incrementally?
+5. How does `tophash` optimize bucket lookup? What values are reserved?
+6. What's the difference between `s[:3]` and `s[:3:3]`? (full slice expression)
 
 ---
 
-#### Day 4 → `fundamentals/04_pointers/concepts.go`
-**What you learn:** `&` (address-of), `*` (dereference), nil pointers, pointer receivers
+## M2 — Language Core Internals
 
-**Key insight — why pointers matter:**
-```go
-// Without pointer: function gets a COPY, original unchanged
-func doubleWrong(x int) {
-    x = x * 2  // changes the COPY, not the original
-}
+**Goal:** How Go's type system, scoping, and error model work under the hood.
 
-// With pointer: function gets the ADDRESS, can change original
-func doubleRight(x *int) {
-    *x = *x * 2  // * dereferences: "go to the address and change the value"
-}
+### 📖 Read
 
-n := 5
-doubleRight(&n)  // & takes the address of n
-fmt.Println(n)   // 10 ✓
+| Document | Key Topics |
+|----------|-----------|
+| [`learnings/03_closures_and_scopes.md`](learnings/03_closures_and_scopes.md) | `funcval` struct, capture-by-reference, escape analysis, Go 1.22 loop fix |
+| [`learnings/04_pointers_and_auto_deref.md`](learnings/04_pointers_and_auto_deref.md) | Auto-dereference, auto-address, addressability rules |
+| [`learnings/06_error_handling_patterns.md`](learnings/06_error_handling_patterns.md) | Sentinel errors, `%w` wrapping, `errors.Is`/`As` chain walk, enterprise strategy |
+| [`learnings/05_interfaces_internals.md`](learnings/05_interfaces_internals.md) | *(Quick refresher — already mastered)* |
 
-// When to use pointers:
-// 1. When you want to MODIFY the original value
-// 2. When the struct is LARGE (avoid copying)
-// 3. When you need to represent "no value" (nil)
-// 4. Method receivers (see Day 5)
-```
+### 🔬 Practice
 
----
+- Re-read `fundamentals/03_functions/` — focus on closure exercises
+- Re-read `fundamentals/04_pointers/` — pointer manipulation with addressability understanding
+- Implement `fundamentals/07_error_handling/exercises.go` — error wrapping exercises
+- Implement `practical/08_error_recovery_retry/exercises.go` — defer/recover (Go's try-catch), retry with backoff, permanent vs retryable errors, context-aware retry
 
-#### Day 5 → `fundamentals/05_structs/concepts.go`
-**What you learn:** struct definition, methods, embedding (Go's version of inheritance)
+### ✅ Mastery Check
 
-```go
-type Person struct {
-    Name string
-    Age  int
-}
-
-// Value receiver — works on a COPY (use when not modifying)
-func (p Person) Greet() string {
-    return "Hi, I'm " + p.Name
-}
-
-// Pointer receiver — works on the ORIGINAL (use when modifying)
-func (p *Person) Birthday() {
-    p.Age++  // modifies the original Person
-}
-
-// Embedding — Go's composition over inheritance
-type Employee struct {
-    Person          // embedded — Employee gets all Person methods!
-    Company string
-}
-
-e := Employee{Person: Person{Name: "Alice", Age: 30}, Company: "Go Corp"}
-e.Greet()     // works! Promoted from Person
-e.Birthday()  // works! Promoted from Person
-```
-
-**Rule of thumb:** If ANY method needs a pointer receiver, make ALL methods pointer receivers.
+1. How does a closure capture variables? Stack or heap? What does escape analysis say?
+2. What changed in Go 1.22 with loop variable scoping and why?
+3. When does Go auto-insert `*` or `&`? What is "addressability"?
+4. Walk through `errors.Is()` chain walk — what happens with wrapped errors?
+5. What's the difference between `errors.Is()` and `errors.As()`?
+6. How does Go's defer/recover compare to Java's try-catch-finally? When is panic appropriate?
+7. Why do production retries need exponential backoff with jitter instead of fixed delay?
 
 ---
 
-### 📅 Week 2 — Go's Unique Features
+## M3 — Concurrency Internals
 
-#### Day 6 → `fundamentals/06_interfaces/concepts.go`
-**What you learn:** implicit interface implementation, polymorphism, type assertions
+**Goal:** How Go runs things in parallel — the GMP model and channel machinery.
 
-**This is one of Go's most powerful features:**
-```go
-// Interface = a contract (list of method signatures)
-type Animal interface {
-    Sound() string
-    Name() string
-}
+### 📖 Read
 
-// Dog implements Animal IMPLICITLY
-// No "implements" keyword needed — if it has the methods, it satisfies the interface
-type Dog struct{ name string }
-func (d Dog) Sound() string { return "Woof" }
-func (d Dog) Name() string  { return d.name }
+| Document | Key Topics |
+|----------|-----------|
+| [`learnings/07_channels_internals.md`](learnings/07_channels_internals.md) | `runtime.hchan`, ring buffer, `sudog` parking, select algorithm, nil channels |
+| [`learnings/08_goroutines_and_scheduler.md`](learnings/08_goroutines_and_scheduler.md) | GMP model, work stealing, async preemption, syscall hand-off, network poller |
 
-type Cat struct{ name string }
-func (c Cat) Sound() string { return "Meow" }
-func (c Cat) Name() string  { return c.name }
+### 🔬 Practice
 
-// Now you can write ONE function that works for ANY Animal
-func MakeSound(a Animal) {
-    fmt.Printf("%s says %s\n", a.Name(), a.Sound())
-}
+- Re-read `fundamentals/10_goroutines/` — goroutine exercises
+- Re-read `fundamentals/11_channels/` — channel exercises
+- Study `practical/06_concurrency_patterns/` — worker pool implementation
+- Run ALL concurrency code with `-race`: `go test -race ./fundamentals/10_goroutines/ ./fundamentals/11_channels/`
 
-MakeSound(Dog{name: "Rex"})  // Rex says Woof
-MakeSound(Cat{name: "Whiskers"})  // Whiskers says Meow
+### ✅ Mastery Check
 
-// The MOST important interface in Go:
-type error interface {
-    Error() string  // any type with this method IS an error
-}
-```
+1. Draw the GMP model. What happens when a goroutine enters a syscall?
+2. What's inside an `hchan`? What are the 3 send paths?
+3. When would you use a mutex over a channel? Give 3 concrete examples.
+4. Design a graceful shutdown sequence for a service with 3 worker pools.
+5. What does `GODEBUG=schedtrace=1000` show? What about `go tool trace`?
+6. What happens when you send on a nil channel? Receive? Close?
 
 ---
 
-#### Day 7 → `fundamentals/07_error_handling/concepts.go`
-**What you learn:** Go's error pattern, custom errors, panic vs error
+## M4 — Runtime, GC & Performance Engineering
 
-**Go error handling is different from exceptions — understand this deeply:**
-```go
-// In Go: errors are VALUES returned from functions
-// You MUST check them (the compiler helps enforce this)
+**Goal:** Memory management, GC tuning, escape analysis, profiling workflow.
 
-file, err := os.Open("myfile.txt")
-if err != nil {
-    // handle it — don't ignore!
-    return fmt.Errorf("opening file: %w", err)  // %w wraps the error
-}
-defer file.Close()
+### 📖 Read
 
-// Check error type:
-var pathErr *os.PathError
-if errors.As(err, &pathErr) {
-    fmt.Println("Path error:", pathErr.Path)
-}
+| Document | Key Topics |
+|----------|-----------|
+| [`learnings/09_memory_gc_and_escape_analysis.md`](learnings/09_memory_gc_and_escape_analysis.md) | Stack vs heap, escape analysis rules, tri-color GC, write barrier, `GOGC`/`GOMEMLIMIT`, `sync.Pool` |
+| [`learnings/13_goroutine_stacks_contiguous.md`](learnings/13_goroutine_stacks_contiguous.md) | Contiguous stacks (Go 1.4+), stack growth/shrink, pointer adjustment, stack maps, hot split problem |
+| [`learnings/12_any_type_boxing.md`](learnings/12_any_type_boxing.md) | `any`/`interface{}` boxing, `eface` internals, `staticuint64s`, `convT` family, generics vs `any` |
 
-// Sentinel errors (check with errors.Is):
-if errors.Is(err, os.ErrNotExist) {
-    fmt.Println("File doesn't exist")
-}
+### 🔬 Practice — Complete All 8 Performance Exercises
 
-// Custom error type:
-type ValidationError struct {
-    Field   string
-    Message string
-}
-func (e *ValidationError) Error() string {
-    return fmt.Sprintf("validation error: %s — %s", e.Field, e.Message)
-}
-```
+All in `practical/07_performance_tuning/exercises.go`:
 
-**Rule:** Use `panic` ONLY for programming errors (like nil pointer you never expect).
-Use `error` returns for ALL expected failure cases.
+| # | Exercise | What You Learn |
+|---|----------|---------------|
+| 1 | Escape analysis | `fmt.Sprintf` boxing cost, pointer escape, `strconv` alternative |
+| 2 | String building | `+=` concatenation O(n²) disaster → `strings.Builder` → pre-alloc |
+| 3 | Slice pre-allocation | `make([]T, 0, n)` to avoid repeated `growslice` calls |
+| 4 | `sync.Pool` | Buffer reuse pattern, 2-generation victim cache |
+| 5 | Interface boxing | Concrete type vs interface dispatch in hot paths |
+| 6 | Map pre-allocation | `make(map[K]V, n)` to avoid rehashing |
+| 7 | GC pressure | Pointer-heavy structs vs value structs (89k vs 39k allocs) |
+| 8 | Struct padding | Field ordering to minimize alignment padding |
 
----
-
-#### Day 8 → `fundamentals/08_arrays_slices/concepts.go`
-**What you learn:** arrays vs slices, append, copy, 2D slices
-
-**Slices are used EVERYWHERE. Understand them deeply:**
-```go
-// Array: fixed size, rarely used directly
-var arr [5]int  // [0,0,0,0,0]
-
-// Slice: dynamic, backed by an array — this is what you use daily
-s := []int{1, 2, 3}
-s = append(s, 4, 5)    // grows automatically
-
-// CRITICAL: slice header = {pointer, length, capacity}
-a := []int{1, 2, 3, 4, 5}
-b := a[1:3]    // b = [2, 3] — shares the SAME underlying array!
-b[0] = 99      // MODIFIES a too! a = [1, 99, 3, 4, 5]
-
-// Safe copy:
-c := make([]int, len(a))
-copy(c, a)    // c is independent of a
-
-// Slice tricks used in interviews:
-s = append(s[:i], s[i+1:]...)  // delete element at index i
-s = append(s, 0); copy(s[i+1:], s[i:]); s[i] = v  // insert at i
-```
-
----
-
-#### Day 9 → `fundamentals/09_maps/concepts.go`
-**What you learn:** map CRUD, safe existence check, maps of slices
-
-```go
-// Always check existence — never assume a key exists
-m := map[string]int{"a": 1, "b": 2}
-
-val, ok := m["c"]    // ok=false, val=0 (zero value)
-if !ok {
-    fmt.Println("key not found")
-}
-
-// Maps are REFERENCE types — assigning copies the reference
-m2 := m       // both m and m2 point to the SAME map!
-m2["a"] = 99  // changes m too!
-
-// Safe copy:
-m3 := make(map[string]int)
-for k, v := range m { m3[k] = v }
-
-// IMPORTANT: map iteration order is RANDOM in Go (by design)
-// Don't rely on order — sort keys if you need deterministic output
-```
-
----
-
-#### Day 10 → `fundamentals/10_goroutines/concepts.go`
-#### Day 11 → `fundamentals/11_channels/concepts.go`
-**What you learn:** concurrency — Go's killer feature
-
-```go
-// Goroutine: lightweight thread, started with 'go' keyword
-go func() {
-    fmt.Println("I run concurrently")
-}()
-
-// WaitGroup: wait for goroutines to finish
-var wg sync.WaitGroup
-for i := 0; i < 5; i++ {
-    wg.Add(1)
-    go func(id int) {
-        defer wg.Done()
-        fmt.Printf("worker %d done\n", id)
-    }(i)
-}
-wg.Wait()
-
-// Channel: communicate between goroutines (don't share memory!)
-ch := make(chan int)
-go func() { ch <- 42 }()  // send
-val := <-ch                 // receive (blocks until value arrives)
-
-// Buffered channel: doesn't block until buffer is full
-ch := make(chan int, 3)
-ch <- 1; ch <- 2; ch <- 3  // doesn't block
-
-// Select: like switch but for channels
-select {
-case msg := <-ch1: fmt.Println("ch1:", msg)
-case msg := <-ch2: fmt.Println("ch2:", msg)
-case <-time.After(1 * time.Second): fmt.Println("timeout")
-}
-```
-
-**Rule:** "Don't communicate by sharing memory; share memory by communicating."
-
----
-
-#### Day 12 → `fundamentals/12_packages_modules/concepts.go`
-
-**Quick build commands before moving on:**
-```bash
-go build ./...         # compile everything — 0 errors = you're ready
-go test ./...          # run all tests — all pass = you're ready
-go vet ./...           # static analysis — 0 issues = you're ready
-```
-
----
-
-## ✅ PHASE 2 — Standard Library
-### Folder: `stdlib/`
-### Duration: ~1 week (1 file per day)
-
-Don't try to memorize everything. **Learn to look things up quickly.**
-The goal is to know WHAT EXISTS so you know where to look.
-
-| Day | File | Must-Know Things |
-|-----|------|-----------------|
-| 1 | `01_strings_strconv` | `strings.Contains/HasPrefix/Split/Join/TrimSpace`, `strconv.Atoi/Itoa` |
-| 2 | `02_sort` | `sort.Ints/Strings`, `sort.Slice`, `sort.Search` |
-| 3 | `03_builtins` | `len/cap`, `make/new`, `append/copy`, `delete`, `panic/recover` |
-| 4 | `04_io_files` | `os.ReadFile/WriteFile`, `bufio.Scanner`, `fmt.Fprintf` |
-| 5 | `05_encoding_json` | `json.Marshal/Unmarshal`, struct tags, `json.NewEncoder` |
-| 6 | `06_math` | `math.Max/Min/Abs`, `math.Sqrt`, `math/rand` |
-| 7 | `07_testing` | table-driven tests, `t.Run`, benchmarks |
-
-**After each file, write a small program that uses what you learned.**
-
----
-
-## ✅ PHASE 3 — Algorithm Patterns
-### Folder: `patterns/templates.go`
-### Duration: ~1 week
-
-**Read the templates file ONCE thoroughly, then memorize these 8 patterns.**
-Every LeetCode/HackerRank problem maps to one of these:
-
-| # | Pattern | When to use | Time |
-|---|---------|-------------|------|
-| 1 | **Two Pointers** | Sorted array, find pair/triplet | O(n) |
-| 2 | **Sliding Window** | Subarray/substring with constraint | O(n) |
-| 3 | **Binary Search** | Sorted array, monotonic function | O(log n) |
-| 4 | **BFS** | Shortest path, level-order traversal | O(V+E) |
-| 5 | **DFS** | Explore all paths, tree traversal | O(V+E) |
-| 6 | **Dynamic Programming** | Optimal substructure, overlapping subproblems | O(n²) |
-| 7 | **Monotonic Stack** | Next greater/smaller element | O(n) |
-| 8 | **Union-Find** | Connected components, cycle detection | O(α(n)) |
-
-**For each pattern, answer these 3 questions:**
-1. What does the template look like?
-2. What problems does it solve?
-3. What are the edge cases?
-
----
-
-## ✅ PHASE 4 — LeetCode Problems
-### Folder: `leetcode/`
-### Duration: ~4 weeks
-
-**The right way to use this repo for LeetCode:**
-
-```
-Step 1: READ the problem comment at the top of the function
-Step 2: UNDERSTAND the approach section (don't skip this!)
-Step 3: CLOSE the file and try to implement it YOURSELF
-Step 4: RUN the tests — if they fail, debug before looking at the solution
-Step 5: Compare your solution with the one in the file
-Step 6: UNDERSTAND every line of the solution
-```
-
-**Weekly Schedule:**
-
-### Week 1 — Arrays, Strings, Linked Lists (Easy focus)
-```bash
-# Start here — these are ALWAYS asked in interviews
-go test ./leetcode/01_arrays/...     # arrays
-go test ./leetcode/02_strings/...    # strings  
-go test ./leetcode/03_linked_list/... # linked list
-```
-**Must solve without looking:** Two Sum, Valid Anagram, Reverse Linked List
-
-### Week 2 — Stacks, Binary Search, Sliding Window
-```bash
-go test ./leetcode/04_stacks_queues/...
-go test ./leetcode/05_binary_search/...
-go test ./leetcode/06_sliding_window/...
-```
-**Must solve without looking:** Valid Parentheses, Binary Search, Longest Substring Without Repeat
-
-### Week 3 — Trees, Graphs
-```bash
-go test ./leetcode/07_trees/...
-go test ./leetcode/08_graphs/...
-```
-**Must solve without looking:** Max Depth, Level Order Traversal, Number of Islands
-
-### Week 4 — Dynamic Programming, Two Pointers, Hard
-```bash
-go test ./leetcode/09_dynamic_prog/...
-go test ./leetcode/10_two_pointers/...
-go test ./leetcode/11_hard/...
-```
-**Must solve without looking:** Climbing Stairs, Coin Change, 3Sum
-
----
-
-## ✅ PHASE 5 — HackerRank
-### Folder: `hackerrank/`
-### Duration: ~1 week
-
-HackerRank is great for **interview warm-up** and **contest-style** problems.
-The style is slightly different from LeetCode — input/output focused.
-
-**Recommended order:**
-1. All Easy problems first (they're fast, confidence builders)
-2. Medium problems 
-3. Array Manipulation (Hard — great for difference array technique)
+### 🛠️ Tools to Master
 
 ```bash
-go test ./hackerrank/... -v   # see each test name passing
+go build -gcflags='-m'                    # escape analysis — what goes to heap
+go build -gcflags='-m -m'                 # verbose escape reasons
+go test -bench=. -benchmem                # benchmark + allocation counting
+go test -cpuprofile=cpu.out -bench=.      # CPU profiling
+go tool pprof cpu.out                     # analyze: top, list, web
+go test -memprofile=mem.out -bench=.      # memory profiling
+GODEBUG=gctrace=1 ./app                   # GC cycle stats in real time
+go tool trace trace.out                   # visual goroutine timeline
+```
+
+### ✅ Mastery Check
+
+1. What are the 5 common triggers for heap escape?
+2. How does `GOGC=100` differ from `GOMEMLIMIT`? When use which?
+3. Your service has 200ms p99 spikes every 2 min — diagnose with GC trace.
+4. Explain `sync.Pool`'s victim cache. When do objects get collected?
+5. Why is `fmt.Sprintf("%d", n)` slower than `strconv.Itoa(n)` in hot paths?
+6. What was the "hot split" problem with segmented stacks? How do contiguous stacks fix it?
+7. When a goroutine stack grows, how does the runtime find and update all pointers into the old stack?
+8. Why does Go NOT have tail call optimization? What's the trade-off?
+9. Which types are free to box into `any`? Which are expensive? Why?
+10. Why does `var a any = 1.0` allocate but `var a any = 42` does not?
+
+---
+
+## M5 — Standard Library Mastery
+
+**Goal:** Become fluent with Go's stdlib — the tools you'll use daily.
+
+### 🔬 Practice — 37 Exercises Across 7 Packages
+
+| Package | Exercises | Key APIs |
+|---------|:---------:|----------|
+| `stdlib/01_strings_strconv/` | 7 | `strings.Builder`, `Split/Join`, `strconv.Atoi/Itoa` |
+| `stdlib/02_sort/` | 5 | `slices.Sort`, `sort.Slice`, custom comparators |
+| `stdlib/03_builtins/` | 6 | `make`, `len`, `cap`, `copy`, `delete`, `clear` |
+| `stdlib/04_io_files/` | 4 | `io.Reader/Writer`, `bufio.Scanner`, `os.ReadFile` |
+| `stdlib/05_encoding_json/` | 4 | `json.Marshal/Unmarshal`, struct tags, streaming |
+| `stdlib/06_math/` | 6 | `math.Max/Min/Abs`, `math/rand` |
+| `stdlib/07_testing/` | 5 | Table-driven, `t.Run`, benchmarks, fuzzing |
+
+### 📚 Key Stdlib Areas for Interviews (beyond exercises)
+
+- **`context`** — `WithCancel`, `WithTimeout`, `WithValue`, propagation rules
+- **`sync`** — `Mutex`, `RWMutex`, `WaitGroup`, `Once`, `Pool`, `Map`
+- **`net/http`** — handlers, middleware pattern, `Server.Shutdown`
+- **`encoding/json`** — struct tags, custom `MarshalJSON`, streaming decoder
+
+```bash
+# Run all stdlib tests
+go test -race ./stdlib/...
 ```
 
 ---
 
-## ✅ PHASE 6 — Practical Engineering
-### Folder: `practical/`
-### Duration: ~1 week
+## M6 — Algorithm Patterns & LeetCode
 
-This is what separates interview candidates from working engineers.
+**Goal:** Build pattern recognition for coding interviews. 207 problems total.
 
-| Day | File | Key Command to Try |
-|-----|------|--------------------|
-| 1 | `01_dependency_management` | `go get github.com/joho/godotenv` |
-| 2 | `02_build_run_deploy` | `go build -ldflags "-s -w" -o myapp .` |
-| 3 | `03_docker` | Build and run the Dockerfile in this guide |
-| 4 | `04_debugging` | Install Delve, set a breakpoint in GoLand |
-| 5 | `05_config_env_json_yaml` | `go test ./practical/05_config_env_json_yaml/...` |
+### Phase A — Core Patterns (solve 3-5 per pattern first)
 
----
+| Pattern | Folder | Problems | Key Problems |
+|---------|--------|:--------:|-------------|
+| Two Pointers | `leetcode/10_two_pointers/` | 7 | 3Sum, Container With Most Water |
+| Sliding Window | `leetcode/06_sliding_window/` | 12 | Longest Substring Without Repeat |
+| Binary Search | `leetcode/05_binary_search/` | 15 | Search in Rotated Sorted Array |
+| Stacks & Queues | `leetcode/04_stacks_queues/` | 15 | Valid Parentheses, Min Stack |
+| Arrays | `leetcode/01_arrays/` | 34 | Two Sum, Max Subarray, Product Except Self |
+| Strings | `leetcode/02_strings/` | 22 | Valid Anagram, Group Anagrams |
 
-## 🧪 How to Test Your Progress
+### Phase B — Data Structure Patterns
 
-### Run a single test:
+| Pattern | Folder | Problems | Key Problems |
+|---------|--------|:--------:|-------------|
+| Linked Lists | `leetcode/03_linked_list/` | 25 | Reverse, Merge Two, Detect Cycle |
+| Trees | `leetcode/07_trees/` | 10 | Max Depth, Level Order, Validate BST |
+| Graphs | `leetcode/08_graphs/` | 6 | Number of Islands, Clone Graph |
+| Heaps | `leetcode/14_heap_priority_queue/` | 7 | Top K Frequent, Merge K Lists |
+
+### Phase C — Advanced Patterns
+
+| Pattern | Folder | Problems | Key Problems |
+|---------|--------|:--------:|-------------|
+| Dynamic Programming | `leetcode/09_dynamic_prog/` | 7 | Climbing Stairs, Coin Change |
+| Backtracking | `leetcode/12_backtracking/` | 9 | Permutations, N-Queens |
+| Bit Manipulation | `leetcode/13_bit_manipulation/` | 9 | Single Number, Counting Bits |
+| Hard | `leetcode/11_hard/` | 13 | Trapping Rain Water, Median of Two |
+
+### Strategy
+
+- Solve in **idiomatic Go** — not a translation from Python/Java
+- Always run with `-race` on concurrent solutions
+- After solving, compare with `solutions.go` — discuss tradeoffs with GoSensei
+- Target: 3-5 problems/day
+
 ```bash
+# Run tests for a specific category
+go test -v ./leetcode/01_arrays/...
+
+# Run a single problem
 go test -run TestTwoSum ./leetcode/01_arrays/
 ```
 
-### Run a whole category:
-```bash
-go test ./leetcode/01_arrays/...
-```
-
-### Run everything and see pass rate:
-```bash
-go test ./... 2>&1
-```
-
-### Run with verbose output (see each test name):
-```bash
-go test -v ./leetcode/01_arrays/...
-```
-
-### Check coverage:
-```bash
-go test -cover ./leetcode/01_arrays/...
-```
-
-### Build to verify no compile errors:
-```bash
-go build ./...
-```
-
 ---
 
-## 🚦 Self-Assessment Checkpoints
+## M7 — Production Readiness & Mock Interviews
 
-After Phase 1, you should be able to answer YES to all:
-- [ ] I know the difference between `:=` and `var`
-- [ ] I know what zero values are and why they matter
-- [ ] I can write a function with multiple return values
-- [ ] I understand pointer receivers vs value receivers
-- [ ] I know when to use an interface
-- [ ] I understand Go error handling (return error, check nil)
-- [ ] I know the difference between array and slice
-- [ ] I can create and iterate a map safely
-- [ ] I understand what a goroutine is and how to use WaitGroup
-- [ ] I know what a channel is and can do basic send/receive
+**Goal:** Tie everything together — system design, pitfalls, real-world Go.
 
-After Phase 4, you should be able to answer YES to all:
-- [ ] I can solve Easy LeetCode problems in < 10 minutes
-- [ ] I can solve Medium LeetCode problems in < 25 minutes
-- [ ] I know which pattern to apply within 2 minutes of reading a problem
-- [ ] I can explain my time and space complexity for every solution
+### 📖 Read
 
----
+| Document | Key Topics |
+|----------|-----------|
+| [`learnings/11_production_go_pitfalls.md`](learnings/11_production_go_pitfalls.md) | Top 15 production bugs, library comparison tables (8 categories), project structure, graceful shutdown, Docker multi-stage builds |
 
-## 💡 Tips for Success
+### 🔬 Practice
 
-### 1. Type the code, don't copy-paste
-Reading code and understanding code are different skills.
-Writing code builds muscle memory and forces you to think.
+- Review `practical/05_config_env_json_yaml/` — config management patterns
+- Review `practical/01-04/` concepts — dependency mgmt, build/deploy, Docker, debugging
+- Review `practical/08_error_recovery_retry/` — production error recovery and retry patterns
 
-### 2. Understand before moving on
-If you don't understand something, don't skip it.
-Go is consistent — if you understand the basics, everything else makes sense.
+### 🎤 Mock Interview Topics
 
-### 3. Test-driven approach
-Every function in this repo has a test.
-Red → Green → Refactor. Run tests constantly.
-
-### 4. Read the error messages
-Go's error messages are very clear. Learn to read them:
-```
-./main.go:15:9: undefined: foo        → you used something that doesn't exist
-./main.go:8:2: imported and not used  → remove unused import
-./main.go:12:5: cannot use x (type int) as type string → type mismatch
-```
-
-### 5. Use `go doc`
-```bash
-go doc fmt.Sprintf          # see docs for a function
-go doc strings              # see all functions in a package
-go doc -all strings.Builder # full docs for a type
-```
-
-### 6. Interview Pattern
-When given a problem in an interview:
-```
-1. Read out loud and confirm understanding (2 min)
-2. Identify the pattern (Binary Search? DP? Two Pointers?)
-3. State your approach before coding (2 min)
-4. Code from the outside in (function signature first)
-5. Walk through an example as you code
-6. State the time/space complexity at the end
-```
-
----
-
-## 📌 Your First 30 Minutes — RIGHT NOW
-
-Open your terminal and do this:
-
-```bash
-cd C:\Users\samte\GolandProjects\go-interview-prep
-
-# 1. Confirm the project builds
-go build ./...
-
-# 2. Confirm all tests pass  
-go test ./...
-
-# 3. Open the first file and read it
-# File: fundamentals/01_basics/concepts.go  ← START HERE
-
-# 4. Try the exercises
-# File: fundamentals/01_basics/exercises.go  ← IMPLEMENT THESE
-
-# 5. Run your solutions
-go test ./fundamentals/01_basics/...
-```
-
-**That's your first step. Open `fundamentals/01_basics/concepts.go` right now.**
+| Topic | What to Prepare |
+|-------|----------------|
+| System Design | Design a rate-limited HTTP API with middleware, context, graceful shutdown |
+| Concurrency | Design a concurrent file processor with backpressure and error propagation |
+| Runtime | Explain Go's GC to an interviewer (tri-color, write barrier, tuning knobs) |
+| Debugging | Walk through diagnosing a memory leak using `pprof` |
+| Code Review | Spot concurrency bugs, escape issues, error handling gaps in sample code |
+| Architecture | Explain `internal/` boundary, clean architecture in Go, DI without frameworks |
 
 ---
 
 ## 📊 Progress Tracker
 
-Copy this and keep it somewhere visible:
-
 ```
-PHASE 1 — Fundamentals
-[ ] 01_basics          (Day 1)
-[ ] 02_control_flow    (Day 2)
-[ ] 03_functions       (Day 3)
-[ ] 04_pointers        (Day 4)
-[ ] 05_structs         (Day 5)
-[ ] 06_interfaces      (Day 6)
-[ ] 07_error_handling  (Day 7)
-[ ] 08_arrays_slices   (Day 8)
-[ ] 09_maps            (Day 9)
-[ ] 10_goroutines      (Day 10)
-[ ] 11_channels        (Day 11)
-[ ] 12_packages_modules(Day 12)
+M1 — Data Structures Internals
+[ ] Read slices internals doc
+[ ] Read maps internals doc
+[ ] Read sorting/pdqsort doc
+[ ] Implement fundamentals/08_arrays_slices exercises
+[ ] Implement fundamentals/09_maps exercises
+[ ] Review slice/map exercises with internals lens
 
-PHASE 2 — Standard Library
-[ ] 01_strings_strconv
-[ ] 02_sort
-[ ] 03_builtins
-[ ] 04_io_files
-[ ] 05_encoding_json
-[ ] 06_math
-[ ] 07_testing
+M2 — Language Core Internals
+[x] Interfaces deep dive (COMPLETE)
+[ ] Read closures & scopes doc
+[ ] Read pointers & auto-deref doc
+[ ] Read error handling patterns doc
+[ ] Implement fundamentals/07_error_handling exercises
+[ ] Implement practical/08_error_recovery_retry exercises (try-catch, retry, backoff)
+[ ] Review functions/pointers/errors exercises
 
-PHASE 3 — Patterns
-[ ] Read patterns/templates.go
-[ ] Memorize 8 patterns
+M3 — Concurrency Internals
+[ ] Read channels internals doc
+[ ] Read goroutines & scheduler doc
+[ ] Implement fundamentals/10_goroutines exercises
+[ ] Implement fundamentals/11_channels exercises
+[ ] Review concurrency exercises + worker pool
 
-PHASE 4 — LeetCode
-[ ] 01_arrays (10 problems)
-[ ] 02_strings (10 problems)
-[ ] 03_linked_list (10 problems)
-[ ] 04_stacks_queues (8 problems)
-[ ] 05_binary_search (10 problems)
-[ ] 06_sliding_window (7 problems)
-[ ] 07_trees (12 problems)
-[ ] 08_graphs (8 problems)
-[ ] 09_dynamic_prog (10 problems)
-[ ] 10_two_pointers (10 problems)
-[ ] 11_hard (12 problems)
+M4 — Runtime & Performance
+[ ] Read memory/GC/escape analysis doc
+[ ] Complete 8 performance tuning exercises
+[ ] Master profiling tools (pprof, trace, gcflags)
 
-PHASE 5 — HackerRank
-[ ] All Easy (10 problems)
-[ ] All Medium (4 problems)
-[ ] Hard (1 problem)
+M5 — Stdlib Mastery
+[ ] Complete 37 stdlib exercises (7 packages)
 
-PHASE 6 — Practical
-[ ] 01_dependency_management
-[ ] 02_build_run_deploy
-[ ] 03_docker
-[ ] 04_debugging
-[ ] 05_config_env_json_yaml
+M6 — Algorithm Patterns & LeetCode
+[ ] Phase A: Core patterns (~100 problems)
+[ ] Phase B: Data structure patterns (~48 problems)
+[ ] Phase C: Advanced patterns (~38 problems)
+
+M7 — Production & Mock Interviews
+[ ] Read production pitfalls doc
+[ ] Mock interview preparation
 ```
 
+---
+
+## 🛠️ Essential Commands
+
+```bash
+# Build & test
+go build ./...                            # compile everything
+go test ./...                             # run all tests
+go test -race ./...                       # race detector (NON-NEGOTIABLE)
+go test -v -run TestName ./path/          # single test, verbose
+go test -cover ./...                      # coverage report
+
+# Performance
+go test -bench=. -benchmem ./path/        # benchmarks + allocations
+go build -gcflags='-m' ./path/            # escape analysis
+go build -gcflags='-S' ./path/            # assembly output
+go test -cpuprofile=cpu.out -bench=.      # CPU profile
+go tool pprof cpu.out                     # analyze profile
+
+# Debugging
+GODEBUG=gctrace=1 ./app                  # GC trace
+GODEBUG=schedtrace=1000 ./app            # scheduler trace
+go tool trace trace.out                   # visual timeline
+
+# Documentation
+go doc fmt.Sprintf                        # function docs
+go doc -all strings.Builder               # full type docs
+```
+
+---
+
+## 💡 Tips for This Stage
+
+1. **Read the deep dive docs actively** — don't just skim. Draw the diagrams yourself.
+2. **Run escape analysis** on code you read — predict what escapes before checking.
+3. **Always `-race`** — make it muscle memory. No exceptions.
+4. **Solve LeetCode in Go idiomatically** — use slices, maps, goroutines naturally.
+5. **When stuck on a problem**, identify the pattern first (Two Pointers? Sliding Window? DP?).
+6. **Read Go standard library source code** — it's the best Go code you'll ever read.
+
+> *"Clear is better than clever."* — Go Proverbs
