@@ -12,14 +12,15 @@ This repository covers Go language fundamentals, runtime internals, algorithm pa
 
 ```
 go-interview-prep/
-├── learnings/      ← 📖 Go Under the Hood — 20 deep-dive chapters (start here)
-├── fundamentals/   ← Go language core — concepts, exercises, tests
-├── stdlib/         ← Standard library deep-dives (7 packages, 37 exercises)
-├── patterns/       ← Algorithm pattern templates (9 patterns)
-├── problems/       ← 200+ coding problems across 14 categories
-├── practical/      ← Real-world Go: Docker, debugging, config, performance
-├── tools/          ← md2pdf — generates the companion PDF book
-└── utils/          ← Shared helpers (ListNode, TreeNode, etc.)
+├── learnings/       ← 📖 Go Under the Hood — 21 deep-dive chapters (start here)
+├── system_design/   ← 🏗️ System Design interview prep (Order Management, GCP, Terraform)
+├── fundamentals/    ← Go language core — concepts, exercises, tests
+├── stdlib/          ← Standard library deep-dives (7 packages, 37 exercises)
+├── patterns/        ← Algorithm pattern templates (9 patterns)
+├── problems/        ← 200+ coding problems across 14 categories
+├── practical/       ← Real-world Go: Docker, debugging, config, performance
+├── tools/           ← md2pdf — generates the companion PDF book
+└── utils/           ← Shared helpers (ListNode, TreeNode, etc.)
 ```
 
 ---
