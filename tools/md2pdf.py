@@ -232,7 +232,13 @@ class BookConfig:
 # ═══════════════════════════════════════════════════════════════════════
 
 def build_css(cfg: BookConfig) -> str:
+    # v2 Design: Deep blue/white (O'Reilly-inspired)
+    # Fonts: Lora (body), Montserrat (headings), JetBrains Mono (code)
+    # Primary: #1B2A4A (deep navy)  Accent: #2B6CB0 (royal blue)
+    # Body text: #2D3748 (soft black)  Background: #FFFFFF
     return f"""
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
 @page {{
     size: A4;
     margin: {cfg.margin_top_mm}mm {cfg.margin_lr_mm}mm {cfg.margin_bottom_mm}mm {cfg.margin_lr_mm}mm;
@@ -241,12 +247,13 @@ def build_css(cfg: BookConfig) -> str:
 * {{ box-sizing: border-box; }}
 
 body {{
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-family: 'Lora', 'Georgia', 'Times New Roman', serif;
     font-size: {cfg.body_font_size_pt}pt;
     line-height: {cfg.line_height};
-    color: #1a1a1a;
+    color: #2D3748;
     margin: 0;
     padding: 0;
+    -webkit-font-smoothing: antialiased;
 }}
 
 /* ── Cover ─────────────────────────────────────────────────── */
@@ -260,22 +267,29 @@ body {{
     text-align: center;
 }}
 .cover h1 {{
-    font-size: 36pt;
-    color: #1a56db;
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 38pt;
+    font-weight: 800;
+    color: #1B2A4A;
     margin-bottom: 6px;
     border: none;
     padding: 0;
     letter-spacing: -0.5px;
 }}
 .cover .subtitle {{
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
     font-size: 15pt;
-    color: #555;
+    font-weight: 500;
+    color: #4A5568;
     margin-bottom: 36px;
-    font-style: italic;
+    font-style: normal;
+    letter-spacing: 2px;
+    text-transform: uppercase;
 }}
 .cover .tagline {{
+    font-family: 'Lora', serif;
     font-size: 11pt;
-    color: #444;
+    color: #4A5568;
     max-width: 460px;
     line-height: 1.9;
 }}
@@ -285,9 +299,11 @@ body {{
 
 /* ── Headings ──────────────────────────────────────────────── */
 h1 {{
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
     font-size: 21pt;
-    color: #1a56db;
-    border-bottom: 3px solid #1a56db;
+    font-weight: 700;
+    color: #1B2A4A;
+    border-bottom: 3px solid #2B6CB0;
     padding-bottom: 6px;
     margin-top: 30px;
     margin-bottom: 16px;
@@ -295,9 +311,11 @@ h1 {{
     line-height: 1.3;
 }}
 h2 {{
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
     font-size: 16pt;
-    color: #2563eb;
-    border-bottom: 1px solid #ddd;
+    font-weight: 600;
+    color: #2B6CB0;
+    border-bottom: 1px solid #E2E8F0;
     padding-bottom: 4px;
     margin-top: 24px;
     margin-bottom: 12px;
@@ -305,15 +323,19 @@ h2 {{
     line-height: 1.3;
 }}
 h3 {{
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
     font-size: 13pt;
-    color: #3b82f6;
+    font-weight: 600;
+    color: #2C5282;
     margin-top: 20px;
     margin-bottom: 8px;
     break-after: avoid;
 }}
 h4 {{
+    font-family: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
     font-size: 11.5pt;
-    color: #60a5fa;
+    font-weight: 600;
+    color: #3182CE;
     margin-top: 16px;
     margin-bottom: 6px;
     break-after: avoid;
@@ -321,14 +343,14 @@ h4 {{
 
 /* ── Code Blocks — KEEP TOGETHER ───────────────────────────── */
 pre {{
-    background: #f6f8fa;
-    border: 1px solid #d0d7de;
-    border-left: 3px solid #3b82f6;
-    border-radius: 6px;
+    background: #F7FAFC;
+    border: 1px solid #E2E8F0;
+    border-left: 3px solid #2B6CB0;
+    border-radius: 4px;
     padding: 12px 14px;
-    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
     font-size: {cfg.code_font_size_pt}pt;
-    line-height: 1.45;
+    line-height: 1.5;
     white-space: pre-wrap;
     word-wrap: break-word;
     break-inside: avoid;
@@ -340,14 +362,15 @@ pre.allow-break {{
     page-break-inside: auto;
 }}
 code {{
-    font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    font-family: 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
     font-size: {cfg.code_font_size_pt}pt;
 }}
 p code, li code, td code, h1 code, h2 code, h3 code, h4 code, a code {{
-    background: #eff1f3;
+    background: #EDF2F7;
     padding: 1px 5px;
     border-radius: 3px;
     font-size: {cfg.code_font_size_pt + 1}pt;
+    color: #1B2A4A;
 }}
 
 /* ── Tables — KEEP TOGETHER ────────────────────────────────── */
@@ -359,19 +382,22 @@ table {{
     break-inside: avoid;
     page-break-inside: avoid;
 }}
-thead {{ background: #1a56db; color: white; }}
-th {{ padding: 8px 10px; text-align: left; font-weight: 600; }}
-td {{ padding: 6px 10px; border: 1px solid #d0d7de; }}
-tbody tr:nth-child(even) {{ background: #f6f8fa; }}
-tbody tr:nth-child(odd) {{ background: #fff; }}
+thead {{ background: #1B2A4A; color: #FFFFFF; }}
+th {{
+    font-family: 'Montserrat', sans-serif;
+    padding: 8px 10px; text-align: left; font-weight: 600;
+}}
+td {{ padding: 6px 10px; border: 1px solid #E2E8F0; }}
+tbody tr:nth-child(even) {{ background: #F7FAFC; }}
+tbody tr:nth-child(odd) {{ background: #FFFFFF; }}
 
 /* ── Blockquotes — KEEP TOGETHER ───────────────────────────── */
 blockquote {{
-    border-left: 4px solid #3b82f6;
-    background: #eff6ff;
+    border-left: 4px solid #2B6CB0;
+    background: #EBF4FF;
     margin: 14px 0;
     padding: 10px 16px;
-    color: #1e3a5f;
+    color: #1B2A4A;
     font-style: italic;
     break-inside: avoid;
     page-break-inside: avoid;
@@ -385,19 +411,19 @@ li > ul, li > ol {{ margin-top: 4px; margin-bottom: 4px; }}
 
 /* ── Paragraphs & misc ─────────────────────────────────────── */
 p {{ margin: 10px 0; orphans: 3; widows: 3; }}
-hr {{ border: none; border-top: 2px solid #e5e7eb; margin: 22px 0; }}
-a {{ color: #1a56db; text-decoration: none; }}
-strong {{ color: #111; }}
+hr {{ border: none; border-top: 2px solid #E2E8F0; margin: 22px 0; }}
+a {{ color: #2B6CB0; text-decoration: none; }}
+strong {{ color: #1A202C; }}
 h1 + *, h2 + *, h3 + *, h4 + * {{ break-before: avoid; }}
 
 /* ── How to Use ────────────────────────────────────────────── */
 .howto h1 {{ text-align: center; border-bottom: none; margin-bottom: 24px; }}
-.howto h3 {{ color: #1a56db; margin-top: 22px; font-size: 13pt; }}
+.howto h3 {{ color: #1B2A4A; margin-top: 22px; font-size: 13pt; }}
 .howto .depth-table td {{
     padding: 4px 10px; border: none; vertical-align: top; font-size: 11pt;
 }}
 .howto .depth-table td:first-child {{
-    font-weight: 700; color: #1a56db; white-space: nowrap;
+    font-weight: 700; color: #2B6CB0; white-space: nowrap;
 }}
 
 /* ── About the Author ──────────────────────────────────────── */
@@ -405,17 +431,20 @@ h1 + *, h2 + *, h3 + *, h4 + * {{ break-before: avoid; }}
     text-align: center; border-bottom: none; margin-bottom: 28px;
 }}
 .author-page .author-name {{
-    font-size: 18pt; font-weight: 700; color: #1a56db;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 18pt; font-weight: 700; color: #1B2A4A;
     text-align: center; margin-bottom: 4px;
 }}
 .author-page .author-role {{
-    font-size: 11pt; color: #666; text-align: center;
+    font-family: 'Lora', serif;
+    font-size: 11pt; color: #718096; text-align: center;
     margin-bottom: 28px; font-style: italic;
 }}
-.author-page h3 {{ color: #1a56db; font-size: 13pt; margin-top: 24px; }}
+.author-page h3 {{ color: #1B2A4A; font-size: 13pt; margin-top: 24px; }}
 .author-page .github-link {{
     display: inline-block; margin-top: 12px; padding: 8px 20px;
-    background: #1a56db; color: white !important; border-radius: 6px;
+    background: #1B2A4A; color: white !important; border-radius: 6px;
+    font-family: 'Montserrat', sans-serif;
     font-weight: 600; font-size: 11pt; text-decoration: none;
 }}
 
@@ -424,35 +453,38 @@ h1 + *, h2 + *, h3 + *, h4 + * {{ break-before: avoid; }}
     text-align: center; border-bottom: none; margin-bottom: 28px;
 }}
 .references-page h3 {{
-    color: #1a56db; font-size: 13pt; margin-top: 22px;
-    border-bottom: 1px solid #e0e0e0; padding-bottom: 4px;
+    color: #1B2A4A; font-size: 13pt; margin-top: 22px;
+    border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;
 }}
 .references-page li {{ margin-bottom: 6px; }}
 
 /* ── Table of Contents ─────────────────────────────────────── */
 .toc h1 {{ text-align: center; border-bottom: none; margin-bottom: 28px; }}
 .toc-part-title {{
-    font-size: 13pt; font-weight: 700; color: #1a56db;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13pt; font-weight: 700; color: #1B2A4A;
     margin-top: 20px; margin-bottom: 8px; padding-bottom: 4px;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #E2E8F0;
 }}
 .toc-entry {{
     display: flex; align-items: baseline; text-decoration: none;
-    color: #1a1a1a; padding: 4px 0; font-size: 11.5pt; line-height: 1.6;
+    color: #2D3748; padding: 4px 0; font-size: 11.5pt; line-height: 1.6;
 }}
-.toc-entry:hover {{ color: #1a56db; }}
+.toc-entry:hover {{ color: #2B6CB0; }}
 .toc-num {{
-    display: inline-block; width: 32px; color: #1a56db;
+    font-family: 'Montserrat', sans-serif;
+    display: inline-block; width: 32px; color: #2B6CB0;
     font-weight: 600; flex-shrink: 0;
 }}
 .toc-title {{ flex-shrink: 0; }}
 .toc-dots {{
-    flex: 1; border-bottom: 1px dotted #bbb;
+    flex: 1; border-bottom: 1px dotted #CBD5E0;
     margin: 0 8px 4px 8px; min-width: 30px;
 }}
 .toc-page {{
+    font-family: 'Montserrat', sans-serif;
     flex-shrink: 0; min-width: 26px; text-align: right;
-    color: #666; font-variant-numeric: tabular-nums; font-weight: 500;
+    color: #718096; font-variant-numeric: tabular-nums; font-weight: 500;
 }}
 """
 
