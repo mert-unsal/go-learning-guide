@@ -2325,51 +2325,80 @@ default:
 }
 ```
 
-### Production Scenario 1: HTTP Handler — Try Cache, Fall Back to DB
+### Production Scenario 1: Metrics Collector — Try Send, Drop If Backed Up
+
+**Why not a channel-based cache?** Channels are FIFO queues where receive **consumes**
+the value — once read, it's gone. A real cache needs random access by key and multiple
+readers (use `sync.Map` or `map` + `RWMutex` for that). Channels are the wrong tool
+for caching.
+
+**Where select+default shines:** fire-and-forget telemetry. If the metrics pipeline is
+backed up, **drop the metric** rather than blocking the hot path:
 
 ```go
-func getUser(w http.ResponseWriter, r *http.Request) {
-    userID := r.PathValue("id")
+// metricsCh has a buffer of 1000 — absorbs bursts
+var metricsCh = make(chan Metric, 1000)
+
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+    start := time.Now()
     
-    // Try the cache channel (non-blocking):
+    // ... handle the request ...
+    user := queryDB(r.PathValue("id"))
+    json.NewEncoder(w).Encode(user)
+    
+    // Try to record latency metric (non-blocking):
     select {
-    case cached := <-cacheResults:
-        if cached.ID == userID {
-            json.NewEncoder(w).Encode(cached)
+    case metricsCh <- Metric{Path: r.URL.Path, Duration: time.Since(start)}:
+        // metric recorded
+    default:
+        // collector is backed up — drop this metric rather than
+        // adding latency to the user's response
+    }
+}
+
+// Separate goroutine drains and batches metrics
+func metricsCollector(ctx context.Context) {
+    batch := make([]Metric, 0, 100)
+    ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
+    
+    for {
+        select {
+        case m := <-metricsCh:
+            batch = append(batch, m)
+            if len(batch) >= 100 {
+                flushMetrics(batch)
+                batch = batch[:0]
+            }
+        case <-ticker.C:
+            if len(batch) > 0 {
+                flushMetrics(batch)
+                batch = batch[:0]
+            }
+        case <-ctx.Done():
+            flushMetrics(batch) // flush remaining on shutdown
             return
         }
-    default:
-        // cache miss — fall through to DB
-    }
-    
-    // Blocking wait with request deadline:
-    resultCh := make(chan User, 1)
-    go func() { resultCh <- queryDB(userID) }()
-    
-    select {
-    case user := <-resultCh:
-        json.NewEncoder(w).Encode(user)
-    case <-r.Context().Done():
-        // client disconnected or request timeout
-        http.Error(w, "timeout", http.StatusGatewayTimeout)
     }
 }
 ```
 
 ```
-  Flow:
-  ┌──────────────────────────────────────────────────────────┐
-  │  Request arrives                                          │
-  │  ├── select + default: check cache (non-blocking)        │
-  │  │   ├── HIT  → respond immediately, done                │
-  │  │   └── MISS → fall through                              │
-  │  │                                                        │
-  │  └── select + ctx.Done(): wait for DB (bounded)          │
-  │      ├── DB responds   → respond with data, done          │
-  │      └── ctx cancelled → respond 504, done                │
-  │                                                           │
-  │  No goroutine leak: either DB finishes or context cancels │
-  └──────────────────────────────────────────────────────────┘
+  Why this works as a channel pattern:
+  ┌─────────────────────────────────────────────────────────────┐
+  │  Channel = FIFO queue (values consumed once) ✅             │
+  │  Metrics are write-once, read-once — perfect for channels   │
+  │  Each metric flows: handler → channel → collector → flush   │
+  │                                                             │
+  │  select+default = "try, don't block":                       │
+  │  ├── Buffer has space  → metric recorded (fast path)        │
+  │  └── Buffer full       → metric dropped (no user impact)    │
+  │                                                             │
+  │  Why NOT a cache pattern:                                   │
+  │  Cache = random access by key, many readers, values persist │
+  │  Channel = sequential queue, one reader consumes, value gone│
+  │  These are fundamentally different data access patterns      │
+  └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Production Scenario 2: Worker Event Loop

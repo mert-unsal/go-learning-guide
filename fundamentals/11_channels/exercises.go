@@ -294,6 +294,43 @@ func ChannelCounter(workers, incrementsPerWorker int) int {
 	return <-done
 }
 
+// ============================================================
+// Exercise 12: DualTimeoutWorker — Inactivity + Hard Deadline
+// ============================================================
+// DualTimeoutWorker consumes values from 'ch' and calls 'process' on each.
+// It must enforce TWO timeout rules:
+//
+//  1. Inactivity timeout: if no message arrives for 'inactivity' duration,
+//     stop and return all processed results.
+//  2. Hard deadline: regardless of activity, stop after 'deadline' duration
+//     from when the worker started.
+//
+// Return the slice of processed results (in order received).
+//
+// Constraints:
+//   - Use time.NewTimer for the inactivity timeout (Reset it on each message)
+//   - Use context for the hard deadline (think: which context function fits?)
+//   - Clean up both: Stop the timer, cancel the context
+//   - Do NOT use time.After in a loop (it leaks — you know why)
+//
+// Why this matters:
+//   - Production workers always need both: "idle shutdown" + "max lifetime"
+//   - Cloud Run gives you 10min max request time — that's a hard deadline
+//   - Inactivity timeout prevents holding resources when producers die
+//   - Combining timer + context is the idiomatic Go pattern for dual timeouts
+func DualTimeoutWorker(ch <-chan int, process func(int) int, inactivity, deadline time.Duration) []int {
+	// TODO: implement dual-timeout worker
+	// Hints:
+	//   - Create a context with the deadline duration
+	//   - Create a timer for inactivity
+	//   - Use for/select watching: ch, timer.C, ctx.Done()
+	//   - On message: process it, append result, reset timer
+	//   - On timer fire: inactivity timeout, return results
+	//   - On ctx.Done(): hard deadline hit, return results
+	//   - Don't forget: timer.Stop()/drain before Reset, defer cancel(), defer timer.Stop()
+	panic("not implemented")
+}
+
 func AtomicCounter(workers, incrementsPerWorker int) int64 {
 	var count int64
 	var wg sync.WaitGroup
