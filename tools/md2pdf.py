@@ -113,6 +113,7 @@ class BookConfig:
         self.output = "book.pdf"
         self.howto_text = ""       # Custom "How to Use" content (markdown)
         self.author_page = ""      # "About the Author" content (markdown, after cover)
+        self.disclaimer_page = ""  # "Disclaimer & License" content (markdown, after author)
         self.references_page = ""  # "References" content (markdown, at the end)
         self.parts = []            # [{"name": "Part I", "chapters": [{"file", "short"}, ...]}]
         self.chrome_path = ""
@@ -141,7 +142,7 @@ class BookConfig:
 
         for key in ["title", "subtitle", "author", "description", "subject",
                      "keywords", "source_dir", "output", "howto_text",
-                     "author_page", "references_page", "chrome_path"]:
+                     "author_page", "disclaimer_page", "references_page", "chrome_path"]:
             if key in data:
                 setattr(cfg, key, data[key])
 
@@ -448,6 +449,17 @@ h1 + *, h2 + *, h3 + *, h4 + * {{ break-before: avoid; }}
     font-weight: 600; font-size: 11pt; text-decoration: none;
 }}
 
+/* ── Disclaimer & License ─────────────────────────────────── */
+.disclaimer-page h1 {{
+    text-align: center; border-bottom: none; margin-bottom: 28px;
+}}
+.disclaimer-page h3 {{
+    color: #1B2A4A; font-size: 13pt; margin-top: 22px;
+    border-bottom: 1px solid #E2E8F0; padding-bottom: 4px;
+}}
+.disclaimer-page li {{ margin-bottom: 6px; }}
+.disclaimer-page p {{ font-size: 10.5pt; color: #4A5568; }}
+
 /* ── References ────────────────────────────────────────────── */
 .references-page h1 {{
     text-align: center; border-bottom: none; margin-bottom: 28px;
@@ -590,6 +602,14 @@ def build_author_page(cfg: BookConfig) -> str:
     return f'<div class="author-page chapter-break"><h1>About the Author</h1>{content}</div>'
 
 
+def build_disclaimer_page(cfg: BookConfig) -> str:
+    """Build 'Disclaimer & License' page from config markdown content."""
+    if not cfg.disclaimer_page:
+        return ""
+    content = md_to_html(cfg.disclaimer_page)
+    return f'<div class="disclaimer-page chapter-break"><h1>Disclaimer &amp; License</h1>{content}</div>'
+
+
 def build_references_page(cfg: BookConfig) -> str:
     """Build 'References' page from config markdown content."""
     if not cfg.references_page:
@@ -629,6 +649,11 @@ def build_full_html(cfg: BookConfig, chapters_content: list, page_map: dict = No
     author_html = build_author_page(cfg)
     if author_html:
         parts.append(author_html)
+
+    # Disclaimer & License page (after author, before How to Use)
+    disclaimer_html = build_disclaimer_page(cfg)
+    if disclaimer_html:
+        parts.append(disclaimer_html)
 
     parts.append(build_howto(cfg))
     parts.append(build_toc(cfg, page_map))
