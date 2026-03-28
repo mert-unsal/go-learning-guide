@@ -3,6 +3,9 @@
 > How Go represents errors at runtime, how wrapping builds linked chains,
 > how errors.Is/As walk those chains, and how to architect error handling
 > across service layers in production.
+>
+> **Related:** [Chapter 12 — Concurrent Error Patterns](./12_concurrent_errors_errgroup.md) covers
+> goroutine error handling with WaitGroup+Mutex, channels, and `errgroup.Group`.
 
 ---
 

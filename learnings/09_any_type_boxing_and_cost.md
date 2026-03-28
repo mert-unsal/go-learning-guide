@@ -2,6 +2,9 @@
 
 > How Go handles heterogeneous data, what it costs at the runtime level,
 > and why understanding boxing is essential for production performance.
+>
+> **Related:** [Chapter 08 — Interface Internals](./08_interfaces_iface_eface_nil_trap.md) covers
+> the `iface` vs `eface` runtime structs, `itab` caching, and the nil interface trap.
 
 ---
 

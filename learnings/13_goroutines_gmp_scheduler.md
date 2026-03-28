@@ -566,61 +566,13 @@ model scales to hundreds of thousands of connections with minimal thread usage.
 
 ## 11. Stack Management
 
-### Contiguous Stacks (Go 1.4+)
+Each goroutine starts with a **2KB contiguous stack** that grows dynamically (2x
+copies) and shrinks during GC. The compiler inserts a stack-check preamble at
+every function entry, which also serves as the cooperative preemption point.
 
-Each goroutine starts with a **2KB stack** (since Go 1.4). Stacks are contiguous
-memory regions that grow and shrink dynamically.
-
-```
-  Initial goroutine stack:
-  ┌──────────────────┐ high address (stack.hi)
-  │                  │
-  │  (unused space)  │  ← only 2KB initially
-  │                  │
-  ├──────────────────┤ ← SP (stack pointer)
-  │  current frame   │
-  └──────────────────┘ low address (stack.lo)
-```
-
-### Stack Growth
-
-At every function preamble, the compiler inserts a check:
-
-```
-  1. Compare SP with g.stackguard0
-  2. If SP < stackguard0 → stack is too small → call runtime.morestack()
-  3. morestack():
-     a. Allocate new stack = 2x current size
-     b. Copy entire old stack to new stack
-     c. Update ALL pointers into the stack (scan and adjust)
-     d. Free old stack
-     e. Resume function on new stack
-```
-
-```
-  Before growth:                    After growth (2x):
-  ┌──────────┐ 2KB                 ┌──────────────────────┐ 4KB
-  │ frame 3  │                     │                      │
-  │ frame 2  │      ──copy──►      │ frame 3              │
-  │ frame 1  │                     │ frame 2              │
-  │ frame 0  │                     │ frame 1              │
-  └──────────┘                     │ frame 0              │
-                                   └──────────────────────┘
-```
-
-### Stack Shrinking
-
-During GC, if a goroutine's stack is less than 25% utilized, the runtime
-halves it (copies to a smaller allocation). This reclaims memory from
-goroutines that had deep call stacks temporarily.
-
-### Implications
-
-- **Pointers to stack variables can move** — this is why you can't pass Go
-  pointers to C code (CGo pins them to prevent movement)
-- **Deep recursion has a hidden cost** — each growth copies the entire stack
-- **Function calls are not free** — the preamble check adds ~1-2ns overhead
-  (but enables preemption and growth)
+> **Full deep dive:** See [Chapter 14 — Goroutine Stacks & Growth](./14_goroutine_stacks_growth.md)
+> for contiguous vs segmented stack history, pointer adjustment algorithm,
+> stack maps, shrinking mechanics, and performance implications.
 
 ---
 
