@@ -2325,83 +2325,7 @@ default:
 }
 ```
 
-### Production Scenario 1: Metrics Collector — Try Send, Drop If Backed Up
-
-**Why not a channel-based cache?** Channels are FIFO queues where receive **consumes**
-the value — once read, it's gone. A real cache needs random access by key and multiple
-readers (use `sync.Map` or `map` + `RWMutex` for that). Channels are the wrong tool
-for caching.
-
-**Where select+default shines:** fire-and-forget telemetry. If the metrics pipeline is
-backed up, **drop the metric** rather than blocking the hot path:
-
-```go
-// metricsCh has a buffer of 1000 — absorbs bursts
-var metricsCh = make(chan Metric, 1000)
-
-func handleRequest(w http.ResponseWriter, r *http.Request) {
-    start := time.Now()
-    
-    // ... handle the request ...
-    user := queryDB(r.PathValue("id"))
-    json.NewEncoder(w).Encode(user)
-    
-    // Try to record latency metric (non-blocking):
-    select {
-    case metricsCh <- Metric{Path: r.URL.Path, Duration: time.Since(start)}:
-        // metric recorded
-    default:
-        // collector is backed up — drop this metric rather than
-        // adding latency to the user's response
-    }
-}
-
-// Separate goroutine drains and batches metrics
-func metricsCollector(ctx context.Context) {
-    batch := make([]Metric, 0, 100)
-    ticker := time.NewTicker(10 * time.Second)
-    defer ticker.Stop()
-    
-    for {
-        select {
-        case m := <-metricsCh:
-            batch = append(batch, m)
-            if len(batch) >= 100 {
-                flushMetrics(batch)
-                batch = batch[:0]
-            }
-        case <-ticker.C:
-            if len(batch) > 0 {
-                flushMetrics(batch)
-                batch = batch[:0]
-            }
-        case <-ctx.Done():
-            flushMetrics(batch) // flush remaining on shutdown
-            return
-        }
-    }
-}
-```
-
-```
-  Why this works as a channel pattern:
-  ┌─────────────────────────────────────────────────────────────┐
-  │  Channel = FIFO queue (values consumed once) ✅             │
-  │  Metrics are write-once, read-once — perfect for channels   │
-  │  Each metric flows: handler → channel → collector → flush   │
-  │                                                             │
-  │  select+default = "try, don't block":                       │
-  │  ├── Buffer has space  → metric recorded (fast path)        │
-  │  └── Buffer full       → metric dropped (no user impact)    │
-  │                                                             │
-  │  Why NOT a cache pattern:                                   │
-  │  Cache = random access by key, many readers, values persist │
-  │  Channel = sequential queue, one reader consumes, value gone│
-  │  These are fundamentally different data access patterns      │
-  └─────────────────────────────────────────────────────────────┘
-```
-
-### Production Scenario 2: Worker Event Loop
+### Production Scenario 1: Worker Event Loop
 
 ```go
 func worker(ctx context.Context, jobs <-chan Job, ticker *time.Ticker) {
@@ -2452,7 +2376,7 @@ func worker(ctx context.Context, jobs <-chan Job, ticker *time.Ticker) {
   forever on an empty channel.
 ```
 
-### Production Scenario 3: Rate Limiter (tryAcquire)
+### Production Scenario 2: Rate Limiter (tryAcquire)
 
 ```go
 type RateLimiter struct {
@@ -2512,7 +2436,7 @@ func (rl *RateLimiter) Acquire(ctx context.Context) error {
     Used for: queue the request, serve when capacity is available
 ```
 
-### Production Scenario 4: Heartbeat / Health Monitor
+### Production Scenario 3: Heartbeat / Health Monitor
 
 ```go
 func monitorService(ctx context.Context, healthCh <-chan struct{}) {
@@ -2554,7 +2478,7 @@ func monitorService(ctx context.Context, healthCh <-chan struct{}) {
   all three concerns cleanly.
 ```
 
-### Production Scenario 5: First Response Wins (Fan-Out to Multiple Backends)
+### Production Scenario 4: First Response Wins (Fan-Out to Multiple Backends)
 
 ```go
 func queryFastest(ctx context.Context, query string, backends []Backend) (Result, error) {
