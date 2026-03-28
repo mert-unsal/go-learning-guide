@@ -544,8 +544,115 @@ def extract_h1(md_text: str) -> str:
 def build_cover(cfg: BookConfig) -> str:
     subtitle = f'<div class="subtitle">{cfg.subtitle}</div>' if cfg.subtitle else ""
     desc = f'<div class="tagline">{cfg.description}</div>' if cfg.description else ""
+
+    # SVG cover art — abstract geometric circuit/network pattern
+    # Deep navy theme with blue accent nodes — represents Go's runtime internals
+    cover_svg = """
+    <svg viewBox="0 0 600 400" xmlns="http://www.w3.org/2000/svg" style="width:480px;margin-bottom:30px;">
+      <defs>
+        <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#0F1B2D"/>
+          <stop offset="100%" style="stop-color:#1B2A4A"/>
+        </linearGradient>
+        <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#2B6CB0"/>
+          <stop offset="100%" style="stop-color:#63B3ED"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+
+      <!-- Background -->
+      <rect width="600" height="400" rx="12" fill="url(#bg)"/>
+
+      <!-- Grid lines (subtle) -->
+      <g stroke="#1E3A5F" stroke-width="0.5" opacity="0.3">
+        <line x1="100" y1="0" x2="100" y2="400"/>
+        <line x1="200" y1="0" x2="200" y2="400"/>
+        <line x1="300" y1="0" x2="300" y2="400"/>
+        <line x1="400" y1="0" x2="400" y2="400"/>
+        <line x1="500" y1="0" x2="500" y2="400"/>
+        <line x1="0" y1="80" x2="600" y2="80"/>
+        <line x1="0" y1="160" x2="600" y2="160"/>
+        <line x1="0" y1="240" x2="600" y2="240"/>
+        <line x1="0" y1="320" x2="600" y2="320"/>
+      </g>
+
+      <!-- Connection lines (runtime data flow) -->
+      <g stroke="#2B6CB0" stroke-width="1.5" opacity="0.5" fill="none">
+        <!-- GMP scheduler paths -->
+        <path d="M100,80 L200,160 L300,80 L400,160" stroke-dasharray="6,4"/>
+        <path d="M200,160 L200,320 L400,320 L400,160"/>
+        <path d="M100,240 L300,240 L300,320 L500,320"/>
+        <path d="M500,80 L400,160 L500,240"/>
+        <!-- Channel paths -->
+        <path d="M100,80 L100,240" stroke-dasharray="4,6"/>
+        <path d="M300,80 L300,240"/>
+        <path d="M500,80 L500,240" stroke-dasharray="4,6"/>
+        <!-- Cross connections -->
+        <path d="M100,160 L300,160 L500,160" opacity="0.3"/>
+      </g>
+
+      <!-- Nodes — goroutines (G) -->
+      <g filter="url(#glow)">
+        <circle cx="100" cy="80" r="8" fill="#63B3ED"/>
+        <circle cx="300" cy="80" r="8" fill="#63B3ED"/>
+        <circle cx="500" cy="80" r="8" fill="#63B3ED"/>
+        <text x="100" y="84" text-anchor="middle" fill="#0F1B2D" font-size="10" font-weight="700" font-family="sans-serif">G</text>
+        <text x="300" y="84" text-anchor="middle" fill="#0F1B2D" font-size="10" font-weight="700" font-family="sans-serif">G</text>
+        <text x="500" y="84" text-anchor="middle" fill="#0F1B2D" font-size="10" font-weight="700" font-family="sans-serif">G</text>
+      </g>
+
+      <!-- Nodes — processors (P) -->
+      <g filter="url(#glow)">
+        <rect x="188" y="148" width="24" height="24" rx="4" fill="#2B6CB0"/>
+        <rect x="388" y="148" width="24" height="24" rx="4" fill="#2B6CB0"/>
+        <text x="200" y="165" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="700" font-family="sans-serif">P</text>
+        <text x="400" y="165" text-anchor="middle" fill="#FFFFFF" font-size="11" font-weight="700" font-family="sans-serif">P</text>
+      </g>
+
+      <!-- Nodes — OS threads (M) -->
+      <g filter="url(#glow)">
+        <circle cx="100" cy="240" r="10" fill="#1B2A4A" stroke="#63B3ED" stroke-width="2"/>
+        <circle cx="300" cy="240" r="10" fill="#1B2A4A" stroke="#63B3ED" stroke-width="2"/>
+        <circle cx="500" cy="240" r="10" fill="#1B2A4A" stroke="#63B3ED" stroke-width="2"/>
+        <text x="100" y="244" text-anchor="middle" fill="#63B3ED" font-size="10" font-weight="700" font-family="sans-serif">M</text>
+        <text x="300" y="244" text-anchor="middle" fill="#63B3ED" font-size="10" font-weight="700" font-family="sans-serif">M</text>
+        <text x="500" y="244" text-anchor="middle" fill="#63B3ED" font-size="10" font-weight="700" font-family="sans-serif">M</text>
+      </g>
+
+      <!-- Channel buffer (hchan ring) -->
+      <g transform="translate(300, 320)" filter="url(#glow)">
+        <rect x="-60" y="-12" width="120" height="24" rx="12" fill="none" stroke="#63B3ED" stroke-width="1.5"/>
+        <circle cx="-36" cy="0" r="5" fill="#63B3ED" opacity="0.8"/>
+        <circle cx="-12" cy="0" r="5" fill="#63B3ED" opacity="0.6"/>
+        <circle cx="12" cy="0" r="5" fill="#63B3ED" opacity="0.4"/>
+        <circle cx="36" cy="0" r="5" fill="none" stroke="#63B3ED" stroke-width="1" opacity="0.3"/>
+        <text x="80" y="5" fill="#4A7FB5" font-size="9" font-family="sans-serif" opacity="0.7">hchan</text>
+      </g>
+
+      <!-- Memory blocks (heap) -->
+      <g opacity="0.4">
+        <rect x="40" y="310" width="30" height="14" rx="2" fill="#2B6CB0"/>
+        <rect x="40" y="330" width="20" height="14" rx="2" fill="#2B6CB0"/>
+        <rect x="40" y="350" width="35" height="14" rx="2" fill="#2B6CB0"/>
+        <rect x="530" y="310" width="25" height="14" rx="2" fill="#2B6CB0"/>
+        <rect x="530" y="330" width="30" height="14" rx="2" fill="#2B6CB0"/>
+        <rect x="520" y="350" width="40" height="14" rx="2" fill="#2B6CB0"/>
+      </g>
+
+      <!-- Labels -->
+      <text x="200" y="60" text-anchor="middle" fill="#4A7FB5" font-size="9" font-family="sans-serif" opacity="0.6">goroutines</text>
+      <text x="200" y="220" text-anchor="middle" fill="#4A7FB5" font-size="9" font-family="sans-serif" opacity="0.6">scheduler</text>
+      <text x="100" y="290" text-anchor="middle" fill="#4A7FB5" font-size="9" font-family="sans-serif" opacity="0.6">threads</text>
+      <text x="40" y="305" fill="#4A7FB5" font-size="8" font-family="sans-serif" opacity="0.5">heap</text>
+    </svg>"""
+
     return f"""
     <div class="cover">
+        {cover_svg}
         <h1>{cfg.title}</h1>
         {subtitle}
         {desc}
