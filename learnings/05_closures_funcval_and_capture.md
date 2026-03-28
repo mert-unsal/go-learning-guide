@@ -3,7 +3,7 @@
 > The funcval struct, capture-by-reference mechanics, escape analysis triggers,
 > loop capture gotchas, and production closure patterns.
 >
-> **Related:** [Chapter 16 §2](./16_memory_gc_escape_analysis.md) covers escape analysis
+> **Related:** [Chapter 13 §2](./13_memory_gc_escape_sorting.md) covers escape analysis
 > in the broader memory/GC context (5 escape rules, allocator, profiling).
 
 ---
@@ -492,7 +492,7 @@ for _, src := range sources {
 }
 ```
 
-> **Full pattern with timeline & variations:** See [Chapter 15 §6](./15_channels_hchan_select.md)
+> **Full pattern with timeline & variations:** See [Chapter 12 §6](./12_channels_hchan_select.md)
 > (channels production patterns) for the complete fan-in implementation,
 > coordinator goroutine, and context cancellation variant.
 

@@ -2,10 +2,9 @@
 
 > How Go's three unique features — methods on function types, structural typing,
 > and closures — combine to create the HTTP middleware ecosystem with zero frameworks.
-> This chapter connects Chapters 06 (closures), 08 (interfaces), and 21 (design philosophy).
+> This chapter connects Chapters 05 (closures), 06 (interfaces), and 16 (design philosophy).
 >
-> **Related:** [Chapter 20 §7](./20_production_pitfalls_enterprise.md) for production middleware checklist.
-> [Chapter 23 §1](./23_production_patterns.md) for architectural context.
+> **Related:** [Chapter 18 §8](./18_production_patterns_enterprise.md) for production middleware checklist.
 
 ---
 

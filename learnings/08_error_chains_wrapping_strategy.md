@@ -4,7 +4,7 @@
 > how errors.Is/As walk those chains, and how to architect error handling
 > across service layers in production.
 >
-> **Related:** [Chapter 12 — Concurrent Error Patterns](./12_concurrent_errors_errgroup.md) covers
+> **Related:** [Chapter 09 — Concurrent Error Patterns](./09_concurrent_errors_errgroup.md) covers
 > goroutine error handling with WaitGroup+Mutex, channels, and `errgroup.Group`.
 
 ---

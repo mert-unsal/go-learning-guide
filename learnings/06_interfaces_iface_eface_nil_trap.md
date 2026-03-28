@@ -3,7 +3,7 @@
 > Everything the runtime does when you assign a value to an interface,
 > call a method through it, or compare it to nil.
 >
-> **Related:** [Chapter 09 — Boxing costs & the `any` type](./09_any_type_boxing_and_cost.md) covers
+> **Related:** [Chapter 07 — Boxing costs & the `any` type](./07_any_type_boxing_and_cost.md) covers
 > `convT` functions, `staticuint64s` optimization, and performance of `interface{}` / `any`.
 
 ---
@@ -687,7 +687,7 @@ handler = authMiddleware(handler)       // wraps http.Handler → returns http.H
 `cancelCtx`. The interface makes the layers **infinitely composable** — each wrapper
 doesn't know or care what's inside it.
 
-> See [12_context_interface_deep_dive.md](./12_context_interface_deep_dive.md) for a
+> See [Chapter 19 — Context Masterclass](./19_context_interface_masterclass.md) for a
 > complete walkthrough of how `context.Context` uses this pattern.
 
 ---

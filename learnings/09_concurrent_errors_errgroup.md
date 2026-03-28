@@ -4,7 +4,7 @@
 > concurrent error handling patterns. Read this BEFORE doing the goroutine
 > and channel exercises if you want to understand the "why" behind each pattern.
 >
-> **Related:** [Chapter 11 — Error Chains & Wrapping](./11_error_chains_wrapping_strategy.md) covers
+> **Related:** [Chapter 08 — Error Chains & Wrapping](./08_error_chains_wrapping_strategy.md) covers
 > sequential error handling: sentinel errors, custom types, `errors.Is`/`As`, and panic/recover.
 
 ---

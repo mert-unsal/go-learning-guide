@@ -20,7 +20,8 @@
 11. [GOMAXPROCS and Tuning](#11-gomaxprocs-and-tuning)
 12. [Performance Characteristics](#12-performance-characteristics)
 13. [Debugging Tools](#13-debugging-tools)
-14. [Quick Reference Card](#14-quick-reference-card)
+14. [Interview Self-Test](#14-interview-self-test)
+15. [Quick Reference Card](#15-quick-reference-card)
 
 ---
 
@@ -362,7 +363,7 @@ Each goroutine starts with a **2KB contiguous stack** that grows dynamically (2x
 copies) and shrinks during GC. The compiler inserts a stack-check preamble at
 every function entry, which also serves as the cooperative preemption point.
 
-> **Full deep dive:** See [Chapter 14 — Goroutine Stacks & Growth](./14_goroutine_stacks_growth.md)
+> **Full deep dive:** See [Chapter 11 — Goroutine Stacks & Growth](./11_goroutine_stacks_growth.md)
 > for contiguous vs segmented stack history, pointer adjustment algorithm,
 > stack maps, shrinking mechanics, and performance implications.
 
@@ -460,10 +461,59 @@ SCHED 1004ms: gomaxprocs=4 idleprocs=2 threads=6 spinningthreads=1
 - **`runtime.NumGoroutine()`**: Check goroutine count at runtime — useful for leak detection.
 - **`go.uber.org/goleak`**: Robust goroutine leak detection in tests via `goleak.VerifyTestMain(m)`.
 
-> **See Chapter 19** for full coverage of `pprof`, goroutine profiling, `scheddetail`,
+> **See [Chapter 15](./15_debugging_profiling.md)** for full coverage of `pprof`, goroutine profiling, `scheddetail`,
 > and production debugging workflows.
 
-## 14. Quick Reference Card
+## 14. Interview Self-Test
+
+Can you answer these without scrolling up? If yes, you own this topic.
+
+**Q1: "What are G, M, and P?"**
+
+> G = Goroutine — the unit of work (~2KB stack, growable).
+> M = Machine — an OS thread that executes code.
+> P = Processor — logical scheduling context that holds the local run queue.
+> GOMAXPROCS controls how many Ps exist. G needs P to run. P needs M to run.
+
+**Q2: "How does Go handle a blocking syscall?"**
+
+> M detaches from P so the P isn't wasted. P finds another M (wakes an idle
+> one or creates a new thread). The goroutine stays on the blocked M in
+> kernel space. When the syscall returns, G re-enters a P's run queue.
+
+**Q3: "What is work stealing?"**
+
+> When a P's local run queue is empty, it steals half of another P's queue.
+> This keeps all cores busy without a central scheduler lock. Half is the
+> sweet spot — stealing one means you're back stealing immediately, stealing
+> all starves the victim.
+
+**Q4: "How does preemption work?"**
+
+> Pre-1.14: cooperative only — the compiler inserts a stack check at every
+> function preamble. Tight loops with no function calls could never be
+> preempted. Go 1.14+: async preemption via SIGURG signal. The runtime's
+> sysmon thread detects goroutines running >10ms and sends SIGURG to the OS
+> thread, which suspends the goroutine at a safe point.
+
+**Q5: "Goroutines vs OS threads?"**
+
+> Goroutines are user-space, start at 2KB (growable to 1GB), context switch
+> in ~200ns (just save/restore ~15 registers, no kernel involved). OS threads
+> cost ~1MB stack, ~1-5μs kernel context switch. Go uses M:N scheduling —
+> millions of goroutines on a handful of OS threads.
+
+**Q6: "What happens when you `go func()`?"**
+
+> The compiler emits `runtime.newproc()`. It grabs a G from the P's free list
+> (or allocates a new one + 2KB stack), copies the function args onto G's
+> stack, sets the program counter, and puts G on the current P's run queue
+> (runnext slot for priority, or LRQ). Goroutines are recycled after they
+> finish — the struct and stack are reused.
+
+---
+
+## 15. Quick Reference Card
 
 ```
 GMP MODEL
@@ -511,7 +561,7 @@ TOOLS
   runtime.NumGoroutine()         goroutine count
   go.uber.org/goleak             leak detection in tests
   go.uber.org/automaxprocs       container-aware GOMAXPROCS
-  See Chapter 19                 full debugging & profiling coverage
+  See Chapter 15                 full debugging & profiling coverage
 ```
 
 ---
