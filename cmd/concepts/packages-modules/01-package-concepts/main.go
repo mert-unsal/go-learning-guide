@@ -144,21 +144,6 @@ func init() {
 // Build tags control which files are included in a build.
 // Place them at the top of a file, BEFORE the package clause.
 //
-// Go 1.17+ syntax:
-//   //go:build linux
-//   //go:build !windows
-//   //go:build linux && amd64
-//
-// Example use case: OS-specific implementations
-//   // file: platform_unix.go
-//   //go:build !windows
-//   package mypackage
-//   func GetPath() string { return "/usr/local" }
-//
-//   // file: platform_windows.go
-//   //go:build windows
-//   package mypackage
-//   func GetPath() string { return `C:\Program Files` }
 
 // ============================================================
 // 8. SUMMARY
