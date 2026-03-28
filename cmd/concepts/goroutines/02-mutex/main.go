@@ -8,6 +8,19 @@ package main
 import (
 	"fmt"
 	"sync"
+	"sync/atomic"
+)
+
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
 )
 
 // ============================================================
@@ -79,24 +92,57 @@ func (c *Cache) Set(key, value string) {
 }
 
 func main() {
-	// --- SafeCounter with Mutex ---
-	counter := &SafeCounter{}
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Mutex, RWMutex & Race Conditions        %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	// --- Unsafe counter (without mutex) ---
+	fmt.Printf("%s▸ Without Mutex — race condition demo%s\n", cyan+bold, reset)
+	fmt.Printf("  %s⚠ Running 1000 goroutines incrementing a plain int (no lock)%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ This is a data race: read-modify-write on c.value is NOT atomic%s\n", yellow, reset)
+
+	unsafeCounter := &UnsafeCounter{}
 	var wg sync.WaitGroup
+	for i := 0; i < 1000; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			unsafeCounter.Increment()
+		}()
+	}
+	wg.Wait()
+	fmt.Printf("  Unsafe counter result: %s%d%s  %s(expected 1000 — may be less due to lost updates!)%s\n", red+bold, unsafeCounter.value, reset, dim, reset)
+	fmt.Printf("  %s⚠ 'go run -race' would flag this as a data race — always use -race in dev!%s\n\n", yellow, reset)
+
+	// --- Safe counter with Mutex ---
+	fmt.Printf("%s▸ With sync.Mutex — safe concurrent access%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Lock() acquires exclusive access; defer Unlock() ensures release even on panic%s\n", green, reset)
+
+	counter := &SafeCounter{}
+	var activeGoroutines atomic.Int64
 
 	for i := 0; i < 1000; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
+			activeGoroutines.Add(1)
 			counter.Increment()
+			activeGoroutines.Add(-1)
 		}()
 	}
 	wg.Wait()
-	fmt.Println("Safe counter:", counter.Value()) // always 1000
+	fmt.Printf("  Safe counter result:   %s%d%s  %s(always exactly 1000 — mutex serializes access)%s\n", green+bold, counter.Value(), reset, dim, reset)
+	fmt.Printf("  %s✔ Mutex uses spinning for short waits + OS semaphore for long waits%s\n", green, reset)
+	fmt.Printf("  %s✔ Starvation mode (Go 1.9+): after 1ms of waiting, switches to FIFO fairness%s\n", green, reset)
 
 	// --- Cache with RWMutex ---
+	fmt.Printf("\n%s▸ sync.RWMutex — concurrent readers, exclusive writers%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ RLock() allows multiple simultaneous readers; Lock() is exclusive%s\n", green, reset)
+
 	cache := &Cache{data: make(map[string]string)}
 
 	// Concurrent writes
+	fmt.Printf("  %sWriting 10 keys concurrently (each needs exclusive Lock)...%s\n", dim, reset)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		i := i
@@ -106,17 +152,25 @@ func main() {
 		}()
 	}
 	wg.Wait()
+	fmt.Printf("  %s✔ All 10 writes completed — each held exclusive lock%s\n", green, reset)
 
 	// Concurrent reads — all can proceed simultaneously with RLock
+	fmt.Printf("  %sReading 10 keys concurrently (all share RLock)...%s\n", dim, reset)
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		i := i
 		go func() {
 			defer wg.Done()
 			if v, ok := cache.Get(fmt.Sprintf("key%d", i)); ok {
-				fmt.Printf("  cache[key%d] = %s\n", i, v)
+				fmt.Printf("    cache[key%d] = %s%s%s\n", i, magenta, v, reset)
 			}
 		}()
 	}
 	wg.Wait()
+
+	fmt.Printf("\n%s▸ When to use which%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Mutex:   simple mutual exclusion, balanced read/write workloads%s\n", green, reset)
+	fmt.Printf("  %s✔ RWMutex: reads vastly outnumber writes (caches, config)%s\n", green, reset)
+	fmt.Printf("  %s✔ atomic:  single counters/flags — no lock overhead at all%s\n", green, reset)
+	fmt.Printf("  %s⚠ Under contention with many writers, RWMutex readers can starve%s\n", yellow, reset)
 }

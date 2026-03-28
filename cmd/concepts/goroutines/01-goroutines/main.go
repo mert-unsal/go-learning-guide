@@ -10,6 +10,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // GOROUTINES
 // ============================================================
@@ -27,20 +39,35 @@ import (
 // Goroutines blocked on I/O are parked by the network poller (epoll/kqueue/IOCP)
 // and do NOT consume an OS thread while waiting.
 
-func doWork(name string) {
-	fmt.Printf("  Worker %s starting\n", name)
+func doWork(name string, start time.Time) {
+	launchDelay := time.Since(start)
+	fmt.Printf("  %s⚡ Worker %s launched%s  %s(+%v since main)%s\n", green, name, reset, dim, launchDelay, reset)
 	time.Sleep(10 * time.Millisecond)
-	fmt.Printf("  Worker %s done\n", name)
+	elapsed := time.Since(start)
+	fmt.Printf("  %s✔ Worker %s done%s     %s(+%v since main)%s\n", green, name, reset, dim, elapsed, reset)
 }
 
 func main() {
-	// Sequential vs Concurrent
-	fmt.Println("Sequential:")
-	doWork("A")
-	doWork("B")
-	doWork("C")
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Goroutines & WaitGroup                 %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
 
-	fmt.Println("\nConcurrent:")
+	// --- Sequential ---
+	fmt.Printf("%s▸ Sequential execution%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Each worker blocks main until it finishes — total time ≈ 3 × 10ms%s\n", green, reset)
+	seqStart := time.Now()
+	doWork("A", seqStart)
+	doWork("B", seqStart)
+	doWork("C", seqStart)
+	seqElapsed := time.Since(seqStart)
+	fmt.Printf("  Total sequential time: %s%v%s\n", magenta, seqElapsed, reset)
+
+	// --- Concurrent ---
+	fmt.Printf("\n%s▸ Concurrent execution with goroutines%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ All workers launch nearly instantly — total time ≈ 10ms (parallel)%s\n", green, reset)
+	fmt.Printf("  %s✔ 'go func()' spawns a goroutine: ~2KB stack, managed by GMP scheduler%s\n", green, reset)
+
+	concStart := time.Now()
 	var wg sync.WaitGroup
 
 	for _, name := range []string{"A", "B", "C"} {
@@ -52,10 +79,18 @@ func main() {
 		// remains idiomatic for backward compatibility.
 		go func() {
 			defer wg.Done() // decrement when done
-			doWork(name)
+			doWork(name, concStart)
 		}()
 	}
 
 	wg.Wait() // block until all goroutines call Done()
-	fmt.Println("All done!")
+	concElapsed := time.Since(concStart)
+	fmt.Printf("  Total concurrent time: %s%v%s\n", magenta, concElapsed, reset)
+
+	// --- Comparison ---
+	fmt.Printf("\n%s▸ Key observations%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Sequential: ~%v  vs  Concurrent: ~%v%s\n", green, seqElapsed.Round(time.Millisecond), concElapsed.Round(time.Millisecond), reset)
+	fmt.Printf("  %s✔ WaitGroup: Add(1) before launch, defer Done() inside goroutine, Wait() to block%s\n", green, reset)
+	fmt.Printf("  %s⚠ Always capture loop variables — without 'name := name' all goroutines see last value%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ Goroutine order is non-deterministic — the scheduler decides who runs when%s\n", yellow, reset)
 }

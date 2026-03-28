@@ -89,6 +89,18 @@ import (
 //   │ Zero accumulation. Zero leaks.          │
 //   └─────────────────────────────────────────┘
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // simulateWork simulates an operation that takes the given duration.
 // It respects context cancellation — if ctx is cancelled before the
 // work completes, it returns ctx.Err() immediately.
@@ -116,29 +128,47 @@ func timeoutOperation(parentCtx context.Context, workDuration, timeout time.Dura
 }
 
 func main() {
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Timeout with Context — Correct Timeout Pattern  %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
 	parentCtx := context.Background()
 
 	// Case 1: Fast operation completes within timeout
-	fmt.Println("  Case 1: Fast operation (50ms work, 200ms timeout)")
+	fmt.Printf("%s▸ Case 1: Fast Operation (work < timeout)%s\n", cyan+bold, reset)
+	fmt.Printf("  Work: %s50ms%s  Timeout: %s200ms%s — work finishes before deadline\n", magenta, reset, magenta, reset)
+	start := time.Now()
 	result, err := timeoutOperation(parentCtx, 50*time.Millisecond, 200*time.Millisecond)
+	elapsed := time.Since(start)
 	if err != nil {
-		fmt.Printf("    ❌ %v\n", err)
+		fmt.Printf("  %s✘ %v%s\n", red, err, reset)
 	} else {
-		fmt.Printf("    ✅ Completed: %s\n", result)
+		fmt.Printf("  %s✔ Completed: %s%s (took %s%v%s)\n", green, result, reset, magenta, elapsed.Round(time.Millisecond), reset)
+		fmt.Printf("  %s✔ time.After(50ms) fired first → select picked work result%s\n", green, reset)
 	}
+	fmt.Println()
 
 	// Case 2: Slow operation hits timeout
-	fmt.Println("  Case 2: Slow operation (500ms work, 100ms timeout)")
+	fmt.Printf("%s▸ Case 2: Slow Operation (work > timeout)%s\n", cyan+bold, reset)
+	fmt.Printf("  Work: %s500ms%s  Timeout: %s100ms%s — deadline expires before work completes\n", magenta, reset, magenta, reset)
+	start = time.Now()
 	result, err = timeoutOperation(parentCtx, 500*time.Millisecond, 100*time.Millisecond)
+	elapsed = time.Since(start)
 	if err != nil {
-		fmt.Printf("    ⏱  Timed out: %v\n", err)
+		fmt.Printf("  %s✘ Timed out: %v%s (after %s%v%s)\n", red, err, reset, magenta, elapsed.Round(time.Millisecond), reset)
+		fmt.Printf("  %s✔ ctx.Done() fired first → select picked cancellation branch%s\n", green, reset)
+		fmt.Printf("  %s⚠ The 500ms timer from time.After still lives in the heap until it fires%s\n", yellow, reset)
 	} else {
-		fmt.Printf("    ✅ Completed: %s\n", result)
+		fmt.Printf("  %s✔ Completed: %s%s\n", green, result, reset)
 	}
+	fmt.Println()
 
 	// Case 3: Demonstrate that cancel() cleans up immediately
-	fmt.Println("  Case 3: Cancel cleans up resources")
+	fmt.Printf("%s▸ Case 3: Immediate Cancel — Resource Cleanup%s\n", cyan+bold, reset)
+	fmt.Printf("  Creating context with %s5s%s timeout, then cancelling immediately\n", magenta, reset)
 	ctx, cancel := context.WithTimeout(parentCtx, 5*time.Second)
+
+	fmt.Printf("  %sLifecycle:%s create → %scancel()%s → timer removed from runtime heap\n", dim, reset, yellow+bold, reset)
 
 	// Cancel immediately — the 5-second timer is removed from the runtime
 	// timer heap right now, not after 5 seconds
@@ -147,9 +177,17 @@ func main() {
 	// ctx.Done() is already closed — any select on it returns immediately
 	select {
 	case <-ctx.Done():
-		fmt.Printf("    ✅ Context cancelled immediately: %v\n", ctx.Err())
-		fmt.Println("    Timer removed from runtime heap — zero resource leak")
+		fmt.Printf("  %s✔ Context cancelled immediately: %v%s\n", green, ctx.Err(), reset)
+		fmt.Printf("  %s✔ Timer removed from runtime heap — zero resource leak%s\n", green, reset)
+		fmt.Printf("  %s✔ defer cancel() guarantees cleanup even on early return%s\n", green, reset)
 	default:
-		fmt.Println("    ❌ Should not reach here")
+		fmt.Printf("  %s✘ Should not reach here%s\n", red, reset)
 	}
+
+	fmt.Printf("\n%s▸ Key Observations%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ context.WithTimeout creates ONE timer; cancel() removes it immediately%s\n", green, reset)
+	fmt.Printf("  %s✔ The deadline propagates to ALL downstream calls via ctx%s\n", green, reset)
+	fmt.Printf("  %s✔ Tighter parent deadline wins: WithTimeout(3s-parent, 5s) → uses 3s%s\n", green, reset)
+	fmt.Printf("  %s⚠ time.After in a loop leaks one timer per iteration — avoid in hot paths%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ Always defer cancel() — even if the timeout fires, cancel() is idempotent%s\n", yellow, reset)
 }

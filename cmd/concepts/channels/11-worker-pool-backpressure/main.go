@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // Worker Pool with Backpressure — N Goroutines, Shared Channel
 // ============================================================
@@ -73,21 +85,40 @@ func main() {
 	const numJobs = 10
 	const bufferSize = 2 // small buffer to make backpressure visible
 
+	workerColors := []string{cyan, yellow, magenta}
+
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Worker Pool with Backpressure                  %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Configuration%s\n", cyan+bold, reset)
+	fmt.Printf("  Workers: %s%d%s   Jobs: %s%d%s   Buffer: %s%d%s\n\n",
+		magenta, numWorkers, reset, magenta, numJobs, reset, magenta, bufferSize, reset)
+
 	jobs := make(chan int, bufferSize)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	var log []string
 
 	// Start workers — each ranges over the shared jobs channel
+	fmt.Printf("%s▸ Starting Workers%s\n", cyan+bold, reset)
 	for w := 0; w < numWorkers; w++ {
 		wg.Add(1)
+		fmt.Printf("  %s%s[W%d]%s ready — listening on shared jobs channel\n",
+			bold, workerColors[w], w, reset)
 		go func(id int) {
 			defer wg.Done()
 			for job := range jobs {
+				mu.Lock()
+				fmt.Printf("  %s%s[W%d]%s ← job %s%d%s\n",
+					bold, workerColors[id], id, reset, magenta, job, reset)
+				mu.Unlock()
 				// Simulate work
 				time.Sleep(10 * time.Millisecond)
 				mu.Lock()
 				log = append(log, fmt.Sprintf("worker %d processed job %d", id, job))
+				fmt.Printf("  %s%s[W%d]%s %s✔%s job %s%d%s complete\n",
+					bold, workerColors[id], id, reset, green, reset, magenta, job, reset)
 				mu.Unlock()
 			}
 			// range exits when jobs is closed and buffer is drained
@@ -95,14 +126,37 @@ func main() {
 	}
 
 	// Producer — sends jobs, blocks when buffer is full (backpressure)
+	fmt.Printf("\n%s▸ Producer Sending Jobs%s\n", cyan+bold, reset)
 	for j := 1; j <= numJobs; j++ {
+		mu.Lock()
+		if len(jobs) >= bufferSize {
+			fmt.Printf("  %s⚠ Buffer full (%d/%d) — producer blocks until a worker reads (backpressure!)%s\n",
+				yellow, len(jobs), bufferSize, reset)
+		}
+		mu.Unlock()
 		jobs <- j // blocks when buffer full AND all workers busy
+		mu.Lock()
+		fmt.Printf("  %s→%s sent job %s%d%s  %s[buffer: %d/%d]%s\n",
+			green, reset, magenta, j, reset, dim, len(jobs), bufferSize, reset)
+		mu.Unlock()
 	}
 	close(jobs) // signal workers: no more jobs coming
+	mu.Lock()
+	fmt.Printf("  %s✔ All jobs sent, channel closed — workers drain remaining%s\n", green, reset)
+	mu.Unlock()
 	wg.Wait()
 
-	fmt.Printf("  %d workers processed %d jobs (buffer=%d):\n", numWorkers, numJobs, bufferSize)
+	fmt.Printf("\n%s▸ Processing Log%s\n", cyan+bold, reset)
+	fmt.Printf("  %s%d%s workers processed %s%d%s jobs (buffer=%s%d%s):\n",
+		magenta, numWorkers, reset, magenta, numJobs, reset, magenta, bufferSize, reset)
 	for _, entry := range log {
-		fmt.Printf("    %s\n", entry)
+		fmt.Printf("    %s%s%s\n", dim, entry, reset)
 	}
+
+	fmt.Printf("\n%s▸ Key Observations%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Bounded parallelism: only %d goroutines, regardless of job count%s\n", green, numWorkers, reset)
+	fmt.Printf("  %s✔ Backpressure is automatic: buffer=%d fills fast, producer blocks%s\n", green, bufferSize, reset)
+	fmt.Printf("  %s✔ Fair distribution: runtime recvq hands work to the next free worker%s\n", green, reset)
+	fmt.Printf("  %s✔ Clean shutdown: close(jobs) → range exits → wg.Done() → Wait() returns%s\n", green, reset)
+	fmt.Printf("  %s⚠ Work is NOT evenly split — fast workers steal more from the queue%s\n", yellow, reset)
 }

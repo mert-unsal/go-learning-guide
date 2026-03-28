@@ -7,6 +7,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // Semaphore — Buffered Channel as Bounded Concurrency Gate
 // ============================================================
@@ -78,6 +90,16 @@ func main() {
 	const numTasks = 10
 	const maxConcurrent = 3
 
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Semaphore — Bounded Concurrency Gate           %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Configuration%s\n", cyan+bold, reset)
+	fmt.Printf("  Tasks: %s%d%s   Max concurrent: %s%d%s\n",
+		magenta, numTasks, reset, magenta, maxConcurrent, reset)
+	fmt.Printf("  Semaphore: %smake(chan struct{}, %d)%s — buffered channel as counting gate\n\n",
+		dim, maxConcurrent, reset)
+
 	sem := make(chan struct{}, maxConcurrent)
 	var wg sync.WaitGroup
 	var currentRunning atomic.Int32
@@ -85,12 +107,30 @@ func main() {
 	var mu sync.Mutex
 	var log []string
 
+	fmt.Printf("%s▸ Task Execution%s\n", cyan+bold, reset)
 	for i := 1; i <= numTasks; i++ {
 		wg.Add(1)
+		mu.Lock()
+		slotsUsed := len(sem)
+		if slotsUsed >= maxConcurrent {
+			fmt.Printf("  %s⚠ Semaphore full (%d/%d) — task %d blocks until a slot frees%s\n",
+				yellow, slotsUsed, maxConcurrent, i, reset)
+		}
+		mu.Unlock()
 		sem <- struct{}{} // acquire — blocks when 3 tasks already running
+		mu.Lock()
+		fmt.Printf("  %s→%s Task %s%2d%s acquired slot  %s[%d/%d slots used]%s\n",
+			green, reset, magenta, i, reset, dim, len(sem), maxConcurrent, reset)
+		mu.Unlock()
 		go func(taskID int) {
 			defer wg.Done()
-			defer func() { <-sem }() // release — frees slot on exit
+			defer func() {
+				<-sem // release — frees slot on exit
+				mu.Lock()
+				fmt.Printf("  %s←%s Task %s%2d%s released slot  %s[%d/%d slots used]%s\n",
+					yellow, reset, magenta, taskID, reset, dim, len(sem), maxConcurrent, reset)
+				mu.Unlock()
+			}()
 
 			// Track concurrency
 			running := currentRunning.Add(1)
@@ -115,9 +155,27 @@ func main() {
 
 	wg.Wait()
 
-	fmt.Printf("  %d tasks, max %d concurrent:\n", numTasks, maxConcurrent)
+	fmt.Printf("\n%s▸ Completion Log%s\n", cyan+bold, reset)
+	fmt.Printf("  %s%d%s tasks, max %s%d%s concurrent:\n",
+		magenta, numTasks, reset, magenta, maxConcurrent, reset)
 	for _, entry := range log {
-		fmt.Printf("    %s\n", entry)
+		fmt.Printf("    %s%s%s\n", dim, entry, reset)
 	}
-	fmt.Printf("  Peak concurrency observed: %d (limit: %d)\n", peakConcurrency.Load(), maxConcurrent)
+
+	peak := peakConcurrency.Load()
+	peakColor := green
+	if peak > int32(maxConcurrent) {
+		peakColor = red
+	}
+
+	fmt.Printf("\n%s▸ Results%s\n", cyan+bold, reset)
+	fmt.Printf("  Peak concurrency observed: %s%d%s (limit: %s%d%s)\n",
+		peakColor, peak, reset, magenta, maxConcurrent, reset)
+
+	fmt.Printf("\n%s▸ Key Observations%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Buffered channel IS a counting semaphore: cap = max concurrency%s\n", green, reset)
+	fmt.Printf("  %s✔ Acquire BEFORE goroutine launch prevents goroutine pile-up%s\n", green, reset)
+	fmt.Printf("  %s✔ Peak ≤ limit proves the semaphore correctly bounds concurrency%s\n", green, reset)
+	fmt.Printf("  %s✔ No external library needed — stdlib channel does it all%s\n", green, reset)
+	fmt.Printf("  %s⚠ struct{} costs 0 bytes — the token carries no data, only the slot matters%s\n", yellow, reset)
 }

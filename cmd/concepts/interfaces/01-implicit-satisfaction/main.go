@@ -27,6 +27,18 @@ package main
 
 import "fmt"
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // 1. IMPLICIT SATISFACTION — NO 'implements' KEYWORD
 // ============================================================
@@ -66,9 +78,36 @@ func printIt(s Stringer) {
 }
 
 func main() {
-	// User and Point are completely different types.
-	// They were never declared to implement anything.
-	// They work here purely because they have the right method.
-	printIt(User{Name: "Alice", Age: 30})
-	printIt(Point{X: 3.5, Y: -1.2})
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Implicit Interface Satisfaction         %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ No 'implements' keyword — the compiler does structural matching%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ User has String() string → satisfies Stringer automatically%s\n", green, reset)
+	fmt.Printf("  %s✔ Point has String() string → also satisfies Stringer%s\n", green, reset)
+	fmt.Printf("  %s✔ Neither type knows Stringer exists — zero coupling at definition site%s\n\n", green, reset)
+
+	u := User{Name: "Alice", Age: 30}
+	p := Point{X: 3.5, Y: -1.2}
+
+	fmt.Printf("%s▸ Passing unrelated types to printIt(s Stringer)%s\n", cyan+bold, reset)
+	fmt.Printf("  User  → ")
+	printIt(u)
+	fmt.Printf("  Point → ")
+	printIt(p)
+	fmt.Println()
+
+	// Compile-time proof: assign to interface variable
+	fmt.Printf("%s▸ Runtime interface value (iface) internals%s\n", cyan+bold, reset)
+	var s Stringer = u
+	fmt.Printf("  var s Stringer = u  →  s is %s(type=User, data=0x...)%s\n", magenta, reset)
+	fmt.Printf("  s.String() = %s%q%s\n", magenta, s.String(), reset)
+
+	s = p
+	fmt.Printf("  s = p               →  s is %s(type=Point, data=0x...)%s\n", magenta, reset)
+	fmt.Printf("  s.String() = %s%q%s\n\n", magenta, s.String(), reset)
+
+	fmt.Printf("  %s⚠ Under the hood: non-empty interface = runtime.iface{tab *itab, data unsafe.Pointer}%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ The itab holds method pointers — cached globally per (interface, concrete) pair%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ In Java/C# you'd write 'class User implements Stringer' — Go needs nothing%s\n", yellow, reset)
 }

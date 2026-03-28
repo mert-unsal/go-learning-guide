@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // ============================================================
 // Pipeline — Chain of Stages Connected by Channels
@@ -66,14 +69,30 @@ import "fmt"
 //   The for-range loop over a channel is the idiomatic "read until done"
 //   construct — it exits when the channel is closed AND drained.
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // generate produces integers from start to end (inclusive) on a channel.
 // It creates and owns the output channel, closing it when all values
 // are sent. This is the source stage of the pipeline.
 func generate(start, end int) <-chan int {
 	out := make(chan int)
 	go func() {
-		defer close(out)
+		defer func() {
+			close(out)
+			fmt.Printf("    %s[generate]%s %sclosed output channel — no more data%s\n", cyan+bold, reset, dim, reset)
+		}()
 		for i := start; i <= end; i++ {
+			fmt.Printf("    %s[generate]%s emitting %s%d%s\n", cyan+bold, reset, magenta, i, reset)
 			out <- i
 		}
 	}()
@@ -85,9 +104,14 @@ func generate(start, end int) <-chan int {
 func double(in <-chan int) <-chan int {
 	out := make(chan int)
 	go func() {
-		defer close(out)
+		defer func() {
+			close(out)
+			fmt.Printf("    %s[double]%s  %sclosed output channel — upstream done%s\n", yellow+bold, reset, dim, reset)
+		}()
 		for v := range in {
-			out <- v * 2
+			result := v * 2
+			fmt.Printf("    %s[double]%s  %s%d%s × 2 = %s%d%s\n", yellow+bold, reset, dim, v, reset, magenta, result, reset)
+			out <- result
 		}
 	}()
 	return out
@@ -98,21 +122,33 @@ func double(in <-chan int) <-chan int {
 func addTen(in <-chan int) <-chan int {
 	out := make(chan int)
 	go func() {
-		defer close(out)
+		defer func() {
+			close(out)
+			fmt.Printf("    %s[addTen]%s  %sclosed output channel — upstream done%s\n", magenta+bold, reset, dim, reset)
+		}()
 		for v := range in {
-			out <- v + 10
+			result := v + 10
+			fmt.Printf("    %s[addTen]%s  %s%d%s + 10 = %s%d%s\n", magenta+bold, reset, dim, v, reset, magenta, result, reset)
+			out <- result
 		}
 	}()
 	return out
 }
 
 func main() {
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Pipeline — Chained Concurrent Stages            %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Pipeline Architecture%s\n", cyan+bold, reset)
+	fmt.Printf("  %s[generate]%s → %s[double]%s → %s[addTen]%s → collect\n", cyan+bold, reset, yellow+bold, reset, magenta+bold, reset)
+	fmt.Printf("  Each stage runs in its own goroutine; unbuffered channels synchronize them\n\n")
+
+	fmt.Printf("%s▸ Stage Processing (interleaved — 3 goroutines run concurrently)%s\n", cyan+bold, reset)
+
 	// Compose the pipeline: each stage's output feeds the next stage's input.
 	// This reads right-to-left: generate → double → addTen
 	pipeline := addTen(double(generate(1, 5)))
-
-	fmt.Println("  Pipeline: generate(1..5) → double(x*2) → addTen(x+10)")
-	fmt.Println()
 
 	// Collect and display results
 	var results []int
@@ -120,12 +156,26 @@ func main() {
 		results = append(results, v)
 	}
 
+	fmt.Printf("\n%s▸ Transformation Summary%s\n", cyan+bold, reset)
 	for _, original := range []int{1, 2, 3, 4, 5} {
 		doubled := original * 2
 		final := doubled + 10
-		fmt.Printf("    %d → ×2 = %d → +10 = %d\n", original, doubled, final)
+		fmt.Printf("    %s%d%s → ×2 = %s%d%s → +10 = %s%d%s\n",
+			cyan, original, reset, yellow, doubled, reset, magenta, final, reset)
 	}
 
-	fmt.Printf("\n  Pipeline output: %v\n", results)
-	fmt.Printf("  All %d items flowed through 3 concurrent stages\n", len(results))
+	fmt.Printf("\n%s▸ Results%s\n", cyan+bold, reset)
+	strs := make([]string, len(results))
+	for i, v := range results {
+		strs[i] = fmt.Sprintf("%s%d%s", magenta, v, reset)
+	}
+	fmt.Printf("  Pipeline output: [%s]\n", strings.Join(strs, ", "))
+	fmt.Printf("  All %s%d%s items flowed through 3 concurrent stages\n\n", magenta, len(results), reset)
+
+	fmt.Printf("%s▸ Key Observations%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Each stage owns its output channel and closes it via defer%s\n", green, reset)
+	fmt.Printf("  %s✔ Close propagates downstream: generate→double→addTen→for-range exits%s\n", green, reset)
+	fmt.Printf("  %s✔ Unbuffered channels provide natural backpressure between stages%s\n", green, reset)
+	fmt.Printf("  %s✔ Log interleaving proves stages run concurrently, not sequentially%s\n", green, reset)
+	fmt.Printf("  %s⚠ For cancellation support, add context.Context + select on ctx.Done()%s\n", yellow, reset)
 }

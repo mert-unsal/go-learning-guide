@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // Token Bucket Rate Limiter — Buffered Channel as Semaphore
 // ============================================================
@@ -113,28 +125,54 @@ func (tb *TokenBucket) Stop() {
 }
 
 func main() {
-	limiter := NewTokenBucket(5) // 5 requests per second
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Token Bucket Rate Limiter — Channel Semaphore  %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Pattern Overview%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Buffered channel capacity = max burst size (token count)%s\n", green, reset)
+	fmt.Printf("  %s✔ <-tokens is goroutine-safe — atomic take across all handlers%s\n", green, reset)
+	fmt.Printf("  %s✔ select+default gives non-blocking TryAcquire for free%s\n", green, reset)
+	fmt.Printf("  %s⚠ Refill goroutine discards tokens when bucket is full (no overflow)%s\n\n", yellow, reset)
+
+	rate := 5
+	limiter := NewTokenBucket(rate) // 5 requests per second
 	defer limiter.Stop()
 
+	fmt.Printf("%s▸ Initial State%s\n", cyan+bold, reset)
+	fmt.Printf("  Bucket capacity: %s%d%s tokens (buffered chan size)\n", magenta, rate, reset)
+	fmt.Printf("  Tokens available: %s%d%s (starts full — allows initial burst)\n", magenta, len(limiter.tokens), reset)
+	fmt.Printf("  Refill rate: %s1 token every %v%s\n\n", magenta, time.Second/time.Duration(rate), reset)
+
 	// Simulate 8 rapid requests — only first 5 should succeed (initial burst)
-	fmt.Println("  Sending 8 rapid requests (rate limit: 5/sec):")
+	fmt.Printf("%s▸ Burst Test — 8 rapid requests (rate limit: %d/sec)%s\n", cyan+bold, rate, reset)
 	for i := 1; i <= 8; i++ {
 		if limiter.TryAcquire() {
-			fmt.Printf("    Request %d: ✅ allowed\n", i)
+			fmt.Printf("    %s✅ Request %d: allowed%s  — token consumed, remaining: %s%d%s\n",
+				green, i, reset, magenta, len(limiter.tokens), reset)
 		} else {
-			fmt.Printf("    Request %d: ❌ rate limited\n", i)
+			fmt.Printf("    %s❌ Request %d: rate limited%s — bucket empty, would return HTTP 429\n",
+				red, i, reset)
 		}
 	}
 
 	// Wait for tokens to refill
-	fmt.Println("  ...waiting 1 second for refill...")
+	fmt.Printf("\n%s▸ Refill Phase%s\n", cyan+bold, reset)
+	fmt.Printf("  %s⚠ Waiting 1 second — refill goroutine adds 1 token every %v%s\n", yellow, time.Second/time.Duration(rate), reset)
 	time.Sleep(1 * time.Second)
+	fmt.Printf("  Tokens after refill: %s%d%s\n\n", magenta, len(limiter.tokens), reset)
 
 	// Now tokens are available again
-	fmt.Println("  After refill:")
+	fmt.Printf("%s▸ Post-Refill Requests%s\n", cyan+bold, reset)
 	for i := 1; i <= 3; i++ {
 		if limiter.TryAcquire() {
-			fmt.Printf("    Request %d: ✅ allowed\n", i)
+			fmt.Printf("    %s✅ Request %d: allowed%s  — remaining: %s%d%s\n",
+				green, i, reset, magenta, len(limiter.tokens), reset)
+		} else {
+			fmt.Printf("    %s❌ Request %d: rate limited%s\n", red, i, reset)
 		}
 	}
+
+	fmt.Printf("\n  %s✔ Token bucket provides bounded burst + steady-state rate control%s\n", green, reset)
+	fmt.Printf("  %s⚠ For production: use golang.org/x/time/rate (optimized, supports Wait/Reserve)%s\n", yellow, reset)
 }

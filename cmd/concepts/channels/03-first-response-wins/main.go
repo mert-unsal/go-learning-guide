@@ -8,6 +8,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // First Response Wins — Fan-Out to Multiple Backends
 // ============================================================
@@ -61,6 +73,20 @@ type QueryResult struct {
 	Duration time.Duration
 }
 
+// backendColor returns a unique ANSI color tag for each backend.
+func backendColor(backend string) string {
+	switch backend {
+	case "replica-us":
+		return cyan
+	case "replica-eu":
+		return yellow
+	case "replica-asia":
+		return magenta
+	default:
+		return dim
+	}
+}
+
 // QueryFastest fans out a query to multiple backends and returns
 // the first successful response. Remaining backends are cancelled.
 func QueryFastest(ctx context.Context, query string, backends []string, queryFn func(ctx context.Context, backend, query string) (string, error)) (QueryResult, error) {
@@ -69,9 +95,13 @@ func QueryFastest(ctx context.Context, query string, backends []string, queryFn 
 
 	// Buffered channel: capacity = len(backends) to prevent goroutine leaks
 	resultCh := make(chan QueryResult, len(backends))
+	fmt.Printf("  %sresultCh buffer capacity = %s%d%s — prevents goroutine leaks if all respond%s\n",
+		dim, magenta, len(backends), dim, reset)
 
 	for _, b := range backends {
 		go func(backend string) {
+			clr := backendColor(backend)
+			fmt.Printf("  %s[%s]%s 🏁 racing — query sent\n", clr+bold, backend, reset)
 			start := time.Now()
 			data, err := queryFn(ctx, backend, query)
 			if err != nil {
@@ -83,8 +113,12 @@ func QueryFastest(ctx context.Context, query string, backends []string, queryFn 
 				Data:     data,
 				Duration: time.Since(start),
 			}:
+				fmt.Printf("  %s[%s]%s %s✔ responded in %v%s\n",
+					clr+bold, backend, reset, green, time.Since(start), reset)
 			default:
 				// another result already sent — discard
+				fmt.Printf("  %s[%s]%s %s… result discarded (winner already chosen)%s\n",
+					clr+bold, backend, reset, dim, reset)
 			}
 		}(b)
 	}
@@ -99,7 +133,21 @@ func QueryFastest(ctx context.Context, query string, backends []string, queryFn 
 }
 
 func main() {
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  First Response Wins — Fan-Out Pattern           %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Pattern Overview%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Query ALL backends in parallel — take the fastest response%s\n", green, reset)
+	fmt.Printf("  %s✔ context.WithCancel cancels slow backends after winner is chosen%s\n", green, reset)
+	fmt.Printf("  %s✔ Buffered channel (cap=N) prevents goroutine leaks%s\n", green, reset)
+	fmt.Printf("  %s⚠ Without buffered chan, losing goroutines block forever on send%s\n\n", yellow, reset)
+
 	backends := []string{"replica-us", "replica-eu", "replica-asia"}
+	fmt.Printf("%s▸ Backend Latencies%s\n", cyan+bold, reset)
+	fmt.Printf("  %s[replica-us]%s    ~50ms  + jitter\n", cyan+bold, reset)
+	fmt.Printf("  %s[replica-eu]%s    ~150ms + jitter\n", yellow+bold, reset)
+	fmt.Printf("  %s[replica-asia]%s  ~80ms  + jitter\n\n", magenta+bold, reset)
 
 	// Simulate backends with different latencies
 	queryFn := func(ctx context.Context, backend, query string) (string, error) {
@@ -113,27 +161,35 @@ func main() {
 		jitter := time.Duration(rand.Intn(20)) * time.Millisecond
 		latency += jitter
 
+		clr := backendColor(backend)
 		select {
 		case <-time.After(latency):
 			return fmt.Sprintf("data-from-%s", backend), nil
 		case <-ctx.Done():
-			fmt.Printf("  ⏹ %s cancelled (was going to take %v)\n", backend, latency)
+			fmt.Printf("  %s[%s]%s %s⏹ cancelled (was going to take %v)%s\n",
+				clr+bold, backend, reset, red, latency, reset)
 			return "", ctx.Err()
 		}
 	}
 
+	fmt.Printf("%s▸ Racing Backends%s\n", cyan+bold, reset)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 
 	result, err := QueryFastest(ctx, "SELECT * FROM users", backends, queryFn)
 	if err != nil {
-		fmt.Printf("  ❌ All backends failed: %v\n", err)
+		fmt.Printf("  %s❌ All backends failed: %v%s\n", red+bold, err, reset)
 		return
 	}
 
 	// Give cancelled backends time to print their cancellation
 	time.Sleep(200 * time.Millisecond)
 
-	fmt.Printf("  🏆 Winner: %s responded in %v with: %s\n",
-		result.Backend, result.Duration, result.Data)
+	clr := backendColor(result.Backend)
+	fmt.Printf("\n%s▸ Result%s\n", cyan+bold, reset)
+	fmt.Printf("  %s🏆 Winner: %s[%s]%s responded in %s%v%s\n",
+		green+bold, clr+bold, result.Backend, reset, magenta, result.Duration, reset)
+	fmt.Printf("  %sData: %s%s%s\n", dim, magenta, result.Data, reset)
+	fmt.Printf("\n  %s✔ Slow backends were cancelled via context — no wasted work%s\n", green, reset)
+	fmt.Printf("  %s⚠ This is Google's approach to tail latency (hedged requests)%s\n", yellow, reset)
 }

@@ -5,6 +5,20 @@ import (
 	"sync"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
+var printMu sync.Mutex
+
 // ============================================================
 // Fan-Out / Fan-In — Parallel Processing Pipeline
 // ============================================================
@@ -78,13 +92,22 @@ import (
 // the same channel) and fan-in (N result channels → 1 merged output).
 // Returns the collected results and which worker processed each item.
 func fanOutFanIn(items []int, numWorkers int) []string {
+	workerColors := []string{cyan, yellow, magenta}
+
 	// Fan-out: one shared work channel, multiple workers reading from it
 	work := make(chan int)
 	go func() {
 		for _, item := range items {
+			printMu.Lock()
+			fmt.Printf("  %s→%s Producer sends item %s%d%s to work channel\n",
+				green, reset, magenta, item, reset)
+			printMu.Unlock()
 			work <- item
 		}
 		close(work) // producer closes — workers will exit range loop
+		printMu.Lock()
+		fmt.Printf("  %s✔ Producer done — work channel closed%s\n\n", green, reset)
+		printMu.Unlock()
 	}()
 
 	// Each worker gets its own result channel
@@ -95,8 +118,14 @@ func fanOutFanIn(items []int, numWorkers int) []string {
 		go func(id int, out chan<- string) {
 			defer close(out) // worker closes its own output channel
 			for item := range work {
+				squared := item * item
+				printMu.Lock()
+				fmt.Printf("  %s%s[W%d]%s ← received %s%d%s → computed %s%d×%d = %d%s\n",
+					bold, workerColors[id%len(workerColors)], id, reset,
+					magenta, item, reset, dim, item, item, squared, reset)
+				printMu.Unlock()
 				// Simulate processing — square the value
-				result := fmt.Sprintf("worker-%d processed %d → %d", id, item, item*item)
+				result := fmt.Sprintf("worker-%d processed %d → %d", id, item, squared)
 				out <- result
 			}
 		}(i, ch)
@@ -106,8 +135,15 @@ func fanOutFanIn(items []int, numWorkers int) []string {
 	merged := fanIn(workerChans)
 
 	// Collect all results
+	printMu.Lock()
+	fmt.Printf("%s▸ Consumer Collecting Results%s\n", cyan+bold, reset)
+	printMu.Unlock()
 	var results []string
 	for r := range merged {
+		printMu.Lock()
+		fmt.Printf("  %s◆%s Consumer received: %s%s%s\n",
+			blue+bold, reset, dim, r, reset)
+		printMu.Unlock()
 		results = append(results, r)
 	}
 	return results
@@ -122,14 +158,18 @@ func fanIn(channels []<-chan string) <-chan string {
 	var wg sync.WaitGroup
 
 	// One forwarding goroutine per input channel
-	for _, ch := range channels {
+	for i, ch := range channels {
 		wg.Add(1)
-		go func(c <-chan string) {
+		go func(idx int, c <-chan string) {
 			defer wg.Done()
 			for v := range c {
+				printMu.Lock()
+				fmt.Printf("  %s⇉%s  Fan-in: ch[%s%d%s] → merged output\n",
+					cyan, reset, magenta, idx, reset)
+				printMu.Unlock()
 				out <- v
 			}
-		}(ch)
+		}(i, ch)
 	}
 
 	// Closer goroutine: waits for all forwarders, then closes output.
@@ -147,15 +187,33 @@ func main() {
 	items := []int{1, 2, 3, 4, 5, 6, 7, 8, 9}
 	numWorkers := 3
 
-	fmt.Printf("  Fan-out: 1 producer → %d workers\n", numWorkers)
-	fmt.Printf("  Fan-in:  %d result channels → 1 merged output\n", numWorkers)
-	fmt.Println()
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Fan-Out / Fan-In Pipeline                      %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Pipeline Architecture%s\n", cyan+bold, reset)
+	fmt.Printf("  Producer → %s[shared work ch]%s → %s%d workers%s → %s[per-worker ch]%s → Fan-In → Consumer\n\n",
+		dim, reset, magenta, numWorkers, reset, dim, reset)
+
+	fmt.Printf("  Fan-out: 1 producer → %s%d%s workers %s(runtime distributes via recvq)%s\n",
+		magenta, numWorkers, reset, dim, reset)
+	fmt.Printf("  Fan-in:  %s%d%s result channels → 1 merged output %s(WaitGroup + close)%s\n\n",
+		magenta, numWorkers, reset, dim, reset)
+
+	fmt.Printf("%s▸ Data Flow%s\n", cyan+bold, reset)
 
 	results := fanOutFanIn(items, numWorkers)
 
+	fmt.Printf("\n%s▸ Final Results%s\n", cyan+bold, reset)
 	for _, r := range results {
-		fmt.Printf("    %s\n", r)
+		fmt.Printf("    %s%s%s\n", dim, r, reset)
 	}
-	fmt.Printf("\n  Total results: %d (all %d items processed exactly once)\n",
-		len(results), len(items))
+	fmt.Printf("\n  Total results: %s%d%s (all %s%d%s items processed exactly once)\n",
+		magenta, len(results), reset, magenta, len(items), reset)
+
+	fmt.Printf("\n%s▸ Key Observations%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Fan-out: multiple goroutines safely read from one channel (exactly-once delivery)%s\n", green, reset)
+	fmt.Printf("  %s✔ Fan-in: WaitGroup + closer goroutine is the ONLY safe way to close a multi-writer channel%s\n", green, reset)
+	fmt.Printf("  %s✔ Each worker has its own output channel — no contention on result writes%s\n", green, reset)
+	fmt.Printf("  %s⚠ Order is non-deterministic — items are distributed by the scheduler, not round-robin%s\n", yellow, reset)
 }

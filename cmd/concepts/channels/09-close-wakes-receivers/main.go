@@ -5,6 +5,18 @@ import (
 	"sync"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // Close Wakes All Receivers — Broadcast via close()
 // ============================================================
@@ -68,6 +80,16 @@ import (
 //   prevents future sends and signals EOF after the buffer empties.
 
 func main() {
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Close Wakes All Receivers — Broadcast via close %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	receiverColors := []string{cyan, yellow, magenta}
+	receiverNames := []string{"receiver-0", "receiver-1", "receiver-2"}
+
+	fmt.Printf("%s▸ Unbuffered Channel — close() Broadcasts to All Receivers%s\n", cyan+bold, reset)
+	fmt.Printf("  %s3 goroutines will park on ch.recvq, then close() wakes them all%s\n\n", dim, reset)
+
 	ch := make(chan int) // unbuffered — receivers will block immediately
 	var mu sync.Mutex
 	results := make([]string, 3)
@@ -80,30 +102,45 @@ func main() {
 			defer wg.Done()
 			val, ok := <-ch // blocks until close(ch)
 			mu.Lock()
-			results[id] = fmt.Sprintf("receiver %d: val=%d, ok=%v", id, val, ok)
+			results[id] = fmt.Sprintf("val=%s%d%s, ok=%s%v%s",
+				magenta, val, reset, red+bold, ok, reset)
 			mu.Unlock()
 		}(i)
 	}
 
 	// All 3 goroutines are now parked in recvq.
 	// close(ch) walks recvq and wakes all of them.
+	fmt.Printf("  %s%s✖ close(ch) — runtime walks recvq and wakes ALL receivers%s\n", bold, red, reset)
+	fmt.Printf("  %s↳ each receiver gets (zero-value, ok=false)%s\n\n", dim, reset)
 	close(ch)
 	wg.Wait()
 
-	fmt.Println("  Unbuffered channel — close() wakes all receivers:")
-	for _, r := range results {
-		fmt.Printf("    %s\n", r)
+	for i, r := range results {
+		color := receiverColors[i]
+		name := receiverNames[i]
+		fmt.Printf("    %s%s%s: %s\n", color+bold, name, reset, r)
 	}
+	fmt.Printf("\n  %s⚠ All receivers got val=0 (zero value of int) and ok=false%s\n", yellow, reset)
+	fmt.Printf("  %s✔ close() is Go's ONLY channel broadcast — no explicit broadcast primitive needed%s\n\n", green, reset)
 
 	// --- Buffered channel: data first, then zero/false ---
+	fmt.Printf("%s▸ Buffered Channel — Data First, Then Zero/False%s\n", cyan+bold, reset)
+	fmt.Printf("  %sBuffered data is NOT discarded by close() — receivers drain it first%s\n\n", dim, reset)
+
 	buffered := make(chan int, 3)
 	buffered <- 10
 	buffered <- 20
 	close(buffered) // buffer has 2 items, then closed
 
-	fmt.Println("  Buffered channel — data first, then zero/false:")
 	for i := 1; i <= 4; i++ {
 		val, ok := <-buffered
-		fmt.Printf("    recv %d: val=%d, ok=%v\n", i, val, ok)
+		if ok {
+			fmt.Printf("    %s✔ recv %d:%s val=%s%d%s, ok=%s%v%s  %s← buffered data still available%s\n",
+				green, i, reset, magenta, val, reset, green+bold, ok, reset, dim, reset)
+		} else {
+			fmt.Printf("    %s⚠ recv %d:%s val=%s%d%s, ok=%s%v%s  %s← buffer drained, channel closed%s\n",
+				yellow, i, reset, magenta, val, reset, red+bold, ok, reset, dim, reset)
+		}
 	}
+	fmt.Printf("\n  %s✔ close() signals EOF after buffer empties — never discards in-flight data%s\n", green, reset)
 }

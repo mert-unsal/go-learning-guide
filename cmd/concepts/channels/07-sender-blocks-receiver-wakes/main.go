@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // Sender Blocks, Receiver Wakes — The sudog Lifecycle
 // ============================================================
@@ -83,16 +95,22 @@ import (
 //   code is needed — the channel handles it.
 
 func main() {
-	fmt.Println("=== Sender Blocks, Receiver Wakes (sudog lifecycle) ===")
-	fmt.Println()
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Sender Blocks, Receiver Wakes (sudog Lifecycle) %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
 
 	// Buffered channel with capacity 2.
 	ch := make(chan string, 2)
 
 	// Fill the buffer — these two sends return immediately.
+	fmt.Printf("%s▸ Step 1: Fill the Buffer%s\n", cyan+bold, reset)
 	ch <- "val_A"
 	ch <- "val_B"
-	fmt.Println("  Buffer filled: [val_A | val_B]  (qcount=2, cap=2)")
+	fmt.Printf("  %s✔ Two sends returned immediately — buffer had space%s\n", green, reset)
+	fmt.Printf("  Buffer state: %s[%sval_A%s|%sval_B%s]%s  (qcount=%s2%s, cap=%s2%s)\n",
+		dim, magenta, dim, magenta, dim, reset, yellow, reset, yellow, reset)
+	fmt.Printf("  %s⚠ Buffer is now FULL — next send will block the goroutine%s\n", yellow, reset)
+	fmt.Println()
 
 	blocked := make(chan struct{})
 	unblocked := make(chan struct{})
@@ -103,11 +121,14 @@ func main() {
 	//   1. acquireSudog() → fill sg.g, sg.elem = &"val_C"
 	//   2. enqueue sg on hchan.sendq
 	//   3. gopark() → goroutine enters _Gwaiting
+	fmt.Printf("%s▸ Step 2: Sender Blocks on Full Buffer%s\n", cyan+bold, reset)
 	go func() {
 		close(blocked) // signal: we're about to block
 		blockStart = time.Now()
+		fmt.Printf("  [%sSENDER%s]  ch <- \"val_C\" — buffer full, creating sudog and parking on sendq\n", yellow+bold, reset)
 		ch <- "val_C" // BLOCKS: buffer is full, sender parked on sendq
 		blockEnd = time.Now()
+		fmt.Printf("  [%sSENDER%s]  woke up! goready() moved goroutine back to %s_Grunnable%s\n", yellow+bold, reset, magenta, reset)
 		close(unblocked)
 	}()
 
@@ -116,9 +137,10 @@ func main() {
 	// Prove the sender is blocked by sleeping. During this time,
 	// the sender's goroutine is in _Gwaiting state, consuming zero CPU.
 	delay := 100 * time.Millisecond
-	fmt.Printf("  Sender goroutine blocked (parked on sendq)...\n")
-	fmt.Printf("  Sleeping %v to prove it...\n", delay)
+	fmt.Printf("  [%sSENDER%s]  goroutine parked in %s_Gwaiting%s on sendq — zero CPU consumed\n", yellow+bold, reset, magenta, reset)
+	fmt.Printf("  %s✔ Sleeping %v to prove sender is truly blocked...%s\n", green, delay, reset)
 	time.Sleep(delay)
+	fmt.Println()
 
 	// Receive one value — this triggers the wake sequence:
 	//   1. recv val_A from buf[recvx]
@@ -126,21 +148,34 @@ func main() {
 	//   3. copy sender's val_C into freed buffer slot
 	//   4. goready(sender) → _Grunnable
 	//   5. releaseSudog() → return to per-P cache
+	fmt.Printf("%s▸ Step 3: Receiver Triggers the Wake Sequence%s\n", cyan+bold, reset)
 	v1 := <-ch
-	fmt.Printf("  Received: %q → freed one buffer slot\n", v1)
-	fmt.Println("  Runtime: dequeued sudog, copied val_C into buffer, woke sender")
+	fmt.Printf("  [%sRECEIVER%s] received: %s%q%s → freed one buffer slot\n", cyan+bold, reset, magenta, v1, reset)
+	fmt.Printf("  %s✔ Runtime: dequeued sudog from sendq%s\n", green, reset)
+	fmt.Printf("  %s✔ Runtime: copied val_C into freed buffer slot via typedmemmove%s\n", green, reset)
+	fmt.Printf("  %s✔ Runtime: goready(sender) → sender is now _Grunnable%s\n", green, reset)
+	fmt.Printf("  %s✔ Runtime: releaseSudog() → sudog returned to per-P cache%s\n", green, reset)
+	fmt.Printf("  Buffer state: %s[%sval_C%s|%sval_B%s]%s  (val_C filled the freed slot)\n",
+		dim, magenta, dim, magenta, dim, reset)
 
 	<-unblocked
 
 	blockedDuration := blockEnd.Sub(blockStart)
-	fmt.Printf("  Sender was blocked for: %v\n", blockedDuration.Round(time.Millisecond))
+	fmt.Println()
+	fmt.Printf("%s▸ Timing Analysis%s\n", cyan+bold, reset)
+	fmt.Printf("  Sender was blocked for: %s%v%s\n", magenta, blockedDuration.Round(time.Millisecond), reset)
+	fmt.Printf("  %s⚠ ≈100ms matches our sleep — proof that sender was truly parked, not spinning%s\n", yellow, reset)
+	fmt.Println()
 
 	// Drain remaining values to show FIFO order is preserved.
+	fmt.Printf("%s▸ Step 4: Drain Remaining Values%s\n", cyan+bold, reset)
 	v2 := <-ch
 	v3 := <-ch
-	fmt.Printf("  Remaining drain: %q, %q\n", v2, v3)
+	fmt.Printf("  Received: %s%q%s, %s%q%s\n", magenta, v2, reset, magenta, v3, reset)
 	fmt.Println()
-	fmt.Println("  FIFO order: val_A → val_B → val_C")
-	fmt.Println("  val_C was in the sender's sudog.elem, not in the buffer,")
-	fmt.Println("  until the receiver freed a slot and the runtime copied it in.")
+
+	fmt.Printf("  %s✔ FIFO order preserved: %sval_A%s %s→%s %sval_B%s %s→%s %sval_C%s\n",
+		green+bold, magenta, green+bold, dim, green+bold, magenta, green+bold, dim, green+bold, magenta, reset)
+	fmt.Printf("  %s✔ val_C was in the sender's sudog.elem, not in the buffer,%s\n", green, reset)
+	fmt.Printf("  %s  until the receiver freed a slot and the runtime copied it in.%s\n", green, reset)
 }
