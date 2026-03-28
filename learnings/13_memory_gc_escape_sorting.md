@@ -4,7 +4,7 @@
 > how the GC reclaims it concurrently, how you control all of it in production,
 > and how pdqsort adapts to input patterns.
 >
-> **Related:** [Chapter 06 §4–5](./06_closures_funcval_and_capture.md) covers escape analysis
+> **Related:** [Chapter 05 §4–5](./05_closures_funcval_and_capture.md) covers escape analysis
 > specifically for closures and goroutines (capture-by-reference, funcval escaping).
 
 ---

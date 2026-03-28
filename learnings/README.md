@@ -18,66 +18,63 @@ debugging and enterprise patterns.
 |---|----------|-------------------|
 | 01 | [Slices: The Three-Word Header](./01_slices_three_word_header.md) | Slice header `{ptr, len, cap}`, `runtime.growslice`, append algorithm, backing array sharing, memory leaks |
 | 02 | [Maps: Buckets, Growth & the Never-Shrink Truth](./02_maps_buckets_and_growth.md) | `runtime.hmap`, buckets, tophash, load factor 6.5, incremental evacuation, concurrent access fatals |
-| 03 | [Strings: Immutability & Boxing](./03_strings_immutability_and_boxing.md) | 2-word header, runes vs bytes, substring memory leaks, concatenation costs, `strings.Builder`, interface boxing → production logging (zap/slog case study) |
+| 03 | [Strings: Immutability & Boxing](./03_strings_immutability_and_boxing.md) | 2-word header, runes vs bytes, substring memory leaks, concatenation costs, `strings.Builder`, interface boxing |
 
-### Part II — Functions, Closures & Variables
+### Part II — Language Mechanics
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 04 | [Variables: var vs := vs Explicit Type](./04_variables_var_vs_short_decl.md) | Three declaration forms, type inference rules, `:=` redeclaration, shadowing, idiomatic conventions |
-| 05 | [Pointers: Auto-Deref & Auto-Address](./05_pointers_auto_deref.md) | Auto-dereference, auto-address, addressability rules, when Go silently inserts `*` and `&` |
-| 06 | [Closures: funcval, Capture & Production Patterns](./06_closures_funcval_and_capture.md) | `funcval` struct, capture-by-reference, escape analysis, loop capture gotcha, defer internals, Go 1.22 changes, cross-language comparison |
+| 04 | [Variables, Pointers & Declarations](./04_variables_pointers_declarations.md) | Three declaration forms, type inference, `:=` shadowing, auto-deref, auto-address, addressability rules |
+| 05 | [Closures: funcval, Capture & Production Patterns](./05_closures_funcval_and_capture.md) | `funcval` struct, capture-by-reference, escape analysis, loop capture gotcha, defer internals, Go 1.22 changes, cross-language comparison |
 
 ### Part III — Type System & Interfaces
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 08 | [Interfaces: iface, eface & the Nil Trap](./08_interfaces_iface_eface_nil_trap.md) | `iface`/`eface`, `itab` dispatch, nil trap, three guards, struct embedding & method promotion |
-| 09 | [The any Type: Boxing & Performance Cost](./09_any_type_boxing_and_cost.md) | Boxing/unboxing, `convT` family, `staticuint64s`, generics vs `any`, GC shape stenciling |
-| 10 | [Context: The Interface Design Masterclass](./10_context_interface_masterclass.md) | 4 methods, cancelCtx/timerCtx/valueCtx chain, decorator pattern, production gotchas |
+| 06 | [Interfaces: iface, eface & the Nil Trap](./06_interfaces_iface_eface_nil_trap.md) | `iface`/`eface`, `itab` dispatch, nil trap, three guards, struct embedding & method promotion |
+| 07 | [The any Type: Boxing & Performance Cost](./07_any_type_boxing_and_cost.md) | Boxing/unboxing, `convT` family, `staticuint64s`, generics vs `any`, GC shape stenciling |
 
 ### Part IV — Error Handling
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 11 | [Error Chains: Wrapping, Is, As & Strategy](./11_error_chains_wrapping_strategy.md) | Sentinel errors, custom types, `%w` wrapping, `errors.Is/As` chain walk, enterprise error strategy |
-| 12 | [Concurrent Errors: errgroup & Recovery](./12_concurrent_errors_errgroup.md) | WaitGroup+Mutex, channel-based collection, `errgroup.Group`, panic recovery in goroutines |
+| 08 | [Error Chains: Wrapping, Is, As & Strategy](./08_error_chains_wrapping_strategy.md) | Sentinel errors, custom types, `%w` wrapping, `errors.Is/As` chain walk, enterprise error strategy |
+| 09 | [Concurrent Errors: errgroup & Recovery](./09_concurrent_errors_errgroup.md) | WaitGroup+Mutex, channel-based collection, `errgroup.Group`, panic recovery in goroutines |
 
 ### Part V — Concurrency & Channels
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 13 | [Goroutines & the GMP Scheduler](./13_goroutines_gmp_scheduler.md) | GMP model, work stealing, async preemption, syscall hand-off, network poller |
-| 14 | [Goroutine Stacks: Growth, Shrinking & Pointers](./14_goroutine_stacks_growth.md) | Contiguous stacks, 2KB→growable, pointer adjustment, stack maps, scope vs frame vs stack |
-| 15 | [Channels: hchan, Select & Production Patterns](./15_channels_hchan_select.md) | `runtime.hchan`, ring buffer, `sudog` parking, select algorithm, nil channels, fan-in/out, pipelines |
+| 10 | [Goroutines & the GMP Scheduler](./10_goroutines_gmp_scheduler.md) | GMP model, work stealing, async preemption, syscall hand-off, network poller, interview self-test |
+| 11 | [Goroutine Stacks: Growth, Shrinking & Pointers](./11_goroutine_stacks_growth.md) | Contiguous stacks, 2KB→growable, pointer adjustment, stack maps, scope vs frame vs stack |
+| 12 | [Channels: hchan, Select & Production Patterns](./12_channels_hchan_select.md) | `runtime.hchan`, ring buffer, `sudog` parking, select algorithm, nil channels, fan-in/out, pipelines |
 
 ### Part VI — Runtime & Performance
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 16 | [Memory, GC & Escape Analysis](./16_memory_gc_escape_analysis.md) | Stack vs heap, escape analysis rules, tri-color GC, write barrier, GOGC/GOMEMLIMIT, sync.Pool |
-| 17 | [Sorting: pdqsort](./17_sorting_pdqsort.md) | Pattern-defeating quicksort: insertion sort + quicksort + heapsort adaptive algorithm |
+| 13 | [Memory, GC, Escape Analysis & Sorting](./13_memory_gc_escape_sorting.md) | Stack vs heap, escape analysis rules, tri-color GC, write barrier, GOGC/GOMEMLIMIT, sync.Pool, pdqsort |
 
 ### Part VII — Testing & Debugging
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 18 | [Testing Internals: go test Under the Hood](./18_testing_internals.md) | Code generation, test discovery, `_testmain.go`, white-box vs black-box, benchmarks, fuzz |
-| 19 | [Debugging & Profiling: pprof, trace & dlv](./19_debugging_profiling.md) | pprof, go tool trace, dlv, GODEBUG, deadlock detection, goroutine leak monitoring |
+| 14 | [Testing Internals: go test Under the Hood](./14_testing_internals.md) | Code generation, test discovery, `_testmain.go`, white-box vs black-box, benchmarks, fuzz |
+| 15 | [Debugging & Profiling: pprof, trace & dlv](./15_debugging_profiling.md) | pprof, go tool trace, dlv, GODEBUG, deadlock detection, goroutine leak monitoring |
 
-### Part VIII — Production Engineering
-
-| # | Document | What You'll Learn |
-|---|----------|-------------------|
-| 20 | [Production Pitfalls & Enterprise Patterns](./20_production_pitfalls_enterprise.md) | Top 15 production bugs, library comparison, project structure, graceful shutdown, Docker builds |
-
-### Part IX — Design Philosophy (Living Document)
+### Part VIII — Design & Architecture
 
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
-| 21 | [Go Design Philosophy: The Connected Architecture](./21_go_design_philosophy.md) | How immutability, interfaces, value semantics, and CSP concurrency form one coherent system |
-| 22 | [The Middleware Pattern: Function Types, Closures & Interface Composition](./22_middleware_pattern.md) | Methods on function types, HandlerFunc adapter, closure capture in middleware, Java comparison, production middleware stacks |
-| 23 | [Production Patterns: The Five Pillars of Go Architecture](./23_production_patterns.md) | Functional options, graceful shutdown, interface-based DI, table-driven tests — how production Go services are built |
+| 16 | [Go Design Philosophy: The Connected Architecture](./16_go_design_philosophy.md) | How immutability, interfaces, value semantics, and CSP concurrency form one coherent system |
+| 17 | [The Middleware Pattern: Function Types & Closures](./17_middleware_pattern.md) | Methods on function types, HandlerFunc adapter, closure capture in middleware, Java comparison |
+| 18 | [Production Patterns & Enterprise Go](./18_production_patterns_enterprise.md) | Top 15 pitfalls, library comparison, project structure, functional options, graceful shutdown, DI, Docker |
+
+### Part IX — Cross-Cutting Concepts
+
+| # | Document | What You'll Learn |
+|---|----------|-------------------|
+| 19 | [Context: The Interface Design Masterclass](./19_context_interface_masterclass.md) | 4 methods, cancelCtx/timerCtx/valueCtx chain, decorator pattern, production gotchas |
 
 ---
 
@@ -108,4 +105,3 @@ dlv debug ./cmd/server           # interactive debugger
 
 > Each document follows the same structure: runtime struct layout → step-by-step
 > trace → production implications → performance cost table → quick reference card.
-
