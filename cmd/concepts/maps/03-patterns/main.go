@@ -6,6 +6,18 @@ package main
 
 import "fmt"
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // COMMON MAP PATTERNS (Essential for LeetCode!)
 // ============================================================
@@ -88,21 +100,47 @@ func Fibonacci(n int) int {
 }
 
 func main() {
-	// Frequency counter
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Maps: Essential Patterns               %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	// --- Pattern 1: Frequency Counter ---
+	fmt.Printf("%s▸ Pattern 1: Frequency Counter%s\n", cyan+bold, reset)
 	freq := FrequencyCount("hello world")
-	fmt.Println("Frequency:", freq)
+	fmt.Printf("  FrequencyCount(\"hello world\"):\n")
+	for ch, count := range freq {
+		fmt.Printf("    '%s%c%s' → %s%d%s\n", magenta, ch, reset, magenta, count, reset)
+	}
+	fmt.Printf("  %s✔ Zero value of int is 0 — freq[ch]++ works without initialization%s\n\n", green, reset)
 
-	// Unique elements (set pattern)
-	fmt.Println("Unique:", UniqueElements([]int{1, 2, 2, 3, 3, 3, 4}))
+	// --- Pattern 2: Set ---
+	fmt.Printf("%s▸ Pattern 2: Set (map[T]struct{})%s\n", cyan+bold, reset)
+	unique := UniqueElements([]int{1, 2, 2, 3, 3, 3, 4})
+	fmt.Printf("  UniqueElements([1,2,2,3,3,3,4]) = %s%v%s\n", magenta, unique, reset)
+	fmt.Printf("  %s✔ struct{} is zero-size — map[T]struct{} uses no memory per entry vs map[T]bool%s\n\n", green, reset)
 
-	// Grouping by computed key
+	// --- Pattern 3: Grouping ---
+	fmt.Printf("%s▸ Pattern 3: Grouping by Computed Key%s\n", cyan+bold, reset)
 	groups := GroupByLength([]string{"go", "is", "fun", "and", "fast"})
-	fmt.Println("Groups by length:", groups)
+	fmt.Printf("  GroupByLength([\"go\",\"is\",\"fun\",\"and\",\"fast\"]):\n")
+	for length, words := range groups {
+		fmt.Printf("    len=%s%d%s → %s%v%s\n", magenta, length, reset, magenta, words, reset)
+	}
+	fmt.Printf("  %s✔ append() on a nil slice is safe — auto-allocates on first append%s\n\n", green, reset)
 
-	// Two Sum — single-pass hash map solution
-	i, j := TwoSum([]int{2, 7, 11, 15}, 9)
-	fmt.Println("TwoSum indices:", i, j) // 0, 1
+	// --- Pattern 4: Two Sum ---
+	fmt.Printf("%s▸ Pattern 4: Two Sum (hash map lookup)%s\n", cyan+bold, reset)
+	nums := []int{2, 7, 11, 15}
+	target := 9
+	i, j := TwoSum(nums, target)
+	fmt.Printf("  TwoSum(%v, %d) = indices [%s%d%s, %s%d%s]\n", nums, target, magenta, i, reset, magenta, j, reset)
+	fmt.Printf("  %s✔ O(n) single-pass: for each element, check if complement exists in map%s\n", green, reset)
+	fmt.Printf("  %s✔ Turns O(n²) brute force into O(n) with O(n) space%s\n\n", green, reset)
 
-	// Fibonacci with memoization
-	fmt.Println("Fib(10):", Fibonacci(10)) // 55
+	// --- Pattern 5: Memoization ---
+	fmt.Printf("%s▸ Pattern 5: Memoization (Fibonacci)%s\n", cyan+bold, reset)
+	result := Fibonacci(10)
+	fmt.Printf("  Fibonacci(10) = %s%d%s\n", magenta, result, reset)
+	fmt.Printf("  %s✔ Map caches results: O(2^n) recursive → O(n) memoized%s\n", green, reset)
+	fmt.Printf("  %s⚠ For concurrent memoization, use sync.Map or mutex-protected map%s\n", yellow, reset)
 }

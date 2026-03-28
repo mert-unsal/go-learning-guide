@@ -6,6 +6,18 @@ import (
 	"time"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // ============================================================
 // Unbuffered Direct Transfer — Zero-Copy Goroutine Rendezvous
 // ============================================================
@@ -76,8 +88,9 @@ import (
 //     deliberate design choice to encourage synchronization-first thinking.
 
 func main() {
-	fmt.Println("=== Unbuffered Direct Transfer (no buffer, one copy) ===")
-	fmt.Println()
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Unbuffered Direct Transfer (Goroutine Rendezvous)%s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
 
 	ch := make(chan int) // dataqsiz == 0, buf == nil
 
@@ -86,12 +99,20 @@ func main() {
 
 	var sendStart, sendEnd time.Time
 
+	fmt.Printf("%s▸ Channel Created%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ make(chan int) → hchan with dataqsiz=0, buf=nil — no ring buffer at all%s\n", green, reset)
+	fmt.Printf("  %s✔ Transfers use sendDirect(): one memmove from sender's stack to receiver's stack%s\n", green, reset)
+	fmt.Println()
+
 	// Sender goroutine — will block until main goroutine receives.
+	fmt.Printf("%s▸ Launching Sender Goroutine%s\n", cyan+bold, reset)
 	go func() {
 		close(senderReady) // signal that we're about to send
 		sendStart = time.Now()
+		fmt.Printf("  [%sSENDER%s]  ch <- 42  — no receiver yet, goroutine parks in %s_Gwaiting%s\n", yellow+bold, reset, magenta, reset)
 		ch <- 42 // BLOCKS here: no buffer, no receiver yet
 		sendEnd = time.Now()
+		fmt.Printf("  [%sSENDER%s]  unblocked! sendDirect() completed — value delivered\n", yellow+bold, reset)
 		close(senderDone)
 	}()
 
@@ -101,9 +122,12 @@ func main() {
 	// During this 100ms, the sender's goroutine is in _Gwaiting state,
 	// parked on hchan.sendq. It consumes zero CPU.
 	delay := 100 * time.Millisecond
-	fmt.Printf("  Receiver sleeping %v to prove sender blocks...\n", delay)
+	fmt.Printf("  [%sRECEIVER%s] sleeping %s%v%s to prove sender blocks...\n", cyan+bold, reset, magenta, delay, reset)
+	fmt.Printf("  %s⚠ During this sleep, sender is parked on hchan.sendq — zero CPU consumed%s\n", yellow, reset)
 	time.Sleep(delay)
 
+	fmt.Println()
+	fmt.Printf("%s▸ Receive Operation%s\n", cyan+bold, reset)
 	recvStart := time.Now()
 	val := <-ch // runtime.sendDirect: memmove from sender's stack to ours
 	recvEnd := time.Now()
@@ -113,12 +137,16 @@ func main() {
 	senderBlocked := sendEnd.Sub(sendStart)
 	recvLatency := recvEnd.Sub(recvStart)
 
-	fmt.Printf("  Received value: %d\n", val)
-	fmt.Printf("  Sender was blocked for:    %v (≈ receiver's sleep)\n", senderBlocked.Round(time.Millisecond))
-	fmt.Printf("  Receive operation latency: %v (sub-microsecond = direct copy)\n", recvLatency)
+	fmt.Printf("  [%sRECEIVER%s] received value: %s%d%s\n", cyan+bold, reset, magenta, val, reset)
 	fmt.Println()
-	fmt.Println("  The sender blocked ~100ms — it was parked in _Gwaiting")
-	fmt.Println("  until our receive call triggered sendDirect().")
-	fmt.Println("  The receive itself was nearly instant: one memmove,")
-	fmt.Println("  no buffer involved.")
+
+	fmt.Printf("%s▸ Timing Analysis%s\n", cyan+bold, reset)
+	fmt.Printf("  Sender was blocked for:    %s%v%s (≈ receiver's sleep)\n", magenta, senderBlocked.Round(time.Millisecond), reset)
+	fmt.Printf("  Receive operation latency: %s%v%s (sub-microsecond = direct copy)\n", magenta, recvLatency, reset)
+	fmt.Println()
+
+	fmt.Printf("  %s✔ The sender blocked ~100ms — it was parked in _Gwaiting%s\n", green+bold, reset)
+	fmt.Printf("  %s  until our receive call triggered sendDirect().%s\n", green, reset)
+	fmt.Printf("  %s✔ The receive itself was nearly instant: one memmove,%s\n", green+bold, reset)
+	fmt.Printf("  %s  no buffer involved. This is the fastest goroutine-to-goroutine transfer.%s\n", green, reset)
 }

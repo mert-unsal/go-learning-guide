@@ -1,107 +1,136 @@
-// Package main contains a standalone conceptual example for the Worker Event Loop pattern.
-// Each file explains one production pattern: the problem, the solution, and why
-// channels are the right tool.
+// Package main demonstrates the Worker Pool + Event Loop pattern with real-time
+// status monitoring. Watch 3 workers drain a job queue, each job taking 1-2 seconds.
 package main
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
-// ============================================================
-// Worker Event Loop — for/select as a Multiplexed Event Handler
-// ============================================================
-//
-// The Problem:
-//   Background workers (Pub/Sub consumers, queue processors, batch jobs)
-//   have no framework wrapping them. Unlike HTTP handlers where middleware
-//   captures metrics automatically, a worker manages its own lifecycle.
-//   It must handle multiple concerns in a single goroutine:
-//     - Process incoming work from a job queue
-//     - Run periodic maintenance (flush batches, report metrics)
-//     - Shut down gracefully when told to stop
-//
-// Real-world example:
-//   A Cloud Run worker pulling from Pub/Sub, batching database writes
-//   every 10 seconds, and reporting queue lag metrics — all in one
-//   for/select loop.
-//
-// The Pattern:
-//   for/select with three channel cases:
-//     - jobs channel: primary work arrives here
-//     - ticker.C: periodic maintenance fires here
-//     - done channel: shutdown signal arrives here
-//
-// Why channels work here:
-//   The goroutine SLEEPS between events — zero CPU when idle.
-//   select wakes it instantly when any channel has data.
-//   Each channel represents a different event source, and select
-//   multiplexes them into a single handler loop.
-//
-//   ┌─────────── for-select loop ───────────┐
-//   │                                        │
-//   │  JOBS ──────► process(job)             │  ← primary work
-//   │                                        │
-//   │  TICKER ────► flush + report           │  ← periodic maintenance
-//   │                                        │
-//   │  DONE ──────► drain remaining → exit   │  ← graceful shutdown
-//   │                                        │
-//   │  The goroutine SLEEPS between events.  │
-//   │  Zero CPU when idle. Wakes instantly   │
-//   │  when any channel has data.            │
-//   └────────────────────────────────────────┘
-//
-// The drain loop on shutdown:
-//   When the done signal arrives, remaining jobs in the channel buffer
-//   should still be processed. The inner select+default loop drains
-//   them without blocking: if the channel is empty, default fires
-//   and the worker exits cleanly.
+// ANSI color codes — works in all modern terminals including Windows Terminal.
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+	white   = "\033[37m"
+	bgBlue  = "\033[44m"
+	bgGreen = "\033[42m"
+	bgRed   = "\033[41m"
+)
 
-// Job represents a unit of work for the worker to process.
+// workerColors assigns a unique color to each worker for visual tracking.
+var workerColors = []string{cyan, yellow, magenta, green, blue}
+
+// ============================================================
+// Worker Pool with Event Loop — Live Queue Simulation
+// ============================================================
+//
+// What this demonstrates:
+//   3 workers share a single jobs channel. Each worker runs a for/select
+//   event loop. Jobs take 1-2 seconds to process (simulated work).
+//   A status ticker prints a live dashboard every 500ms so you can
+//   watch the queue drain in real time.
+//
+// Architecture:
+//
+//   ┌─────────────────────────────────────────────────────────┐
+//   │  main goroutine                                        │
+//   │  ┌─────────────┐                                       │
+//   │  │ Load 12 jobs │──► jobs channel (buffered, cap=20)   │
+//   │  └─────────────┘         │                             │
+//   │                          ▼                             │
+//   │         ┌────────────────┼────────────────┐            │
+//   │         ▼                ▼                ▼            │
+//   │   ┌──────────┐    ┌──────────┐    ┌──────────┐        │
+//   │   │ Worker 1 │    │ Worker 2 │    │ Worker 3 │        │
+//   │   │ for/sel  │    │ for/sel  │    │ for/sel  │        │
+//   │   └──────────┘    └──────────┘    └──────────┘        │
+//   │         │                │                │            │
+//   │         └────────────────┼────────────────┘            │
+//   │                          ▼                             │
+//   │                   completed count                      │
+//   │                                                        │
+//   │   status ticker (500ms) reads:                         │
+//   │     • active workers (atomic counter)                  │
+//   │     • queue depth (len(jobs))                          │
+//   │     • completed count (atomic counter)                 │
+//   │                                                        │
+//   │   done channel ──► all workers drain + exit            │
+//   └─────────────────────────────────────────────────────────┘
+//
+// Key runtime observations:
+//   • 3 workers compete on one channel — the scheduler decides who
+//     wakes up. This is safe: channel receive is goroutine-safe
+//     (hchan has an internal mutex).
+//   • Active count goes up to 3 max (3 workers, each holds 1 job).
+//   • Queue depth drops in bursts of ~3 as workers grab jobs.
+//   • On shutdown, workers drain remaining buffered jobs before exiting.
+
+// Job represents a unit of work.
 type Job struct {
-	ID   int
-	Data string
+	ID       int
+	Data     string
+	Duration time.Duration // simulated processing time
 }
 
-// WorkerEventLoop demonstrates the for/select event loop pattern.
-// It processes jobs, runs periodic maintenance, and shuts down gracefully.
-func WorkerEventLoop(jobs <-chan Job, done <-chan struct{}) []string {
-	var processed []string
-	ticker := time.NewTicker(100 * time.Millisecond)
+// worker runs a for/select event loop: pulls jobs, handles ticks, responds to shutdown.
+func worker(id int, jobs <-chan Job, done <-chan struct{}, active, completed *atomic.Int32, wg *sync.WaitGroup) {
+	defer wg.Done()
+	c := workerColors[(id-1)%len(workerColors)]
+	tag := fmt.Sprintf("%s[worker-%d]%s", c, id, reset)
+
+	fmt.Printf("%s ▶ Online — waiting for jobs\n", tag)
+
+	ticker := time.NewTicker(3 * time.Second)
 	defer ticker.Stop()
 
-	flushCount := 0
+	processJob := func(job Job, phase string) {
+		active.Add(1)
+		fmt.Printf("%s ⚙ %s Job #%02d %s(%s)%s — will take %s%v%s\n",
+			tag, phase, job.ID, dim, job.Data, reset, bold, job.Duration, reset)
+
+		time.Sleep(job.Duration)
+
+		active.Add(-1)
+		completed.Add(1)
+		fmt.Printf("%s %s✔ Done%s  Job #%02d (%s) — completed: %s%d%s total\n",
+			tag, green, reset, job.ID, job.Data, bold, completed.Load(), reset)
+	}
 
 	for {
 		select {
 		case job, ok := <-jobs:
 			if !ok {
-				// Channel closed — no more jobs coming
-				return processed
+				fmt.Printf("%s %s✖ Channel closed — exiting%s\n", tag, red, reset)
+				return
 			}
-			// Primary work: process the job
-			result := fmt.Sprintf("processed:%s", job.Data)
-			processed = append(processed, result)
+			processJob(job, "Processing")
 
 		case <-ticker.C:
-			// Periodic maintenance: flush batches, report metrics
-			flushCount++
-			_ = flushCount // in production: flush DB batch, report queue depth
+			fmt.Printf("%s %s⏱ Heartbeat — I'm alive and waiting for work%s\n", tag, dim, reset)
 
 		case <-done:
-			// Graceful shutdown — drain remaining jobs in buffer
+			fmt.Printf("%s %s🛑 Shutdown signal — draining remaining jobs...%s\n", tag, red+bold, reset)
 			for {
 				select {
 				case job, ok := <-jobs:
 					if !ok {
-						return processed
+						fmt.Printf("%s    %sChannel closed during drain — exiting%s\n", tag, red, reset)
+						return
 					}
-					result := fmt.Sprintf("drained:%s", job.Data)
-					processed = append(processed, result)
+					processJob(job, fmt.Sprintf("%sDraining%s", yellow, reset))
 				default:
-					// buffer empty — exit cleanly
-					return processed
+					fmt.Printf("%s    %sBuffer empty — exiting cleanly%s\n", tag, green, reset)
+					return
 				}
 			}
 		}
@@ -109,34 +138,94 @@ func WorkerEventLoop(jobs <-chan Job, done <-chan struct{}) []string {
 }
 
 func main() {
-	jobs := make(chan Job, 10)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Worker Pool + Event Loop — Live Queue Drain Simulation      %s\n", bold, blue, reset)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	const (
+		numWorkers = 3
+		numJobs    = 12
+	)
+
+	jobs := make(chan Job, 20)
 	done := make(chan struct{})
+	var active, completed atomic.Int32
 
-	// Pre-load some jobs
-	jobs <- Job{ID: 1, Data: "order-101"}
-	jobs <- Job{ID: 2, Data: "order-102"}
-	jobs <- Job{ID: 3, Data: "order-103"}
+	// Load all jobs upfront — each takes 1-2 seconds
+	fmt.Printf("%s[main]%s Loading %s%d jobs%s into channel (cap=%d)...\n", white+bold, reset, green+bold, numJobs, reset, cap(jobs))
+	for i := 1; i <= numJobs; i++ {
+		duration := time.Duration(1000+rand.Intn(1000)) * time.Millisecond
+		jobs <- Job{
+			ID:       i,
+			Data:     fmt.Sprintf("order-%03d", 100+i),
+			Duration: duration,
+		}
+	}
+	fmt.Printf("%s[main]%s Queue loaded: %s%d/%d%s slots used\n\n", white+bold, reset, yellow, len(jobs), cap(jobs), reset)
 
-	var results []string
-	var wg sync.WaitGroup
-	wg.Add(1)
+	// Status ticker — live dashboard every 500ms
+	statusDone := make(chan struct{})
 	go func() {
-		defer wg.Done()
-		results = WorkerEventLoop(jobs, done)
+		tick := time.NewTicker(500 * time.Millisecond)
+		defer tick.Stop()
+		for {
+			select {
+			case <-tick.C:
+				a := active.Load()
+				c := completed.Load()
+				q := len(jobs)
+
+				// Build color-coded progress bar
+				bar := ""
+				for i := 0; i < int(a); i++ {
+					bar += fmt.Sprintf("%s█%s", green, reset)
+				}
+				for i := int(a); i < numWorkers; i++ {
+					bar += fmt.Sprintf("%s░%s", dim, reset)
+				}
+
+				// Color queue count: green=low, yellow=medium, red=high
+				qColor := green
+				if q > 6 {
+					qColor = red
+				} else if q > 3 {
+					qColor = yellow
+				}
+
+				fmt.Printf("%s[status]%s Active: %s%d/%d%s [%s]  Queue: %s%-2d%s  Completed: %s%d/%d%s\n",
+					dim, reset, bold, a, numWorkers, reset, bar, qColor, q, reset, green+bold, c, numJobs, reset)
+			case <-statusDone:
+				return
+			}
+		}
 	}()
 
-	// Let worker process for a bit
-	time.Sleep(50 * time.Millisecond)
+	// Launch worker pool
+	var wg sync.WaitGroup
+	fmt.Printf("%s[main]%s Launching %s%d workers%s...\n\n", white+bold, reset, cyan+bold, numWorkers, reset)
+	for i := 1; i <= numWorkers; i++ {
+		wg.Add(1)
+		go worker(i, jobs, done, &active, &completed, &wg)
+	}
 
-	// Add more jobs then signal shutdown
-	jobs <- Job{ID: 4, Data: "order-104"}
-	jobs <- Job{ID: 5, Data: "order-105"}
-	close(done) // signal graceful shutdown
+	// Wait until we have a few jobs left to show the drain behavior
+	for completed.Load() < int32(numJobs-3) {
+		time.Sleep(200 * time.Millisecond)
+	}
+
+	fmt.Println()
+	fmt.Printf("%s%s[main] ═══════════════════════════════════════════════════════%s\n", bold, red, reset)
+	fmt.Printf("%s[main]%s %d/%d jobs completed — %ssending shutdown signal%s\n", white+bold, reset, completed.Load(), numJobs, red+bold, reset)
+	fmt.Printf("%s[main]%s Remaining buffered jobs will be drained by workers\n", white+bold, reset)
+	fmt.Printf("%s%s[main] ═══════════════════════════════════════════════════════%s\n", bold, red, reset)
+	fmt.Println()
+	close(done)
 
 	wg.Wait()
+	close(statusDone)
 
-	for _, r := range results {
-		fmt.Printf("  %s\n", r)
-	}
-	fmt.Printf("  Total: %d jobs handled\n", len(results))
+	fmt.Println()
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════════%s\n", bold, green, reset)
+	fmt.Printf("%s%s  ✔ All done: %d/%d jobs processed by %d workers              %s\n", bold, green, completed.Load(), numJobs, numWorkers, reset)
+	fmt.Printf("%s%s═══════════════════════════════════════════════════════════════%s\n", bold, green, reset)
 }

@@ -26,6 +26,18 @@ import (
 	"math"
 )
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // Measurer is a small, focused interface.
 type Measurer interface {
 	Measure() float64
@@ -54,12 +66,34 @@ func totalMeasure(items []Measurer) float64 {
 }
 
 func main() {
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Small Interfaces — Power of Minimalism  %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ Measurer has ONE method: Measure() float64%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Small interface = more types can satisfy it%s\n", green, reset)
+	fmt.Printf("  %s✔ io.Reader has 1 method → files, strings, HTTP bodies, gzip all satisfy it%s\n", green, reset)
+	fmt.Printf("  %s✔ A 10-method interface would exclude most types%s\n\n", green, reset)
+
 	// Completely unrelated types used together — because behavior, not type.
-	items := []Measurer{
-		Circle{Radius: 2},
-		Rectangle{Width: 3, Height: 4},
-		Segment{Length: 10},
-		FileSize{Bytes: 1024},
-	}
-	fmt.Printf("Total: %.2f\n", totalMeasure(items))
+	c := Circle{Radius: 2}
+	r := Rectangle{Width: 3, Height: 4}
+	seg := Segment{Length: 10}
+	fs := FileSize{Bytes: 1024}
+
+	items := []Measurer{c, r, seg, fs}
+
+	fmt.Printf("%s▸ Four completely unrelated types — all satisfy Measurer%s\n", cyan+bold, reset)
+	fmt.Printf("  Circle{Radius: 2}        → Measure() = %s%.2f%s  (π·r²)\n", magenta, c.Measure(), reset)
+	fmt.Printf("  Rectangle{3, 4}          → Measure() = %s%.2f%s  (w·h)\n", magenta, r.Measure(), reset)
+	fmt.Printf("  Segment{Length: 10}      → Measure() = %s%.2f%s  (not a shape!)\n", magenta, seg.Measure(), reset)
+	fmt.Printf("  FileSize{Bytes: 1024}    → Measure() = %s%.2f%s  (different domain entirely)\n\n", magenta, fs.Measure(), reset)
+
+	total := totalMeasure(items)
+	fmt.Printf("%s▸ totalMeasure([]Measurer) works on ALL of them%s\n", cyan+bold, reset)
+	fmt.Printf("  Total = %s%.2f%s\n\n", magenta, total, reset)
+
+	fmt.Printf("  %s⚠ Go groups by WHAT THINGS DO, not what they ARE%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ OOP would force Circle and FileSize into separate hierarchies%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ Rule: >3 methods? Ask if it's one concern or several bundled together%s\n", yellow, reset)
 }

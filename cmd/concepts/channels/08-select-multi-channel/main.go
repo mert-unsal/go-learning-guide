@@ -3,7 +3,20 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
+)
+
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
 )
 
 // ============================================================
@@ -94,14 +107,19 @@ import (
 //   select cases.
 
 func main() {
-	fmt.Println("=== Select Multi-Channel (selectgo internals) ===")
-	fmt.Println()
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Select Multi-Channel (selectgo internals)      %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════════════%s\n\n", bold, blue, reset)
 
 	ch1 := make(chan string)
 	ch2 := make(chan string)
 	ch3 := make(chan string)
 
 	result := make(chan string, 1)
+
+	fmt.Printf("%s▸ Multi-Channel Select — Goroutine Parks on 3 Wait Queues%s\n", cyan+bold, reset)
+	fmt.Printf("  %s⚠ selectgo locks channels sorted by address to prevent deadlocks%s\n", yellow, reset)
+	fmt.Printf("  %sPoll phase finds no data → creates 3 sudogs → gopark()%s\n\n", dim, reset)
 
 	// Launch a goroutine that enters select on all three channels.
 	// At the runtime level:
@@ -110,16 +128,21 @@ func main() {
 	//   3. Creates 3 sudogs, enqueues on ch1.recvq, ch2.recvq, ch3.recvq
 	//   4. gopark() → goroutine sleeps on all three wait queues
 	go func() {
-		fmt.Println("  [select goroutine] entering select on 3 channels...")
+		fmt.Printf("  %s[select goroutine]%s entering select on 3 channels...\n", bold+blue, reset)
+		fmt.Printf("    %s↳ parking on:%s %sch1.recvq%s, %sch2.recvq%s, %sch3.recvq%s\n",
+			dim, reset, cyan, reset, yellow, reset, magenta, reset)
 		start := time.Now()
 
 		select {
 		case v := <-ch1:
-			result <- fmt.Sprintf("ch1 won with %q after %v", v, time.Since(start).Round(time.Millisecond))
+			result <- fmt.Sprintf("%s%sch1 won%s with %s%q%s after %s%v%s",
+				bold, cyan, reset, magenta, v, reset, magenta, time.Since(start).Round(time.Millisecond), reset)
 		case v := <-ch2:
-			result <- fmt.Sprintf("ch2 won with %q after %v", v, time.Since(start).Round(time.Millisecond))
+			result <- fmt.Sprintf("%s%sch2 won%s with %s%q%s after %s%v%s",
+				bold, yellow, reset, magenta, v, reset, magenta, time.Since(start).Round(time.Millisecond), reset)
 		case v := <-ch3:
-			result <- fmt.Sprintf("ch3 won with %q after %v", v, time.Since(start).Round(time.Millisecond))
+			result <- fmt.Sprintf("%s%sch3 won%s with %s%q%s after %s%v%s",
+				bold, magenta, reset, magenta, v, reset, magenta, time.Since(start).Round(time.Millisecond), reset)
 		}
 		// After waking:
 		//   - The winning channel's sudog was dequeued by the sender
@@ -135,16 +158,20 @@ func main() {
 	//   2. Direct copy (unbuffered) from sender to select goroutine
 	//   3. goready() wakes the select goroutine
 	//   4. Select goroutine cleans up sudogs from ch1 and ch3
-	fmt.Println("  [main] sending to ch2...")
+	fmt.Printf("  %s[main]%s sending to %sch2%s...\n", bold+green, reset, yellow+bold, reset)
+	fmt.Printf("    %s↳ chansend finds sudog in ch2.recvq → direct copy → goready()%s\n", dim, reset)
 	ch2 <- "payload-from-ch2"
 
 	winner := <-result
-	fmt.Printf("  Result: %s\n", winner)
-	fmt.Println()
+	fmt.Printf("  %s✔ Result:%s %s\n", green, reset, winner)
+	fmt.Printf("  %s✔ Goroutine woke and cleaned up sudogs from ch1, ch3%s\n\n", green, reset)
 
 	// Demonstrate random fairness: when multiple channels are ready
 	// at the poll phase, selectgo picks at random.
-	fmt.Println("  --- Random fairness demonstration ---")
+	fmt.Printf("%s▸ Random Fairness Demonstration (fastrandn)%s\n", cyan+bold, reset)
+	fmt.Printf("  %s⚠ When multiple cases are ready, selectgo picks uniformly at random%s\n", yellow, reset)
+	fmt.Printf("  %sThis prevents starvation — source order is irrelevant%s\n\n", dim, reset)
+
 	wins := map[string]int{"ch1": 0, "ch2": 0, "ch3": 0}
 	const trials = 900
 
@@ -170,10 +197,20 @@ func main() {
 		}
 	}
 
-	fmt.Printf("  Over %d trials with all 3 ready:\n", trials)
-	for name, count := range wins {
+	fmt.Printf("  Over %s%d%s trials with all 3 channels ready:\n\n", magenta, trials, reset)
+
+	// Visual bar chart of wins
+	channelColors := map[string]string{"ch1": cyan, "ch2": yellow, "ch3": magenta}
+	maxBarWidth := 30
+	for _, name := range []string{"ch1", "ch2", "ch3"} {
+		count := wins[name]
 		pct := float64(count) / float64(trials) * 100
-		fmt.Printf("    %s: %d wins (%.1f%%)\n", name, count, pct)
+		barLen := int(float64(count) / float64(trials) * float64(maxBarWidth))
+		bar := strings.Repeat("█", barLen)
+		color := channelColors[name]
+		fmt.Printf("    %s%s%s %s%s%s %s%3d wins%s (%s%.1f%%%s)\n",
+			color+bold, name, reset, color, bar, reset, green, count, reset, magenta, pct, reset)
 	}
-	fmt.Println("  Each should be ~33% — select uses fastrandn for fairness.")
+	fmt.Printf("\n  %s✔ Each should be ~33%% — select uses fastrandn for fairness%s\n", green, reset)
+	fmt.Printf("  %s⚠ Without randomization, case 0 would always win (starvation)%s\n", yellow, reset)
 }

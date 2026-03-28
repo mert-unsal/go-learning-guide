@@ -4,7 +4,25 @@
 // Run: go run ./cmd/concepts/packages-modules/01-package-concepts
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"go/build"
+	"os"
+	"runtime"
+	"strings"
+)
+
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
 
 // ============================================================
 // 1. PACKAGES — The Basic Unit of Code Organization
@@ -150,8 +168,68 @@ func init() {
 // ============================================================
 
 func main() {
-	fmt.Println("=== Package Concepts ===")
-	fmt.Println(PublicFunction())
-	fmt.Println("PublicConstant:", PublicConstant)
-	fmt.Println("privateConstant:", privateConstant) // accessible here (same package)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Go Package & Module Concepts            %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	// --- Exported vs Unexported ---
+	fmt.Printf("%s▸ Exported vs Unexported identifiers%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Go uses CAPITALIZATION as the visibility rule — no public/private keywords%s\n", green, reset)
+	fmt.Printf("  PublicConstant  = %s%q%s  ← Uppercase first letter → exported\n", magenta, PublicConstant, reset)
+	fmt.Printf("  privateConstant = %s%q%s  ← lowercase first letter → unexported\n", magenta, privateConstant, reset)
+	fmt.Printf("  PublicFunction()= %s%q%s  ← calls privateHelper() internally\n", magenta, PublicFunction(), reset)
+	fmt.Printf("  %s✔ Both accessible here because we're in the same package (main)%s\n", green, reset)
+	fmt.Printf("  %s⚠ In library packages, only Exported identifiers form the public API%s\n", yellow, reset)
+
+	// --- init() ordering ---
+	fmt.Printf("\n%s▸ init() function & initialization order%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Order: package-level vars → init() → main()%s\n", green, reset)
+	fmt.Printf("  globalVar = %s%q%s  ← computed BEFORE init() ran\n", magenta, globalVar, reset)
+	fmt.Printf("  %s⚠ Use init() sparingly — it makes code harder to test and reason about%s\n", yellow, reset)
+	fmt.Printf("  %s✔ Common uses: registering DB drivers (database/sql), setting defaults%s\n", green, reset)
+
+	// --- Module system ---
+	fmt.Printf("\n%s▸ Module system (go.mod)%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ A module is a collection of packages with a shared go.mod%s\n", green, reset)
+
+	// Read go.mod to show module info dynamically
+	if data, err := os.ReadFile("go.mod"); err == nil {
+		lines := strings.SplitN(string(data), "\n", 3)
+		for _, line := range lines[:2] {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				fmt.Printf("    %s%s%s\n", magenta, line, reset)
+			}
+		}
+	}
+
+	fmt.Printf("  %s✔ Key commands: go mod init, go get, go mod tidy, go mod download%s\n", green, reset)
+
+	// --- Imports ---
+	fmt.Printf("\n%s▸ Import types%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Standard lib:%s    import \"fmt\"\n", green, reset)
+	fmt.Printf("  %s✔ This module:%s     import \"gointerviewprep/utils\"\n", green, reset)
+	fmt.Printf("  %s✔ Third party:%s     import \"github.com/stretchr/testify\"\n", green, reset)
+	fmt.Printf("  %s✔ Alias:%s           import myfmt \"gointerviewprep/utils\"\n", green, reset)
+	fmt.Printf("  %s✔ Blank import:%s    import _ \"database/driver\"  (only runs init())\n", green, reset)
+	fmt.Printf("  %s⚠ Dot import:%s      import . \"math\"  (avoid in production!)%s\n", yellow, reset, reset)
+
+	// --- internal/ packages ---
+	fmt.Printf("\n%s▸ internal/ packages%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Packages under 'internal/' can only be imported by sibling/parent packages%s\n", green, reset)
+	fmt.Printf("  %s✔ The COMPILER enforces this — not just a convention, a hard boundary%s\n", green, reset)
+	fmt.Printf("  %s✔ Use internal/ to hide implementation details from external consumers%s\n", green, reset)
+
+	// --- Build tags ---
+	fmt.Printf("\n%s▸ Build tags%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Control which files are included in a build%s\n", green, reset)
+	fmt.Printf("  %s✔ New syntax (Go 1.17+): //go:build linux && amd64%s\n", green, reset)
+	fmt.Printf("  %s⚠ Old syntax (deprecated): // +build linux,amd64%s\n", yellow, reset)
+
+	// --- Runtime info ---
+	fmt.Printf("\n%s▸ Current environment%s\n", cyan+bold, reset)
+	fmt.Printf("  Go version:  %s%s%s\n", magenta, runtime.Version(), reset)
+	fmt.Printf("  GOOS/GOARCH: %s%s/%s%s\n", magenta, runtime.GOOS, runtime.GOARCH, reset)
+	fmt.Printf("  GOPATH:      %s%s%s\n", magenta, build.Default.GOPATH, reset)
+	fmt.Printf("  NumCPU:      %s%d%s  ← GOMAXPROCS defaults to this\n", magenta, runtime.NumCPU(), reset)
 }

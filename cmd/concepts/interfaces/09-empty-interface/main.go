@@ -48,14 +48,56 @@ package main
 
 import "fmt"
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 func printAnything(v any) {
-	fmt.Printf("type: %-12T value: %v\n", v, v)
+	typeName := fmt.Sprintf("%T", v)
+	fmt.Printf("  type: %s%-12s%s  value: %s%v%s\n", magenta, typeName, reset, magenta, v, reset)
 }
 
 func main() {
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Empty Interface (any) — runtime.eface   %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ any (interface{}) has ZERO methods — every type satisfies it%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Represented as runtime.eface = {_type *_type, data unsafe.Pointer}%s\n", green, reset)
+	fmt.Printf("  %s✔ Only 2 words (16 bytes on 64-bit) — simpler than iface (no itab)%s\n", green, reset)
+	fmt.Printf("  %s⚠ Boxing cost: assigning to any may copy value to heap (escape analysis)%s\n\n", yellow, reset)
+
+	fmt.Printf("%s▸ Passing different types to printAnything(v any)%s\n", cyan+bold, reset)
 	printAnything(42)
 	printAnything("hello")
 	printAnything(true)
 	printAnything([]int{1, 2, 3})
 	printAnything(nil)
+
+	fmt.Printf("\n%s▸ Boxing/unboxing — what happens under the hood%s\n", cyan+bold, reset)
+	var x any = 42
+	fmt.Printf("  var x any = 42  → eface = %s(_type=int, data→42)%s\n", magenta, reset)
+	fmt.Printf("  %s⚠ 42 is boxed: copied to heap, eface.data points to the copy%s\n", yellow, reset)
+
+	// Unboxing via type assertion
+	n, ok := x.(int)
+	fmt.Printf("  n, ok := x.(int) → n=%s%d%s, ok=%s%v%s  (unboxing — itab type check)\n", magenta, n, reset, magenta, ok, reset)
+
+	_, ok = x.(string)
+	fmt.Printf("  _, ok := x.(string) → ok=%s%v%s  (type mismatch — no panic with comma-ok)\n\n", magenta, ok, reset)
+
+	fmt.Printf("%s▸ When to use any — and when NOT to%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ JSON decoding into unknown structures%s\n", green, reset)
+	fmt.Printf("  %s✔ fmt.Println-style variadic functions%s\n", green, reset)
+	fmt.Printf("  %s⚠ NOT when you know the type — use concrete types%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ NOT as a lazy substitute for generics (Go 1.18+)%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ \"interface{} says nothing\" — Go Proverbs%s\n", yellow, reset)
 }

@@ -14,6 +14,18 @@ package main
 
 import "fmt"
 
+const (
+	reset   = "\033[0m"
+	bold    = "\033[1m"
+	dim     = "\033[2m"
+	red     = "\033[31m"
+	green   = "\033[32m"
+	yellow  = "\033[33m"
+	blue    = "\033[34m"
+	magenta = "\033[35m"
+	cyan    = "\033[36m"
+)
+
 // Saver is defined HERE, by the consumer. It describes the minimum
 // behavior this package needs. It does NOT live next to File or DB.
 type Saver interface {
@@ -46,6 +58,24 @@ func persist(s Saver, data string) {
 }
 
 func main() {
-	persist(FileSaver{Path: "/tmp/data.txt"}, "hello world")
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n", bold, blue, reset)
+	fmt.Printf("%s%s  Consumer-Defined Interface Pattern      %s\n", bold, blue, reset)
+	fmt.Printf("%s%s══════════════════════════════════════════%s\n\n", bold, blue, reset)
+
+	fmt.Printf("%s▸ The interface is defined by the CONSUMER, not the producer%s\n", cyan+bold, reset)
+	fmt.Printf("  %s✔ Saver interface lives here — next to persist(), which needs it%s\n", green, reset)
+	fmt.Printf("  %s✔ FileSaver and DBSaver know nothing about Saver%s\n", green, reset)
+	fmt.Printf("  %s✔ New backends can be added without touching persist()%s\n\n", green, reset)
+
+	fmt.Printf("%s▸ FileSaver satisfies Saver via Save(data string) error%s\n", cyan+bold, reset)
+	fmt.Printf("  ")
+	persist(FileSaver{Path: "/data/events.log"}, "hello world")
+
+	fmt.Printf("\n%s▸ DBSaver satisfies Saver via Save(data string) error%s\n", cyan+bold, reset)
+	fmt.Printf("  ")
 	persist(DBSaver{Table: "events"}, "hello world")
+
+	fmt.Printf("\n  %s⚠ In Java, FileSaver would 'implements Saver' — coupling at definition%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ In Go, the consumer defines what it needs — decoupling by default%s\n", yellow, reset)
+	fmt.Printf("  %s⚠ This is why Go code is so easy to test: swap in a mock Saver trivially%s\n", yellow, reset)
 }
