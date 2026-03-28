@@ -2327,15 +2327,15 @@ default:
 
 ### Production Scenario 1: Worker Event Loop
 
-**This is NOT an HTTP handler** — HTTP request metrics (latency, status codes) are
-handled by middleware. This pattern is for **background workers** that have no framework
-wrapping them: a Cloud Run worker pulling from Pub/Sub, batching database writes every
+**Background workers** have no framework wrapping them — unlike HTTP handlers where
+middleware captures request metrics automatically, a worker manages its own loop.
+Think: a Cloud Run worker pulling from Pub/Sub, batching database writes every
 10 seconds, and reporting queue lag metrics — all in one `for/select` loop.
 
 - **`process(job)`** — the primary work (process an order, send an email, resize an image)
 - **`flushBuffers()`** — you've been batching writes in memory, now flush to DB/network
   (e.g., batch INSERT 100 rows at once instead of 1-by-1 for throughput)
-- **`reportMetrics()`** — worker-specific metrics that middleware can't capture:
+- **`reportMetrics()`** — worker-specific metrics only the worker knows about:
   queue depth, processing rate, batch sizes, retry counts
 
 ```go
