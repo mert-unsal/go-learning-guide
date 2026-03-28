@@ -418,6 +418,23 @@ GOMEMLIMIT=900MiB    # ~90% of container limit
 GOGC=100             # or GOGC=off (GC runs only near limit)
 ```
 
+#### How GOMEMLIMIT Interacts with GOGC Dynamically
+
+When heap approaches `GOMEMLIMIT`, the runtime **dynamically reduces the effective GOGC**
+to trigger GC earlier than the normal `GOGC` ratio would allow. Concretely:
+
+- **Example**: `GOMEMLIMIT=512MB`, `GOGC=100`, live heap = 300MB.
+  - Normal GOGC=100 would trigger GC at 600MB (2× live heap).
+  - Runtime sees 600MB > 512MB limit, so it lowers effective GOGC to trigger GC at
+    ~460MB instead, leaving headroom for allocation during the mark phase.
+- If heap continues growing toward the limit, the runtime keeps lowering effective GOGC —
+  potentially all the way to near-zero, running GC almost continuously.
+- `GOMEMLIMIT` is a **soft limit**: the runtime tries to stay under it but will **not**
+  OOM-kill the process if it is temporarily exceeded (e.g., during allocation spikes).
+- **Best practice in containers**: set `GOMEMLIMIT` to ~90% of the container memory limit.
+  The remaining 10% leaves room for non-heap memory: goroutine stacks, OS buffers,
+  memory-mapped files, and the Go runtime's own metadata.
+
 **Replaces the ballast pattern** — no more allocating large `[]byte` to delay GC.
 
 ---
