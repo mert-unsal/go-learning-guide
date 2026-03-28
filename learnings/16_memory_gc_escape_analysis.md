@@ -2,6 +2,9 @@
 
 > How Go decides where values live, how the allocator obtains memory,
 > how the GC reclaims it concurrently, and how you control all of it in production.
+>
+> **Related:** [Chapter 06 §4–5](./06_closures_funcval_and_capture.md) covers escape analysis
+> specifically for closures and goroutines (capture-by-reference, funcval escaping).
 
 ---
 

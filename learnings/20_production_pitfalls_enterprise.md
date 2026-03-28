@@ -1166,101 +1166,32 @@ GOARCH=amd64         → Target architecture (arm64 for Graviton/M-series)
 
 ## 7. Middleware Pattern — The Go Way
 
-### The Signature
+The universal middleware signature creates a composable handler chain:
 
 ```go
-// The universal Go middleware signature
 type Middleware func(next http.Handler) http.Handler
 ```
 
-This creates a chain where each middleware wraps the next handler:
-
 ```
-  Request                                                    Response
-  ──────►  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌──────┐  ──────►
-           │ Logging  │──► Auth    │──► Rate    │──► Your  │
-           │ MW       │  │ MW      │  │ Limit   │  │Handler│
-  ◄──────  └─────────┘  └─────────┘  └─────────┘  └──────┘  ◄──────
-  Response                                                   Request
-  (unwinding)
-
-  Execution order:
-  1. Logging MW (before) → 2. Auth MW (before) → 3. Rate Limit (before)
-  → 4. Handler → 3. Rate Limit (after) → 2. Auth MW (after) → 1. Logging (after)
+  Request → [ Logging ] → [ Auth ] → [ RateLimit ] → [ Handler ] → Response
+            (unwinding on the way back — each middleware runs "after" logic)
 ```
 
-### Standard Middleware Implementations
+**Essential middleware for production:** Recovery (panic→500), RequestID
+(trace correlation), Logging (structured request/response), Timeout
+(`http.TimeoutHandler`), Auth (JWT/API key validation), RateLimit.
 
-**Recovery Middleware** — catches panics, returns 500:
-```go
-func Recovery(logger *slog.Logger) Middleware {
-    return func(next http.Handler) http.Handler {
-        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-            defer func() {
-                if err := recover(); err != nil {
-                    logger.Error("panic recovered",
-                        "error", err,
-                        "stack", string(debug.Stack()),
-                        "path", r.URL.Path,
-                    )
-                    http.Error(w, "Internal Server Error", 500)
-                }
-            }()
-            next.ServeHTTP(w, r)
-        })
-    }
-}
-```
-
-**Request ID Middleware** — adds trace correlation:
-```go
-func RequestID(next http.Handler) http.Handler {
-    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-        id := r.Header.Get("X-Request-ID")
-        if id == "" {
-            id = uuid.NewString()
-        }
-        ctx := context.WithValue(r.Context(), requestIDKey, id)
-        w.Header().Set("X-Request-ID", id)
-        next.ServeHTTP(w, r.WithContext(ctx))
-    })
-}
-```
-
-**Timeout Middleware** — enforces handler deadline:
-```go
-func Timeout(d time.Duration) Middleware {
-    return func(next http.Handler) http.Handler {
-        return http.TimeoutHandler(next, d, "request timeout")
-    }
-}
-```
-
-### Composing Middleware
+Compose with a `Chain` function that wraps handlers right-to-left:
 
 ```go
-func Chain(middlewares ...Middleware) Middleware {
-    return func(final http.Handler) http.Handler {
-        for i := len(middlewares) - 1; i >= 0; i-- {
-            final = middlewares[i](final)
-        }
-        return final
-    }
-}
-
-// Usage:
-stack := Chain(
-    Recovery(logger),
-    RequestID,
-    Logging(logger),
-    Timeout(30 * time.Second),
-    Auth(tokenValidator),
-    RateLimit(100),          // 100 req/sec
-)
-
-mux := http.NewServeMux()
+stack := Chain(Recovery(logger), RequestID, Logging(logger), Timeout(30*time.Second))
 mux.Handle("GET /users/{id}", stack(userHandler))
 ```
+
+> **Full deep dive:** See [Chapter 22 — The Middleware Pattern](./22_middleware_pattern.md)
+> for how `http.HandlerFunc`, closures, and structural typing make this work,
+> plus ResponseWriter wrapping and cross-language comparison.
+> See also [Chapter 23 §1](./23_production_patterns.md) for architectural context.
 
 ---
 

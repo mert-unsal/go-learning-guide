@@ -1,7 +1,10 @@
 # Deep Dive: Go Closures — funcval, Capture, Escape, and Production Patterns
 
 > The funcval struct, capture-by-reference mechanics, escape analysis triggers,
-> loop capture gotchas, and production patterns including fan-in.
+> loop capture gotchas, and production closure patterns.
+>
+> **Related:** [Chapter 16 §2](./16_memory_gc_escape_analysis.md) covers escape analysis
+> in the broader memory/GC context (5 escape rules, allocator, profiling).
 
 ---
 
@@ -474,102 +477,24 @@ func Filter[T any](seq iter.Seq[T], pred func(T) bool) iter.Seq[T] {
 }
 ```
 
-### Pattern 6 — Fan-In (Merge N Channels)
+### Pattern 6 — Fan-In (Closure + Goroutine Application)
+
+The fan-in pattern merges N channels into one. Each goroutine is launched with
+a closure that captures `out` and `wg`, while the loop variable `src` is passed
+as a parameter to avoid the capture gotcha:
 
 ```go
-func fanIn(sources ...<-chan int) <-chan int {
-    out := make(chan int)
-    var wg sync.WaitGroup
-    wg.Add(len(sources))
-
-    for _, src := range sources {
-        go func(s <-chan int) {
-            defer wg.Done()
-            for v := range s { out <- v }
-        }(src)
-    }
-
-    go func() {
-        wg.Wait()
-        close(out)
-    }()
-
-    return out
+for _, src := range sources {
+    go func(s <-chan int) {         // s = copy of src (capture fix)
+        defer wg.Done()             // closure captures wg
+        for v := range s { out <- v } // closure captures out
+    }(src)
 }
 ```
 
-```
-  ┌──────────┐
-  │ source 1 │──► chan int ──┐
-  └──────────┘               │
-  ┌──────────┐               │    ┌─────────┐
-  │ source 2 │──► chan int ──┼───►│   out   │──► consumer
-  └──────────┘               │    │ (merged)│
-  ┌──────────┐               │    └─────────┘
-  │ source 3 │──► chan int ──┘
-  └──────────┘
-```
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│  WHO CLOSES THE OUTPUT CHANNEL?                                     │
-│                                                                     │
-│  Workers can't: if G1 closes out, G2/G3 panic on send.             │
-│  Consumer can't: doesn't know when producers finish.               │
-│  Coordinator: wg.Wait() then close(out). The only safe approach.   │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-**Key design rules:**
-- `wg.Add(N)` BEFORE goroutine loop — prevents premature `Wait()` return
-- Pass channel as parameter: `go func(s <-chan int){...}(src)`
-- Coordinator in a separate goroutine — otherwise `wg.Wait()` blocks the return
-
-### Fan-In Execution Timeline
-
-```
-TIME  │ Main Goroutine    │ G1 (src[0])      │ G2 (src[1])     │ Coordinator
-──────┼───────────────────┼──────────────────┼─────────────────┼──────────────
- t0   │ fanIn(s0, s1, s2) │                  │                 │
- t1   │ make(chan), Add(3) │                  │                 │
- t2   │ spawn workers     │ start            │ start           │
- t3   │ spawn coordinator │                  │                 │ wg.Wait()
- t4   │ return out         │                  │                 │ (blocked, 3)
-──────┼───────────────────┼──────────────────┼─────────────────┼──────────────
- t5   │ consumer reads    │ v=10, out <- 10  │ v=20, out <- 20 │
-──────┼───────────────────┼──────────────────┼─────────────────┼──────────────
- t6   │                   │ s0 closed!       │                 │
- t7   │                   │ wg.Done(), exit  │                 │ counter: 3→2
-──────┼───────────────────┼──────────────────┼─────────────────┼──────────────
- t8   │                   │                  │ s1 closed!      │
- t9   │                   │                  │ wg.Done()       │ counter: 2→1
-──────┼───────────────────┼──────────────────┼─────────────────┼──────────────
- t10  │                   │                  │                 │ G3 done → 0
-      │                   │                  │                 │ close(out)
-──────┼───────────────────┼──────────────────┼─────────────────┼──────────────
- t11  │ range exits       │                  │                 │
-      │ "all done!"       │                  │                 │
-```
-
-### Fan-In with Context Cancellation
-
-Without context, if the consumer stops reading, workers block forever → goroutine
-leak. Add `select` with `ctx.Done()` in each worker:
-
-```go
-for v := range s {
-    select {
-    case out <- v:
-    case <-ctx.Done():
-        return            // clean exit on cancellation
-    }
-}
-```
-
-### Fan-In with Select (Small N)
-
-For 2 sources, a single goroutine with `select` avoids N goroutines. Set exhausted
-channels to `nil` to disable their `select` case (`nil` channel blocks forever).
+> **Full pattern with timeline & variations:** See [Chapter 15 §6](./15_channels_hchan_select.md)
+> (channels production patterns) for the complete fan-in implementation,
+> coordinator goroutine, and context cancellation variant.
 
 ---
 

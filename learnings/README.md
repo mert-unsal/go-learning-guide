@@ -26,8 +26,7 @@ debugging and enterprise patterns.
 |---|----------|-------------------|
 | 04 | [Variables: var vs := vs Explicit Type](./04_variables_var_vs_short_decl.md) | Three declaration forms, type inference rules, `:=` redeclaration, shadowing, idiomatic conventions |
 | 05 | [Pointers: Auto-Deref & Auto-Address](./05_pointers_auto_deref.md) | Auto-dereference, auto-address, addressability rules, when Go silently inserts `*` and `&` |
-| 06 | [Closures: funcval, Capture by Reference](./06_closures_funcval_and_capture.md) | Block scoping, `funcval` struct, capture-by-reference, escape analysis, defer internals, Go 1.22 changes |
-| 07 | [Loop Variable Capture & the Fan-In Pattern](./07_loop_capture_and_fanin.md) | The classic loop bug, memory layout per iteration, Go 1.22 range fix, fan-in pattern line-by-line |
+| 06 | [Closures: funcval, Capture & Production Patterns](./06_closures_funcval_and_capture.md) | `funcval` struct, capture-by-reference, escape analysis, loop capture gotcha, defer internals, Go 1.22 changes, cross-language comparison |
 
 ### Part III — Type System & Interfaces
 

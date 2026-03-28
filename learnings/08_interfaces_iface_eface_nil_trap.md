@@ -2,6 +2,9 @@
 
 > Everything the runtime does when you assign a value to an interface,
 > call a method through it, or compare it to nil.
+>
+> **Related:** [Chapter 09 — Boxing costs & the `any` type](./09_any_type_boxing_and_cost.md) covers
+> `convT` functions, `staticuint64s` optimization, and performance of `interface{}` / `any`.
 
 ---
 
