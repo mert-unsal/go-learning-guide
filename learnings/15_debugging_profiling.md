@@ -363,6 +363,35 @@ go tool pprof http://localhost:6060/debug/pprof/mutex
 # trying to acquire the same lock simultaneously)
 ```
 
+#### Understanding Block Profiling in Depth
+
+`runtime.SetBlockProfileRate(n)` records how long goroutines spend **blocked** — waiting
+on channel ops, mutex acquisition, select statements, and condition variables. Use it when
+you suspect goroutines are spending time **waiting** rather than working. The profile shows
+the **call stack** where the block occurred and the **total accumulated blocked time**.
+
+- Rate `n` = nanoseconds threshold. `n=1` records **all** blocking events. Higher values
+  (e.g., `n=1000`) only record blocks longer than that threshold, reducing overhead.
+- Scope: channels, mutexes, select, `sync.Cond` — anything that calls `gopark()`.
+
+#### Understanding Mutex Profiling in Depth
+
+`runtime.SetMutexProfileFraction(n)` records contention on `sync.Mutex` and `sync.RWMutex`
+**only**. Use it when you suspect lock contention is degrading throughput. The profile shows
+**which locks** are contended and **how long** goroutines waited to acquire them.
+
+- Fraction `n`: `1/n` of mutex contention events are recorded. `n=1` records all events,
+  `n=5` records ~20% of events (lower overhead, statistically representative).
+- Scope: **only** `sync.Mutex` and `sync.RWMutex` — does **not** cover channels or select.
+
+#### Block vs Mutex — When to Use Which
+
+- **Block profiling** = broad net (channels + mutexes + select + cond vars). Start here.
+- **Mutex profiling** = focused lens (only mutexes, lower noise). Use when you've narrowed
+  the problem to lock contention specifically.
+- **Production overhead**: Block profiling with a high rate (e.g., `n=100000`) has minimal
+  overhead. Mutex profiling at `fraction=5` is safe for production use.
+
 ### When to Use Each
 
 ```

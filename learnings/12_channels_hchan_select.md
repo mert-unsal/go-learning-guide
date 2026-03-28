@@ -1029,6 +1029,22 @@ runtime.selectgo(cases []scase, order []uint16):
     5. selectgo returns case index 1
 ```
 
+### Select Wakeup Logic — Multi-Channel Cleanup
+
+When a goroutine hits a `select` with multiple cases and none are ready, it creates a
+`sudog` for **each** case and enqueues them on the respective channel wait queues. The
+goroutine then parks via `gopark()`. When **any** channel becomes ready, that channel's
+operation wakes the goroutine. The runtime then walks through **all other** sudogs and
+removes them from their respective channel wait queues — this is the cleanup phase in
+`selectgo()`. This dequeue-from-all step is why select has **O(n) overhead** in the
+number of cases: every wakeup must touch every channel's queue.
+
+If **multiple channels are ready simultaneously** when the goroutine first evaluates the
+select (Phase 3), the runtime does **not** pick the first listed case. Instead, it uses a
+**pseudo-random permutation** (Fisher-Yates shuffle computed in Phase 1) to choose among
+ready cases. This prevents starvation of later cases and is a deliberate design choice —
+never rely on case ordering for priority.
+
 ### Performance: Select is Expensive
 
 ```
