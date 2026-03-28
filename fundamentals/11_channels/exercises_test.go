@@ -415,6 +415,104 @@ func TestOrDone_RespectsCancel(t *testing.T) {
 }
 
 // ============================================================
+// Tests for Exercise 12: DualTimeoutWorker
+// ============================================================
+
+func TestDualTimeoutWorker_ProcessesAll(t *testing.T) {
+	// All values arrive quickly — worker should process all before any timeout
+	ch := make(chan int, 5)
+	ch <- 1
+	ch <- 2
+	ch <- 3
+	close(ch)
+
+	double := func(x int) int { return x * 2 }
+	results := DualTimeoutWorker(ch, double, 500*time.Millisecond, 5*time.Second)
+
+	want := []int{2, 4, 6}
+	if !reflect.DeepEqual(results, want) {
+		t.Errorf("❌ DualTimeoutWorker = %v, want %v", results, want)
+	} else {
+		t.Logf("✅ Processed all values: %v", results)
+	}
+}
+
+func TestDualTimeoutWorker_InactivityTimeout(t *testing.T) {
+	// Channel stays open but no values sent — should exit via inactivity
+	ch := make(chan int)
+
+	identity := func(x int) int { return x }
+	start := time.Now()
+	results := DualTimeoutWorker(ch, identity, 100*time.Millisecond, 5*time.Second)
+	elapsed := time.Since(start)
+
+	if len(results) != 0 {
+		t.Errorf("❌ Expected empty results, got %v", results)
+	}
+	if elapsed > 500*time.Millisecond {
+		t.Errorf("❌ Took %v — should have exited via inactivity (~100ms), not hard deadline", elapsed)
+	} else {
+		t.Logf("✅ Inactivity timeout fired after %v (no values received)", elapsed)
+	}
+}
+
+func TestDualTimeoutWorker_HardDeadline(t *testing.T) {
+	// Values keep coming forever — should exit via hard deadline
+	ch := make(chan int)
+	go func() {
+		i := 0
+		for {
+			ch <- i // never stops sending
+			i++
+			time.Sleep(10 * time.Millisecond)
+		}
+	}()
+
+	identity := func(x int) int { return x }
+	start := time.Now()
+	results := DualTimeoutWorker(ch, identity, 500*time.Millisecond, 200*time.Millisecond)
+	elapsed := time.Since(start)
+
+	if elapsed > 500*time.Millisecond {
+		t.Errorf("❌ Took %v — hard deadline (200ms) should have stopped it sooner", elapsed)
+	}
+	if len(results) == 0 {
+		t.Errorf("❌ Should have processed some values before deadline")
+	} else {
+		t.Logf("✅ Hard deadline fired after %v — processed %d values: %v", elapsed, len(results), results)
+	}
+}
+
+func TestDualTimeoutWorker_InactivityResetsOnMessage(t *testing.T) {
+	// Send values spaced at 50ms with 100ms inactivity timeout
+	// Values should keep the timer alive, then inactivity fires after last value
+	ch := make(chan int)
+	go func() {
+		for i := 1; i <= 3; i++ {
+			ch <- i
+			time.Sleep(50 * time.Millisecond) // well within 100ms inactivity
+		}
+		// stop sending — inactivity should fire ~100ms after last send
+	}()
+
+	identity := func(x int) int { return x }
+	start := time.Now()
+	results := DualTimeoutWorker(ch, identity, 100*time.Millisecond, 5*time.Second)
+	elapsed := time.Since(start)
+
+	want := []int{1, 2, 3}
+	if !reflect.DeepEqual(results, want) {
+		t.Errorf("❌ DualTimeoutWorker = %v, want %v", results, want)
+	}
+	// Should take ~150ms (3 sends at 50ms spacing) + ~100ms inactivity = ~250ms
+	if elapsed > 1*time.Second {
+		t.Errorf("❌ Took %v — inactivity timer wasn't resetting properly", elapsed)
+	} else {
+		t.Logf("✅ Timer reset correctly — processed %v in %v, then inactivity fired", results, elapsed)
+	}
+}
+
+// ============================================================
 // Tests for Bonus: ChannelCounter vs AtomicCounter
 // ============================================================
 
