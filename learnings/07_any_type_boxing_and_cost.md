@@ -287,17 +287,22 @@ Any type whose binary representation fits in a `uint64` AND has value 0-255:
 mathematical value. `float64(1.0)` has bits `0x3FF0000000000000` — way beyond 255.
 So `var a any = 1.0` **DOES allocate**.
 
-### Correction to a Common Misconception
+### How `data` Works — Definitive Rule
 
-Some sources claim that small values are "stored directly in the data pointer field"
-(including my earlier explanation — I need to correct that). The truth is more nuanced:
+The `eface.data` field is **always a pointer** — it never stores a value directly.
+What it points to depends on the value being boxed:
 
-**The `data` field is always a pointer.** For small values 0-255, it points to the
-`staticuint64s` array (a static, pre-allocated memory region). The value is NOT stored
-"inside" the pointer — the pointer points to a shared static location.
+| Value Range | `data` Points To | Allocation Cost |
+|---|---|---|
+| Integer 0-255 | `&staticuint64s[v]` — a pre-allocated global array | **Zero** (no heap alloc) |
+| Integer > 255, floats, structs | Heap-allocated copy via `mallocgc()` | **One alloc** per boxing |
+| Pointer-shaped types (`*T`, map, chan, func) | The pointer value itself (it's already an address) | **Zero** (see Section 6) |
 
-For pointer-shaped types (see next section), the actual pointer value IS stored in
-`data` — but that's because the value itself is already a pointer.
+For small integers, `staticuint64s[256]` works like Java's `Integer.cache` (which
+caches -128 to 127): the runtime pre-allocates a static array at startup, and boxing
+simply stores a pointer into this array. Multiple `any` values holding `42` all point
+to the same `staticuint64s[42]` — no heap allocation, no GC pressure, fully concurrent-safe
+because the array is read-only after initialization.
 
 ---
 

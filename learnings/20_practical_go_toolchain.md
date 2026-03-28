@@ -10,7 +10,9 @@
 2. [Build, Run & Deploy](#2-build-run--deploy)
 3. [Dockerizing Go Applications](#3-dockerizing-go-applications)
 4. [Configuration & Environment](#4-configuration--environment)
-5. [Quick Reference Cheatsheet](#5-quick-reference-cheatsheet)
+5. [Worker Pool & Concurrency Management](#5-worker-pool--concurrency-management)
+6. [Error Recovery & Retry Patterns](#6-error-recovery--retry-patterns)
+7. [Quick Reference Cheatsheet](#7-quick-reference-cheatsheet)
 
 ---
 
@@ -85,6 +87,8 @@ replace github.com/some/pkg => ../local-fork   // local override for dev
 | `go mod verify`    | Check deps haven't been tampered with (hash integrity)    |
 | `go mod download`  | Pre-download all deps to local cache (`$GOPATH/pkg/mod`)  |
 | `go mod graph`     | Print the full dependency graph (pipe to `grep` to filter)|
+
+> **When to vendor:** Use vendoring when CI requires hermetic builds, in air-gapped environments, or when you need to audit all dependency source code. **When not to:** Standard microservice development where module cache + proxy (`GOPROXY`) is sufficient — vendoring adds noise to code reviews and inflates the repository.
 
 ### Upgrade & Downgrade Strategies
 
@@ -351,6 +355,8 @@ ENTRYPOINT ["/myapp"]
 | `scratch`             | ~0 MB   | ❌    | ❌       | Minimal — copy certs yourself |
 | `distroless/static`   | ~2 MB   | ❌    | ✅       | Production default           |
 | `alpine`              | ~7 MB   | ✅    | ✅       | Need shell for debugging     |
+
+> **`scratch` vs `distroless`:** `scratch` has NO certificates, NO timezone data, NO shell — it's literally empty. If your app makes HTTPS requests, you **MUST** copy CA certs: `COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/`. `distroless` (`gcr.io/distroless/static`) includes CA certs and timezone data but no shell. **Rule of thumb:** use `distroless` unless you need the absolute smallest image.
 
 > **Why `ENTRYPOINT` not `CMD`?** `ENTRYPOINT` makes the container behave like an executable. `CMD` provides default args that can be overridden. Use `ENTRYPOINT` for the binary, `CMD` for default flags.
 
@@ -675,7 +681,240 @@ func main() {
 
 ---
 
-## 5. Quick Reference Cheatsheet
+## 5. Worker Pool & Concurrency Management
+
+Unbounded `go func()` launches are the #1 concurrency mistake in production Go. Every goroutine costs ~2-8 KB of stack, and without limits you'll exhaust memory or overwhelm downstream services (DB connection pools, API rate limits, file descriptors). A **worker pool** gives you bounded concurrency with backpressure.
+
+### Core Structure
+
+A worker pool has four components: a **Job** type describing work, a **Result** type for outcomes, a **buffered channel** as the job queue, and N **worker goroutines** pulling from that queue.
+
+```go
+type Job struct {
+    ID      int
+    Payload string
+}
+
+type Result struct {
+    JobID int
+    Data  string
+    Err   error
+}
+
+type WorkerPool struct {
+    workers  int
+    jobQueue chan Job
+    wg       sync.WaitGroup
+    quit     chan struct{}
+}
+
+func NewWorkerPool(workers, queueSize int) *WorkerPool {
+    return &WorkerPool{
+        workers:  workers,
+        jobQueue: make(chan Job, queueSize),
+        quit:     make(chan struct{}),
+    }
+}
+```
+
+### The Worker Loop
+
+Each worker runs a `select` loop that listens for jobs or a shutdown signal. The `ok` check on the channel receive detects a drained-and-closed queue:
+
+```go
+func (wp *WorkerPool) worker() {
+    defer wp.wg.Done()
+    for {
+        select {
+        case job, ok := <-wp.jobQueue:
+            if !ok {
+                return // queue closed and drained
+            }
+            process(job)
+        case <-wp.quit:
+            return // hard stop
+        }
+    }
+}
+```
+
+### Two Shutdown Strategies
+
+| Strategy | Mechanism | Behaviour |
+|----------|-----------|-----------|
+| **Drain** (graceful) | `close(jobQueue)` → `wg.Wait()` | Workers finish all queued jobs, then exit |
+| **Hard stop** | `close(quit)` → `wg.Wait()` | Workers finish current job only, pending jobs abandoned |
+
+Graceful shutdown is right for batch processing (every job matters). Hard stop is right for request-scoped work where the caller has already timed out.
+
+### Backpressure
+
+When `jobQueue` is full, `AddJob` blocks — that *is* backpressure. The caller slows down because the pool can't keep up. If blocking is unacceptable, use a **try-send**:
+
+```go
+func (wp *WorkerPool) TryAddJob(j Job) error {
+    select {
+    case wp.jobQueue <- j:
+        return nil
+    default:
+        return errors.New("pool: queue full")
+    }
+}
+```
+
+This lets callers decide what to do when the pool is saturated: return HTTP 429, drop the job, log a warning, or push to a dead-letter queue.
+
+### Sizing Guidelines
+
+- **Workers**: start with `runtime.NumCPU()` for CPU-bound work, 2-10× that for I/O-bound work (HTTP calls, DB queries). Profile under load.
+- **Queue size**: small (10-100) for low-latency backpressure signalling; large (1000+) for batch ingestion where throughput matters more than responsiveness.
+
+> See [Chapter 12](./12_channels_hchan_select.md) for channel internals and select mechanics.
+
+---
+
+## 6. Error Recovery & Retry Patterns
+
+Go has no `try-catch`. This is deliberate — not an omission. **Errors are values** returned from functions. **Panics** are for programmer errors only (nil dereference, impossible states). This section covers the patterns that replace Java's exception infrastructure.
+
+### Java → Go Mental Model
+
+| Java | Go |
+|------|-----|
+| `try { ... }` | (just write the code) |
+| `catch (Exception e)` | `defer func() { recover() }()` |
+| `finally { ... }` | `defer cleanup()` |
+| `throw new XException()` | `panic(value)` — RARE, bugs only |
+| `throws IOException` | `func f() error` |
+| `e.getMessage()` | `err.Error()` |
+| `instanceof` | `errors.As(err, &target)` |
+| `e == SomeErr` | `errors.Is(err, sentinel)` |
+| `try-with-resources` | `defer file.Close()` |
+| `@Retryable` | `retryWithBackoff(cfg, fn)` |
+
+### defer/recover — The safeCall Pattern
+
+`recover()` only works inside a **deferred function** — calling it directly is a no-op. Named return values let the deferred function set the error:
+
+```go
+func safeCall(fn func() interface{}) (result interface{}, err error) {
+    defer func() {
+        if r := recover(); r != nil {
+            switch v := r.(type) {
+            case error:
+                err = fmt.Errorf("recovered panic: %w", v)
+            default:
+                err = fmt.Errorf("recovered panic: %v", v)
+            }
+        }
+    }()
+    result = fn()
+    return result, nil
+}
+```
+
+Under the hood: `panic()` unwinds the stack, running deferred functions in LIFO order. If nothing recovers, the goroutine prints a stack trace and **crashes the entire process**. `recover()` captures the panic value and resumes normal control flow.
+
+### Recovery Middleware
+
+Every production HTTP server needs recovery middleware. One unrecovered panic in a handler crashes the whole process — not just that request. This is the pattern used by gin, echo, chi, and every serious Go framework:
+
+```go
+func recoverMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        defer func() {
+            if r := recover(); r != nil {
+                // Log, increment panic metric, return 500
+                http.Error(w, "internal error", http.StatusInternalServerError)
+            }
+        }()
+        next.ServeHTTP(w, r)
+    })
+}
+```
+
+**Critical:** `recover()` only catches panics in the **same goroutine**. If your handler spawns goroutines, each needs its own recovery.
+
+### Retry Patterns
+
+#### 1. Fixed Delay (Simplest)
+
+Try N times with a constant delay. ~10 lines, no framework:
+
+```go
+func retryFixed(attempts int, delay time.Duration, fn func() error) error {
+    var lastErr error
+    for i := 0; i < attempts; i++ {
+        if lastErr = fn(); lastErr == nil {
+            return nil
+        }
+        if i < attempts-1 {
+            time.Sleep(delay)
+        }
+    }
+    return fmt.Errorf("after %d attempts: %w", attempts, lastErr)
+}
+```
+
+#### 2. Exponential Backoff with Jitter (Production-Grade)
+
+Fixed delay causes **thundering herd** — 1000 clients retrying at the same instant. Exponential backoff with jitter spreads the load:
+
+```
+delay = min(baseDelay × 2^attempt + random(0, delay/2), maxDelay)
+```
+
+This is the same algorithm used by AWS SDK, gRPC, and Google Cloud client libraries. Configure it with a struct:
+
+```go
+type BackoffConfig struct {
+    MaxAttempts int
+    BaseDelay   time.Duration
+    MaxDelay    time.Duration
+    Multiplier  float64 // typically 2.0
+}
+```
+
+#### 3. Retryable vs Permanent Errors
+
+Not all errors should be retried. Network timeout? Retry. 400 Bad Request? Stop immediately.
+
+The pattern: wrap non-retryable errors with a **PermanentError** type, check with `errors.As` before retrying:
+
+```go
+type PermanentError struct{ Err error }
+func (e *PermanentError) Error() string { return e.Err.Error() }
+func (e *PermanentError) Unwrap() error { return e.Err }
+
+// In retry loop:
+if IsPermanent(lastErr) {
+    return lastErr // don't retry
+}
+```
+
+#### 4. Context-Aware Retry
+
+Production retries **must** respect context cancellation. If the HTTP client disconnected, stop retrying:
+
+```go
+// In retry loop — replace time.Sleep with select:
+select {
+case <-ctx.Done():
+    return fmt.Errorf("retry cancelled: %w", ctx.Err())
+case <-time.After(delay):
+    // continue to next attempt
+}
+```
+
+### Key Insight
+
+Go makes you write these patterns yourself — ~10-20 lines each. No framework needed. The code **is** the documentation. Every engineer on the team can read the retry logic, understand the backoff formula, and modify it without learning a framework's annotation magic.
+
+> See [Chapter 8](./08_error_chains_wrapping_sentinel.md) for error wrapping fundamentals and [Chapter 9](./09_concurrent_errors_errgroup.md) for concurrent error handling.
+
+---
+
+## 7. Quick Reference Cheatsheet
 
 | Task                     | Command                                                         |
 |--------------------------|-----------------------------------------------------------------|
@@ -696,11 +935,17 @@ func main() {
 | Push to registry         | `docker tag app:latest user/app:latest && docker push user/app:latest` |
 | Lint                     | `golangci-lint run ./...`                                       |
 | Install CLI tool         | `go install github.com/tool@latest`                             |
+| Worker pool sizing       | CPU-bound: `runtime.NumCPU()` workers; I/O-bound: 2-10× that   |
+| Retry (production)       | Exponential backoff + jitter + `PermanentError` + context-aware |
+| Panic recovery           | `defer func() { if r := recover(); r != nil { ... } }()`       |
 
 ---
 
 ## Related Chapters
 
+- [Chapter 8 — Error Chains & Wrapping](./08_error_chains_wrapping_sentinel.md) — error wrapping, sentinel errors, `errors.Is`/`errors.As`
+- [Chapter 9 — Concurrent Errors & errgroup](./09_concurrent_errors_errgroup.md) — error handling across goroutines
+- [Chapter 12 — Channels, hchan & Select](./12_channels_hchan_select.md) — channel internals powering worker pools
 - [Chapter 13 — Memory, GC & Escape Analysis](./13_memory_gc_escape_sorting.md) — build flags for escape analysis (`-gcflags="-m"`)
 - [Chapter 15 — Debugging & Profiling](./15_debugging_profiling.md) — pprof, dlv, GODEBUG
 - [Chapter 18 — Production Patterns](./18_production_patterns_enterprise.md) — graceful shutdown, middleware, observability

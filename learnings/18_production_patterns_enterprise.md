@@ -1551,6 +1551,9 @@ func (r *postgresOrderRepo) Create(ctx context.Context, order *Order) error {
     )
     return err
 }
+// Note: Placeholder syntax is driver-specific: $1, $2 (pgx/lib/pq for PostgreSQL),
+// ? (go-sql-driver/mysql), @p1 (go-mssqldb). Always use parameterized queries
+// regardless of syntax — never string concatenation.
 
 // Step 3: Service ACCEPTS the interface (not the concrete type)
 type OrderService struct {

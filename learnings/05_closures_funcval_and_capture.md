@@ -166,45 +166,8 @@ dereferences through the same location.
 
 ### The `i := i` Fix — Separate Variables Per Iteration
 
-```go
-for i := 0; i < 3; i++ {
-    i := i   // NEW variable — shadows the loop's i
-    funcs[i] = func() { fmt.Println(i) }
-}
-```
-
-```
-  Without i := i (shared):                   With i := i (separate):
-
-  funcs[0].closure.i ──┐                     funcs[0].closure.i ──► [i₀ = 0]
-  funcs[1].closure.i ──┼──► [ i = 3 ]        funcs[1].closure.i ──► [i₁ = 1]
-  funcs[2].closure.i ──┘                      funcs[2].closure.i ──► [i₂ = 2]
-
-  All see final value 3.                      Each sees its own snapshot.
-```
-
-### Go 1.22 Range Loop Change
-
-```
-┌───────────────────────────────────┬──────────────┬────────────────────────┐
-│ Loop Type                         │ Go ≤ 1.21    │ Go 1.22+               │
-├───────────────────────────────────┼──────────────┼────────────────────────┤
-│ for i, v := range ...            │ ONE var      │ NEW var per iteration  │
-│                                   │ (gotcha!)    │ (fixed ✅)             │
-├───────────────────────────────────┼──────────────┼────────────────────────┤
-│ for i := 0; i < n; i++           │ ONE var      │ ONE var                │
-│                                   │ (gotcha!)    │ (STILL a gotcha ❌)    │
-├───────────────────────────────────┼──────────────┼────────────────────────┤
-│ Variables declared OUTSIDE loop   │ shared       │ shared                 │
-│ but captured by closures in loop  │ (by design)  │ (by design — be aware) │
-└───────────────────────────────────┴──────────────┴────────────────────────┘
-```
-
-The compiler inserts an implicit `i := i` at the top of each range loop iteration
-body. C-style `for` loops remain unchanged — mutation-based semantics where the
-developer explicitly owns the variable.
-
-**Source:** Go proposal [#60078](https://go.dev/blog/loopvar-preview)
+For the full loop capture gotcha with examples (closures, goroutines, and defer),
+see [Section 5: The Loop Capture Gotcha](#5-the-loop-capture-gotcha) below.
 
 ---
 
@@ -280,7 +243,24 @@ funcs[2]()   // 3
   └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Fix:** `i := i` inside the body, or pass as parameter.
+**Fix:** `i := i` inside the body, or pass as parameter:
+
+```go
+for i := 0; i < 3; i++ {
+    i := i   // NEW variable — shadows the loop's i
+    funcs[i] = func() { fmt.Println(i) }
+}
+```
+
+```
+  Without i := i (shared):                   With i := i (separate):
+
+  funcs[0].closure.i ──┐                     funcs[0].closure.i ──► [i₀ = 0]
+  funcs[1].closure.i ──┼──► [ i = 3 ]        funcs[1].closure.i ──► [i₁ = 1]
+  funcs[2].closure.i ──┘                      funcs[2].closure.i ──► [i₂ = 2]
+
+  All see final value 3.                      Each sees its own snapshot.
+```
 
 ### Gotcha 2 — Goroutine in a Loop
 
@@ -315,6 +295,33 @@ for i := 0; i < 3; i++ {
     defer func(n int) { fmt.Println(n) }(i)   // 2, 1, 0 (LIFO, own values)
 }
 ```
+
+### Go 1.22+ Loop Variable Semantics
+
+```
+┌───────────────────────────────────┬──────────────┬────────────────────────┐
+│ Loop Type                         │ Go ≤ 1.21    │ Go 1.22+               │
+├───────────────────────────────────┼──────────────┼────────────────────────┤
+│ for i, v := range ...            │ ONE var      │ NEW var per iteration  │
+│                                   │ (gotcha!)    │ (fixed ✅)             │
+├───────────────────────────────────┼──────────────┼────────────────────────┤
+│ for i := 0; i < n; i++           │ ONE var      │ ONE var                │
+│                                   │ (gotcha!)    │ (STILL a gotcha ❌)    │
+├───────────────────────────────────┼──────────────┼────────────────────────┤
+│ Variables declared OUTSIDE loop   │ shared       │ shared                 │
+│ but captured by closures in loop  │ (by design)  │ (by design — be aware) │
+└───────────────────────────────────┴──────────────┴────────────────────────┘
+```
+
+Go 1.22 changed `for range` loops so the compiler inserts an implicit `i := i` at the
+top of each iteration body — each iteration gets its own variable. **C-style `for` loops
+remain unchanged** — Gotchas 1-3 above still apply in all Go versions.
+
+Even with Go 1.22+, understanding the old behavior is critical: you'll encounter pre-1.22
+code in production, and C-style loops plus goroutines launched in loops remain a live
+footgun. Always run `go vet ./...` — it warns about loop variable capture in goroutines.
+
+**Source:** Go proposal [#60078](https://go.dev/blog/loopvar-preview)
 
 ---
 

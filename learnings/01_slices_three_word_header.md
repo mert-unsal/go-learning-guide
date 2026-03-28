@@ -296,6 +296,36 @@ The compiler calls `runtime.growslice()`:
   (runtime/malloc.go → roundupsize(), ~70 classes from 8B to 32KB).
 ```
 
+### Memory Allocator Size Classes — Why `cap()` Returns "Unexpected" Values
+
+The Go memory allocator (based on TCMalloc) doesn't allocate arbitrary byte counts.
+It maintains **~70 pre-defined size classes**: 8, 16, 32, 48, 64, 80, 96, 112, 128,
+160, 192, 224, 256, ... up to 32KB. Any allocation request is **rounded up** to the
+nearest size class via `runtime/sizeclasses.go` and `roundupsize()` in `runtime/malloc.go`.
+
+This means `growslice` computes a new capacity, multiplies by element size to get
+the byte count, then `roundupsize()` bumps it to the next size class. The actual
+capacity is `roundedBytes / elementSize`, which can be **larger** than the growth
+formula predicted.
+
+```
+  Example: []int (8 bytes/elem), oldCap=5
+  1. growslice formula: 2 × 5 = 10 → needs 80 bytes
+  2. 80 is a valid size class → allocates exactly 80 bytes → cap = 80/8 = 10
+
+  Example: []int (8 bytes/elem), oldCap=3
+  1. growslice formula: 2 × 3 = 6 → needs 48 bytes
+  2. 48 is a valid size class → allocates exactly 48 bytes → cap = 48/8 = 6
+
+  Example: []byte (1 byte/elem), oldCap=5
+  1. growslice formula: 2 × 5 = 10 → needs 10 bytes
+  2. Next size class is 16 → allocates 16 bytes → cap = 16 (not 10!)
+```
+
+This is why `cap()` sometimes returns values that don't match the 2x/1.25x formula —
+**the size class rounding is the final step**, and it only ever rounds **up**, giving
+you free bonus capacity. You can observe this directly:
+
 ```go
 s := make([]int, 0)
 for i := 0; i < 5; i++ {

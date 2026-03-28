@@ -367,3 +367,11 @@ Each doll:
 
 This is only possible because the "shape" each doll must match is an **interface**, not a
 specific struct. That's the entire lesson.
+
+---
+
+### Go 1.21+ Additions
+
+**`context.WithoutCancel(parent)`** — creates a child that is NOT cancelled when parent is cancelled. Use case: cleanup operations that must complete even after request cancellation (e.g., audit logging, releasing resources).
+
+**`context.AfterFunc(ctx, func())`** — registers a function to run after ctx is done. Safer than spawning a goroutine with `go func() { <-ctx.Done(); cleanup() }()` because AfterFunc handles the goroutine lifecycle and returns a `stop` function to deregister the callback if it's no longer needed.
