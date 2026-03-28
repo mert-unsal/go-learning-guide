@@ -75,6 +75,7 @@ debugging and enterprise patterns.
 | # | Document | What You'll Learn |
 |---|----------|-------------------|
 | 19 | [Context: The Interface Design Masterclass](./19_context_interface_masterclass.md) | 4 methods, cancelCtx/timerCtx/valueCtx chain, decorator pattern, production gotchas |
+| 20 | [Practical Go Toolchain](./20_practical_go_toolchain.md) | Go modules, go build, cross-compilation, Docker multi-stage, config/env patterns, cheatsheet |
 
 ---
 
