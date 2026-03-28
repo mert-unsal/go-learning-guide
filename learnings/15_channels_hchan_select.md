@@ -2387,67 +2387,7 @@ func worker(ctx context.Context, jobs <-chan Job, ticker *time.Ticker) {
   forever on an empty channel.
 ```
 
-### Production Scenario 2: Rate Limiter (tryAcquire)
-
-```go
-type RateLimiter struct {
-    tokens chan struct{}
-}
-
-func NewRateLimiter(rate int) *RateLimiter {
-    rl := &RateLimiter{tokens: make(chan struct{}, rate)}
-    // Fill with initial tokens
-    for i := 0; i < rate; i++ {
-        rl.tokens <- struct{}{}
-    }
-    // Refill tokens periodically
-    go func() {
-        ticker := time.NewTicker(time.Second / time.Duration(rate))
-        defer ticker.Stop()
-        for range ticker.C {
-            select {
-            case rl.tokens <- struct{}{}:
-                // token added
-            default:
-                // bucket full, discard — this is tryAcquire in reverse (trySend)
-            }
-        }
-    }()
-    return rl
-}
-
-// TryAcquire — non-blocking check: is a token available?
-func (rl *RateLimiter) TryAcquire() bool {
-    select {
-    case <-rl.tokens:
-        return true    // got a token — proceed
-    default:
-        return false   // no tokens — reject request
-    }
-}
-
-// Acquire — blocking wait: wait until a token is available (with deadline)
-func (rl *RateLimiter) Acquire(ctx context.Context) error {
-    select {
-    case <-rl.tokens:
-        return nil     // got a token
-    case <-ctx.Done():
-        return ctx.Err()   // deadline exceeded or cancelled
-    }
-}
-```
-
-```
-  TryAcquire (select+default):
-    "Is a token available RIGHT NOW? Yes → take it. No → reject."
-    Used for: immediate reject (HTTP 429 Too Many Requests)
-  
-  Acquire (select+ctx.Done):
-    "Wait for a token, but respect my deadline."
-    Used for: queue the request, serve when capacity is available
-```
-
-### Production Scenario 3: Heartbeat / Health Monitor
+### Production Scenario 2: Heartbeat / Health Monitor
 
 ```go
 func monitorService(ctx context.Context, healthCh <-chan struct{}) {
@@ -2489,7 +2429,7 @@ func monitorService(ctx context.Context, healthCh <-chan struct{}) {
   all three concerns cleanly.
 ```
 
-### Production Scenario 4: First Response Wins (Fan-Out to Multiple Backends)
+### Production Scenario 3: First Response Wins (Fan-Out to Multiple Backends)
 
 ```go
 func queryFastest(ctx context.Context, query string, backends []Backend) (Result, error) {
