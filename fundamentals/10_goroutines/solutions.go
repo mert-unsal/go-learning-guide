@@ -1,5 +1,10 @@
 package goroutines
-import "sync"
+
+import (
+	"context"
+	"sync"
+)
+
 // ============================================================
 // SOLUTIONS — 10 Goroutines
 // ============================================================
@@ -54,4 +59,94 @@ var once sync.Once
 once.Do(setup) // runs setup
 once.Do(setup) // does nothing — already ran
 once.Do(setup) // does nothing — already ran
+}
+
+// ── Exercise 5 Solution: WaitGroup + Mutex ──
+
+func CollectAllErrorsSolution(operations []func() error) []error {
+	var (
+		mu   sync.Mutex
+		errs []error
+		wg   sync.WaitGroup
+	)
+
+	for _, op := range operations {
+		wg.Add(1)
+		go func(fn func() error) {
+			defer wg.Done()
+			if err := fn(); err != nil {
+				mu.Lock()
+				errs = append(errs, err)
+				mu.Unlock()
+			}
+		}(op)
+	}
+
+	wg.Wait()
+	return errs
+}
+
+// ── Exercise 6 Solution: Channel-Based ──
+
+func CollectErrorsViaChanSolution(operations []func() error) []error {
+	errCh := make(chan error, len(operations))
+	var wg sync.WaitGroup
+
+	for _, op := range operations {
+		wg.Add(1)
+		go func(fn func() error) {
+			defer wg.Done()
+			errCh <- fn() // send even if nil — channel drains all
+		}(op)
+	}
+
+	// Closer goroutine: waits for all workers, then closes channel
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	var errs []error
+	for err := range errCh {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
+}
+
+// ── Exercise 7 Solution: Context-Aware (errgroup-style) ──
+
+func CollectErrorsWithCancelSolution(ctx context.Context, operations []func(ctx context.Context) error) []error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	errCh := make(chan error, len(operations))
+	var wg sync.WaitGroup
+
+	for _, op := range operations {
+		wg.Add(1)
+		go func(fn func(ctx context.Context) error) {
+			defer wg.Done()
+			if err := fn(ctx); err != nil {
+				errCh <- err
+				cancel() // signal others to stop
+				return
+			}
+			errCh <- nil
+		}(op)
+	}
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	var errs []error
+	for err := range errCh {
+		if err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errs
 }
