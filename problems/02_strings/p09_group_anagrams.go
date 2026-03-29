@@ -29,5 +29,17 @@ package strings_problems
 // Time: O(n * k) where k is max string length  Space: O(n*k)
 func GroupAnagrams(strs []string) [][]string {
 	// TODO: implement
-	return nil
+	groups := map[[26]int][]string{}
+	for _, word := range strs {
+		key := [26]int{}
+		for _, ch := range word {
+			key[ch-'a']++
+		}
+		groups[key] = append(groups[key], word)
+	}
+	output := make([][]string, 0, len(groups))
+	for _, v := range groups {
+		output = append(output, v)
+	}
+	return output
 }
