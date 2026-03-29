@@ -14,7 +14,15 @@ import (
 // Wait for all goroutines to finish before returning.
 func RunConcurrently(n int, fn func(id int)) {
 	// TODO: use sync.WaitGroup to launch n goroutines and wait
-	panic("not implemented")
+	var wg sync.WaitGroup
+	wg.Add(n)
+	for i := 0; i < n; i++ {
+		go func() {
+			defer wg.Done()
+			fn(i)
+		}()
+	}
+	wg.Wait()
 }
 
 // Exercise 2:
@@ -27,12 +35,17 @@ type ExCounter struct {
 
 func (c *ExCounter) Inc() {
 	// TODO: lock, increment, unlock
-	panic("not implemented")
+	c.mu.Lock()
+	c.value++
+	c.mu.Unlock()
 }
 
 func (c *ExCounter) Value() int {
 	// TODO: lock, read, unlock, return
-	panic("not implemented")
+	c.mu.Lock()
+	read := c.value
+	c.mu.Unlock()
+	return read
 }
 
 // Exercise 3:
@@ -40,7 +53,31 @@ func (c *ExCounter) Value() int {
 // in a separate goroutine, then returns the total.
 func SumConcurrent(nums []int) int {
 	// TODO: split at midpoint, sum each half in a goroutine, combine
-	panic("not implemented")
+	var wg sync.WaitGroup
+	var sumCh = make(chan int, 2)
+
+	var subArrays = make([][]int, 2)
+	subArrays[0] = nums[:len(nums)/2]
+	subArrays[1] = nums[len(nums)/2:]
+	wg.Add(len(subArrays))
+	for _, subArray := range subArrays {
+		go func(array []int) {
+			defer wg.Done()
+			sum := 0
+			for _, v := range array {
+				sum += v
+			}
+			sumCh <- sum
+		}(subArray)
+	}
+	wg.Wait()
+	close(sumCh)
+	sum := 0
+	for v := range sumCh {
+		sum += v
+	}
+
+	return sum
 }
 
 // Exercise 4:
@@ -49,7 +86,7 @@ var runOnce sync.Once
 
 func RunOnce(setup func()) {
 	// TODO: use runOnce.Do(...)
-	panic("not implemented")
+	runOnce.Do(setup)
 }
 
 // ============================================================
@@ -77,7 +114,23 @@ func RunOnce(setup func()) {
 // Tradeoff: Mutex contention if many goroutines error simultaneously.
 func CollectAllErrors(operations []func() error) []error {
 	// TODO: WaitGroup + Mutex pattern
-	panic("not implemented")
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var errors []error
+	for _, operationFn := range operations {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := operationFn()
+			if err != nil {
+				mu.Lock()
+				errors = append(errors, err)
+				mu.Unlock()
+			}
+		}()
+	}
+	wg.Wait()
+	return errors
 }
 
 // Exercise 6: Channel-Based Error Collection
@@ -97,7 +150,27 @@ func CollectAllErrors(operations []func() error) []error {
 // Tradeoff: Allocates buffered channel; all results pass through it.
 func CollectErrorsViaChan(operations []func() error) []error {
 	// TODO: buffered channel + closer goroutine pattern
-	panic("not implemented")
+	var errCh = make(chan error, len(operations))
+	var wg sync.WaitGroup
+	for _, operation := range operations {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errCh <- operation()
+		}()
+	}
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	var output []error
+	for v := range errCh {
+		if v != nil {
+			output = append(output, v)
+		}
+	}
+	return output
 }
 
 // Exercise 7: Context-Aware Error Collection (errgroup-style)
@@ -117,5 +190,33 @@ func CollectErrorsViaChan(operations []func() error) []error {
 // This is what errgroup.Group does internally.
 func CollectErrorsWithCancel(ctx context.Context, operations []func(ctx context.Context) error) []error {
 	// TODO: context cancellation + channel collection
-	panic("not implemented")
+	var wg sync.WaitGroup
+	var errCh = make(chan error, len(operations))
+	cancellableCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	for _, operation := range operations {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := operation(cancellableCtx)
+			if err != nil {
+				cancel()
+			}
+			errCh <- err
+		}()
+	}
+
+	go func() {
+		wg.Wait()
+		close(errCh)
+	}()
+
+	var output []error
+	for v := range errCh {
+		if v != nil {
+			output = append(output, v)
+		}
+	}
+
+	return output
 }
