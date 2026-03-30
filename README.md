@@ -15,7 +15,6 @@ go-learning-guide/
 ├── learnings/       ← 📖 Go Under the Hood — 21 deep-dive chapters (start here)
 ├── fundamentals/    ← Go language core — concepts, exercises, tests
 ├── stdlib/          ← Standard library deep-dives (7 packages, 37 exercises)
-├── patterns/        ← Algorithm pattern templates (9 patterns)
 ├── problems/        ← 200+ coding problems across 14 categories
 ├── practical/       ← Real-world Go: Docker, debugging, config, performance
 ├── tools/           ← md2pdf — generates the companion PDF book
@@ -81,19 +80,6 @@ Each package contains `concepts.go` (annotated examples), `exercises.go` (implem
 | 05 | `encoding_json` | json.Marshal/Unmarshal, struct tags, streaming |
 | 06 | `math` | math, rand, big numbers |
 | 07 | `testing` | Table-driven tests, subtests, benchmarks |
-
-### Algorithm Patterns (`patterns/`)
-
-| Pattern | Key Concept |
-|---------|-------------|
-| Binary Search | `left <= right`, left-bound variant |
-| Sliding Window | expand right, shrink left |
-| Two Pointers | converging from both ends |
-| BFS / DFS | queue + visited / recursive closure + stack |
-| Dynamic Programming | top-down memoization, bottom-up tabulation |
-| Monotonic Stack | indices on stack, pop when invariant breaks |
-| Union-Find | path compression + union by rank |
-| Heap | `container/heap` interface |
 
 ### Coding Problems (`problems/`) — 200+ Problems
 
