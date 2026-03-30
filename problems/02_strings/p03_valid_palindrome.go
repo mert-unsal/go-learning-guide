@@ -1,10 +1,5 @@
 package strings_problems
 
-import (
-	"fmt"
-	"unicode"
-)
-
 // ============================================================
 // PROBLEM 3: Valid Palindrome (LeetCode #125) — EASY
 // ============================================================
@@ -42,20 +37,5 @@ import (
 // IsPalindrome returns true if s is a valid palindrome (ignoring case/non-alnum).
 // Time: O(n)  Space: O(1)
 func IsPalindrome(s string) bool {
-	// TODO: implement
-	var filteredRunes []rune
-	for _, ch := range s {
-		if unicode.IsLetter(ch) {
-			filteredRunes = append(filteredRunes, unicode.ToLower(ch))
-		} else if unicode.IsDigit(ch) {
-			filteredRunes = append(filteredRunes, ch)
-		}
-	}
-	fmt.Printf("FilteredRunes : %s \n", string(filteredRunes))
-	for l, r := 0, len(filteredRunes)-1; l < r; l, r = l+1, r-1 {
-		if filteredRunes[l] != filteredRunes[r] {
-			return false
-		}
-	}
-	return true
+	return false
 }

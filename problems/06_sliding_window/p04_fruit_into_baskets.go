@@ -5,4 +5,6 @@ package sliding_window
 // Sliding window with a frequency map. Shrink when > 2 distinct.
 // Target: O(n) time, O(1) space.
 
-func TotalFruit(fruits []int) int { return 0 }
+func TotalFruit(fruits []int) int {
+	return 0
+}

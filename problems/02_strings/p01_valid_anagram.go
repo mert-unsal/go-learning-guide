@@ -40,6 +40,5 @@ package strings_problems
 // IsAnagram returns true if s and t are anagrams.
 // Time: O(n)  Space: O(1) — only 26 lowercase letters
 func IsAnagram(s string, t string) bool {
-	// TODO: implement
 	return false
 }

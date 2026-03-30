@@ -58,6 +58,5 @@ package arrays
 // IsValidSudoku returns true if the board is a valid Sudoku configuration.
 // Time: O(81) = O(1)  Space: O(81) = O(1)
 func IsValidSudoku(board [][]byte) bool {
-	// TODO: implement
 	return false
 }

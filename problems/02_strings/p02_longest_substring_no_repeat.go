@@ -41,6 +41,5 @@ package strings_problems
 // LengthOfLongestSubstring returns the length of the longest unique-char substring.
 // Time: O(n)  Space: O(min(n, alphabet_size))
 func LengthOfLongestSubstring(s string) int {
-	// TODO: implement
 	return 0
 }

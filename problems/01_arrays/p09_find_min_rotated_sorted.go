@@ -78,6 +78,5 @@ package arrays
 // FindMinRotated returns the minimum of a rotated sorted array.
 // Time: O(log n)  Space: O(1)
 func FindMinRotated(nums []int) int {
-	// TODO: implement
 	return 0
 }

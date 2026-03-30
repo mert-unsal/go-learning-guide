@@ -7,6 +7,5 @@ package linked_list
 // Target: O(n) time, O(1) space.
 
 func DetectCycle(head *ListNode) *ListNode {
-	// TODO: implement
 	return nil
 }

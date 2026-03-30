@@ -5,4 +5,6 @@ package binary_search
 // If nums[mid] < nums[mid+1], peak is to the right. Else left or mid.
 // Target: O(log n) time, O(1) space.
 
-func FindPeakElement(nums []int) int { return 0 }
+func FindPeakElement(nums []int) int {
+	return 0
+}

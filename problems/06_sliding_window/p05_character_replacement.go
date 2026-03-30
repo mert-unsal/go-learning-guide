@@ -6,4 +6,6 @@ package sliding_window
 // Window valid when (windowSize - maxFreq) <= k.
 // Target: O(n) time, O(1) space.
 
-func CharacterReplacement(s string, k int) int { return 0 }
+func CharacterReplacement(s string, k int) int {
+	return 0
+}

@@ -106,17 +106,4 @@ package arrays
 // Merge merges nums2 into nums1 in-place.
 // Time: O(m+n)  Space: O(1)
 func Merge(nums1 []int, m int, nums2 []int, n int) {
-	i := m - 1
-	j := len(nums2) - 1
-	index := len(nums1) - 1
-	for index >= 0 && j >= 0 {
-		if i < 0 || nums2[j] >= nums1[i] {
-			nums1[index] = nums2[j]
-			j--
-		} else {
-			nums1[index] = nums1[i]
-			i--
-		}
-		index--
-	}
 }

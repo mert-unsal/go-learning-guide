@@ -5,4 +5,6 @@ package binary_search
 // Binary search on the answer (speed k). For each k, check if total hours <= h.
 // Target: O(n log(max(piles))) time, O(1) space.
 
-func MinEatingSpeed(piles []int, h int) int { return 0 }
+func MinEatingSpeed(piles []int, h int) int {
+	return 0
+}

@@ -5,4 +5,6 @@ package binary_search
 // If nums[mid] > nums[right], min is in right half. Else left half (including mid).
 // Target: O(log n) time, O(1) space.
 
-func FindMin(nums []int) int { return 0 }
+func FindMin(nums []int) int {
+	return 0
+}

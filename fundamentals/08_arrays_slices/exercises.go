@@ -22,9 +22,6 @@ package arrays_slices
 //	    L     R      → swap(2,4)
 //	       L=R       → stop
 func ReverseSlice(s []int) {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
 }
 
 // RemoveDuplicates Exercise 2:
@@ -40,17 +37,7 @@ func ReverseSlice(s []int) {
 //	 w=1, r=2: write=2
 //	 ...
 func RemoveDuplicates(s []int) []int {
-	writePointer := 1
-	if len(s) == 0 {
-		return s
-	}
-	for i := 1; i < len(s); i++ {
-		if s[i] != s[i-1] {
-			s[writePointer] = s[i]
-			writePointer++
-		}
-	}
-	return append([]int(nil), s[:writePointer]...)
+	return nil
 }
 
 // Make2D Exercise 3:
@@ -62,11 +49,7 @@ func RemoveDuplicates(s []int) []int {
 // TRAP: `make([][]int, rows)` allocates the outer slice, but each inner slice is nil.
 // You must allocate each row separately.
 func Make2D(rows, cols int) [][]int {
-	var m = make([][]int, rows)
-	for i := 0; i < rows; i++ {
-		m[i] = make([]int, cols)
-	}
-	return m
+	return nil
 }
 
 // RotateLeft Exercise 4:
@@ -81,16 +64,9 @@ func Make2D(rows, cols int) [][]int {
 //
 // Hint: write a helper func reverseRange(s []int, l, r int)
 func RotateLeft(s []int, k int) {
-	k = k % len(s)
-	reverseRange(s, 0, k-1)
-	reverseRange(s, k, len(s)-1)
-	reverseRange(s, 0, len(s)-1)
 }
 
 func reverseRange(s []int, l, r int) {
-	for i, j := l, r; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
 }
 
 // Filter Exercise 5:
@@ -99,13 +75,7 @@ func reverseRange(s []int, l, r int) {
 // LESSON: Higher-order functions. Go doesn't have a built-in map / filter /reduce,
 // but you can write them easily. Note we build a new slice — we don't modify the original.
 func Filter(s []int, fn func(int) bool) []int {
-	var result []int
-	for _, v := range s {
-		if fn(v) {
-			result = append(result, v)
-		}
-	}
-	return result
+	return nil
 }
 
 // MergeSorted Exercise 6:
@@ -116,20 +86,7 @@ func Filter(s []int, fn func(int) bool) []int {
 // Then drain whichever slice still has elements.
 func MergeSorted(a, b []int) []int {
 	// Hint: pre-allocate with make([]int, 0, len(a)+len(b))
-	var mergedSlice = make([]int, 0, len(a)+len(b))
-	var p1, p2 = 0, 0
-	for p1 < len(a) && p2 < len(b) {
-		if a[p1] <= b[p2] {
-			mergedSlice = append(mergedSlice, a[p1])
-			p1++
-		} else {
-			mergedSlice = append(mergedSlice, b[p2])
-			p2++
-		}
-	}
-	mergedSlice = append(mergedSlice, a[p1:]...) // drain remaining a
-	mergedSlice = append(mergedSlice, b[p2:]...) // drain remaining b
-	return mergedSlice
+	return nil
 }
 
 // ============================================================
@@ -151,10 +108,7 @@ func MergeSorted(a, b []int) []int {
 //	// result   = [10, 20, 40, 50]
 //	// original = [10, 20, 30, 40, 50] ← must be unchanged!
 func SafeDelete(s []int, i int) []int {
-	var copiedSlice = make([]int, len(s))
-	copy(copiedSlice, s)
-	copiedSlice = append(copiedSlice[:i], copiedSlice[i+1:]...)
-	return copiedSlice
+	return nil
 }
 
 // CopySlice Exercise 8:
@@ -170,9 +124,7 @@ func SafeDelete(s []int, i int) []int {
 //   - Returned slice must have the same len as src
 //   - Modifying the returned slice must NOT affect src
 func CopySlice(src []int) []int {
-	var copiedSlice = make([]int, len(src))
-	copy(copiedSlice, src)
-	return copiedSlice
+	return nil
 }
 
 // NilVsEmpty Exercise 9:
@@ -188,7 +140,7 @@ func CopySlice(src []int) []int {
 //
 // Returns: (nilSlice, emptySlice)
 func NilVsEmpty() ([]int, []int) {
-	return []int(nil), []int{}
+	return nil, nil
 }
 
 // ExtractWithoutLeak Exercise 10:
@@ -210,9 +162,7 @@ func NilVsEmpty() ([]int, []int) {
 //	// small has len=3, cap=3, independent backing array
 //	// huge can now be garbage collected
 func ExtractWithoutLeak(s []int, from, to int) []int {
-	newSlice := make([]int, to-from)
-	copy(newSlice, s[from:to])
-	return newSlice
+	return nil
 }
 
 // ObserveGrowth Exercise 11:
@@ -240,13 +190,7 @@ func ExtractWithoutLeak(s []int, from, to int) []int {
 // allocator size class that holds int (8 bytes) is 32 bytes = 4 ints.
 func ObserveGrowth(n int) []int {
 	// record cap(s) after each append into a result slice
-	var output []int = make([]int, 0, n)
-	var s []int
-	for i := 0; i < n; i++ {
-		s = append(s, i)
-		output = append(output, cap(s))
-	}
-	return output
+	return nil
 }
 
 // DetachSlice Exercise 12:
@@ -268,6 +212,5 @@ func ObserveGrowth(n int) []int {
 //	// original is still [10, 20, 30, 40, 50] — not corrupted
 func DetachSlice(s []int) []int {
 	// Hint: s[0:len(s):len(s)]
-	var detached = s[0:len(s):len(s)]
-	return detached
+	return nil
 }

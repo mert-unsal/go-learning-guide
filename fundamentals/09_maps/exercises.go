@@ -11,7 +11,7 @@ package maps
 // Runes handle Unicode correctly. "hello" → map[rune]int{'h':1, 'e':1, 'l':2, 'o':1}
 func CharFrequency(s string) map[rune]int {
 	// TODO: iterate runes, count each in a map
-	panic("not implemented")
+	return nil
 }
 
 // Exercise 2:
@@ -21,7 +21,7 @@ func CharFrequency(s string) map[rune]int {
 // The zero value of a slice is nil, and append(nil, x) works fine.
 func GroupByFirstChar(words []string) map[byte][]string {
 	// TODO: group words by w[0] (first byte — fine for ASCII)
-	panic("not implemented")
+	return nil
 }
 
 // Exercise 3:
@@ -31,7 +31,7 @@ func GroupByFirstChar(words []string) map[byte][]string {
 // Alternative: use a heap (see patterns/). For exactly top-2, scanning is simpler.
 func TopTwoFrequent(nums []int) []int {
 	// TODO: build frequency map, then find top two by count
-	panic("not implemented")
+	return nil
 }
 
 // Exercise 4:
@@ -42,7 +42,7 @@ func TopTwoFrequent(nums []int) []int {
 // O(n) time, O(k) space where k = number of unique characters.
 func IsAnagram(s, t string) bool {
 	// TODO: count chars in s, decrement for t, check all zero
-	panic("not implemented")
+	return false
 }
 
 // Exercise 5:
@@ -53,7 +53,7 @@ func IsAnagram(s, t string) bool {
 // but map[T]bool is more readable.
 func FirstDuplicate(nums []int) int {
 	// TODO: use a seen set, return first repeated element (or -1)
-	panic("not implemented")
+	return 0
 }
 
 // Exercise 6:
@@ -63,5 +63,5 @@ func FirstDuplicate(nums []int) int {
 // Prefer it over strings.Split(s, " ") which doesn't handle multiple spaces.
 func WordCount(sentence string) map[string]int {
 	// TODO: split sentence into words, count each
-	panic("not implemented")
+	return nil
 }

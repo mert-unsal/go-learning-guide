@@ -8,6 +8,5 @@ package linked_list
 // Target: O(max(m,n)) time, O(max(m,n)) space.
 
 func AddTwoNumbers(l1 *ListNode, l2 *ListNode) *ListNode {
-	// TODO: implement
 	return nil
 }

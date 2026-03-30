@@ -89,16 +89,5 @@ package arrays
 // ProductExceptSelf returns the product array without division.
 // Time: O(n)  Space: O(1) extra (output array doesn't count)
 func ProductExceptSelf(nums []int) []int {
-	// TODO: implement
-	output := make([]int, len(nums))
-	output[0] = 1
-	for i := 1; i < len(nums); i++ {
-		output[i] = output[i-1] * nums[i-1]
-	}
-	right := 1
-	for i := len(nums) - 1; i >= 0; i-- {
-		output[i] *= right
-		right *= nums[i]
-	}
-	return output
+	return nil
 }

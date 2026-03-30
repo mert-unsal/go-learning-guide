@@ -69,6 +69,5 @@ package arrays
 // EraseOverlapIntervals returns the minimum removals for non-overlapping intervals.
 // Time: O(n log n)  Space: O(1)
 func EraseOverlapIntervals(intervals [][]int) int {
-	// TODO: implement
 	return 0
 }

@@ -13,15 +13,14 @@ package basics
 // Write a function that takes a Celsius temperature and returns
 // the Fahrenheit equivalent. Formula: F = C * 9/5 + 32
 func CelsiusToFahrenheit(c float64) float64 {
-	F := c*9/5 + 32
-	return F
+	return 0
 }
 
 // Exercise 2:
 // Write a function that swaps two integers and returns them.
 // Hint: Go supports multiple return values!
 func SwapInts(a, b int) (int, int) {
-	return b, a
+	return 0, 0
 }
 
 // Exercise 3:
@@ -29,30 +28,14 @@ func SwapInts(a, b int) (int, int) {
 // in CHARACTERS (not bytes). Strings can contain Unicode.
 // Hint: convert to []rune
 func CharacterCount(s string) int {
-	return len([]rune(s))
+	return 0
 }
 
 // Exercise 4:
 // Create a function that returns the minimum and maximum
 // values from three integers.
 func MinMax(a, b, c int) (min, max int) {
-	min = a
-	if b < min {
-		min = b
-	}
-	if c < min {
-		min = c
-	}
-
-	max = a
-	if b > max {
-		max = b
-	}
-	if c > max {
-		max = c
-	}
-
-	return min, max
+	return
 }
 
 // Exercise 5:
@@ -71,15 +54,5 @@ const (
 
 func DirectionName(d Direction) string {
 	// TODO: implement using a switch statement
-	switch d {
-	case North:
-		return "North"
-	case East:
-		return "East"
-	case South:
-		return "South"
-	case West:
-		return "West"
-	}
-	return "Unknown"
+	return ""
 }

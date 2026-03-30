@@ -1,10 +1,5 @@
 package strings_problems
 
-import (
-	"math"
-	"strings"
-)
-
 // ============================================================
 // Encryption — [M]
 // ============================================================
@@ -21,25 +16,5 @@ import (
 // Encryption encrypts a string using the grid column method.
 // Time: O(n)  Space: O(n)
 func Encryption(s string) string {
-	s = strings.ReplaceAll(s, " ", "")
-	n := len(s)
-	rows := int(math.Floor(math.Sqrt(float64(n))))
-	cols := int(math.Ceil(math.Sqrt(float64(n))))
-	if rows*cols < n {
-		rows++
-	}
-
-	var result strings.Builder
-	for c := 0; c < cols; c++ {
-		for r := 0; r < rows; r++ {
-			idx := r*cols + c
-			if idx < n {
-				result.WriteByte(s[idx])
-			}
-		}
-		if c < cols-1 {
-			result.WriteByte(' ')
-		}
-	}
-	return result.String()
+	return ""
 }

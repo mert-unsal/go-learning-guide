@@ -10,7 +10,14 @@ type MyQueue struct {
 	outbox []int
 }
 
-func (q *MyQueue) Push(x int)  { /* TODO */ }
-func (q *MyQueue) Pop() int    { /* TODO */ return 0 }
-func (q *MyQueue) Peek() int   { /* TODO */ return 0 }
-func (q *MyQueue) Empty() bool { /* TODO */ return true }
+func (q *MyQueue) Push(x int) {
+}
+func (q *MyQueue) Pop() int {
+	return 0
+}
+func (q *MyQueue) Peek() int {
+	return 0
+}
+func (q *MyQueue) Empty() bool {
+	return false
+}

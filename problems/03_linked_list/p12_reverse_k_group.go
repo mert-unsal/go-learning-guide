@@ -7,6 +7,5 @@ package linked_list
 // Target: O(n) time, O(1) space.
 
 func ReverseKGroup(head *ListNode, k int) *ListNode {
-	// TODO: implement
-	return head
+	return nil
 }

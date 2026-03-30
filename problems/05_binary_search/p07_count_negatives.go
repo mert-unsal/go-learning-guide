@@ -5,4 +5,6 @@ package binary_search
 // Start top-right. If negative, all below are negative. Move left. If non-negative, move down.
 // Target: O(m+n) time, O(1) space.
 
-func CountNegatives(grid [][]int) int { return 0 }
+func CountNegatives(grid [][]int) int {
+	return 0
+}

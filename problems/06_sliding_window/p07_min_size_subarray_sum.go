@@ -6,4 +6,6 @@ package sliding_window
 // Variable-size sliding window. Shrink when sum >= target.
 // Target: O(n) time, O(1) space.
 
-func MinSubArrayLen(target int, nums []int) int { return 0 }
+func MinSubArrayLen(target int, nums []int) int {
+	return 0
+}

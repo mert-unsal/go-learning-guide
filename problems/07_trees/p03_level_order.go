@@ -5,4 +5,6 @@ package trees
 // Use a queue. Process all nodes at current level before next.
 // Target: O(n) time, O(n) space.
 
-func LevelOrder(root *TreeNode) [][]int { return nil }
+func LevelOrder(root *TreeNode) [][]int {
+	return nil
+}

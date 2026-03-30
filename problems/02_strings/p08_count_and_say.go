@@ -33,6 +33,5 @@ package strings_problems
 // CountAndSay returns the nth term of the count-and-say sequence.
 // Time: O(n * len of each term)  Space: O(n)
 func CountAndSay(n int) string {
-	// TODO: implement
 	return ""
 }

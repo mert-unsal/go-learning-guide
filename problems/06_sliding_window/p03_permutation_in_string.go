@@ -5,4 +5,6 @@ package sliding_window
 // Fixed-size window (len(s1)) sliding over s2, compare frequency arrays.
 // Target: O(|s1|+|s2|) time, O(1) space.
 
-func CheckInclusion(s1 string, s2 string) bool { return false }
+func CheckInclusion(s1 string, s2 string) bool {
+	return false
+}

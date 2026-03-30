@@ -76,6 +76,5 @@ package arrays
 // MaxSubArray returns the largest sum of any contiguous subarray.
 // Time: O(n)  Space: O(1)
 func MaxSubArray(nums []int) int {
-	// TODO: implement
 	return 0
 }

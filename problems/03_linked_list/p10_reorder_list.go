@@ -7,5 +7,4 @@ package linked_list
 // Target: O(n) time, O(1) space.
 
 func ReorderList(head *ListNode) {
-	// TODO: implement
 }

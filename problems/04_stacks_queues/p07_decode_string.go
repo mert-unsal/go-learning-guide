@@ -6,6 +6,5 @@ package stacks_queues
 // Target: O(output length) time and space.
 
 func DecodeString(s string) string {
-	// TODO: implement
 	return ""
 }

@@ -26,6 +26,5 @@ package strings_problems
 // FirstUniqChar returns the index of the first non-repeating character.
 // Time: O(n)  Space: O(1)
 func FirstUniqChar(s string) int {
-	// TODO: implement
-	return -1
+	return 0
 }

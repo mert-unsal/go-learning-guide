@@ -58,6 +58,5 @@ package arrays
 // MajorityElement returns the element that appears more than n/2 times.
 // Time: O(n)  Space: O(1)
 func MajorityElement(nums []int) int {
-	// TODO: implement
 	return 0
 }

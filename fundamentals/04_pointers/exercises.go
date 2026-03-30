@@ -7,14 +7,12 @@ package pointers
 // Write a function that increments an integer through a pointer.
 func Increment(n *int) {
 	// TODO: *n++
-	*n++
 }
 
 // Exercise 2:
 // Write a function that swaps two integers using pointers.
 func SwapPointers(a, b *int) {
 	// TODO: *a, *b = *b, *a
-	*a, *b = *b, *a
 }
 
 // Exercise 3:
@@ -26,11 +24,10 @@ type ScoreBoard struct {
 
 func (s *ScoreBoard) AddPoints(points int) {
 	// TODO: s.Score += points
-	s.Score += points
 }
 func (s ScoreBoard) CurrentScore() int {
 	// TODO: return s.Score
-	return s.Score
+	return 0
 }
 
 // Exercise 4:
@@ -42,12 +39,11 @@ type Player struct {
 
 func NewPlayer(name string, level int) *Player {
 	// TODO: return &Player{...}
-	return &Player{Name: name, Level: level}
+	return nil
 }
 
 // Exercise 5:
 // DoubleValue doubles the value at the pointer address.
 func DoubleValue(x *int) {
 	// TODO: *x = *x * 2
-	*x = *x * 2
 }

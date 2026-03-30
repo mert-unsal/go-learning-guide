@@ -35,6 +35,5 @@ package strings_problems
 // LongestCommonPrefix returns the longest common prefix of strs.
 // Time: O(S) where S = total characters  Space: O(1)
 func LongestCommonPrefix(strs []string) string {
-	// TODO: implement
 	return ""
 }

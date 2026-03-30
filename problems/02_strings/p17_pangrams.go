@@ -1,7 +1,5 @@
 package strings_problems
 
-import "strings"
-
 // ============================================================
 // Pangrams — [E]
 // ============================================================
@@ -13,16 +11,5 @@ import "strings"
 // Pangram returns "pangram" if every letter appears, else "not pangram".
 // Time: O(n)  Space: O(1)
 func Pangram(sentence string) string {
-	var seen [26]bool
-	for _, ch := range strings.ToLower(sentence) {
-		if ch >= 'a' && ch <= 'z' {
-			seen[ch-'a'] = true
-		}
-	}
-	for _, v := range seen {
-		if !v {
-			return "not pangram"
-		}
-	}
-	return "pangram"
+	return ""
 }

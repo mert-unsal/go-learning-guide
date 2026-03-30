@@ -7,6 +7,5 @@ package linked_list
 // Target: O(n) time, O(1) space.
 
 func FindDuplicate(nums []int) int {
-	// TODO: implement
 	return 0
 }

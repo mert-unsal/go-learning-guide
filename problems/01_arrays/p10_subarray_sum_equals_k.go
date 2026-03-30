@@ -67,6 +67,5 @@ package arrays
 // SubarraySum returns the number of subarrays with sum equal to k.
 // Time: O(n)  Space: O(n)
 func SubarraySum(nums []int, k int) int {
-	// TODO: implement
 	return 0
 }

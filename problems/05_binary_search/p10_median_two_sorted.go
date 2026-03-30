@@ -5,4 +5,6 @@ package binary_search
 // Example: [1,3]+[2] → 2.0    [1,2]+[3,4] → 2.5
 // Binary search on partition of the smaller array.
 
-func FindMedianSortedArrays(nums1 []int, nums2 []int) float64 { return 0 }
+func FindMedianSortedArrays(nums1 []int, nums2 []int) float64 {
+	return 0
+}

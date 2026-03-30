@@ -68,6 +68,5 @@ package arrays
 // InsertInterval inserts a new interval and merges overlaps.
 // Time: O(n)  Space: O(n)
 func InsertInterval(intervals [][]int, newInterval []int) [][]int {
-	// TODO: implement
 	return nil
 }

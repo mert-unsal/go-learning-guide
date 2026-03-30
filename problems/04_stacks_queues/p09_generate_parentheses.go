@@ -7,6 +7,5 @@ package stacks_queues
 // Target: O(4^n / √n) time (Catalan number), O(n) space.
 
 func GenerateParenthesis(n int) []string {
-	// TODO: implement
 	return nil
 }

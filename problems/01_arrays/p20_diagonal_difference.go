@@ -14,15 +14,5 @@ package arrays
 // DiagonalDifference returns the absolute diagonal difference.
 // Time: O(n)  Space: O(1)
 func DiagonalDifference(matrix [][]int) int {
-	n := len(matrix)
-	primary, secondary := 0, 0
-	for i := 0; i < n; i++ {
-		primary += matrix[i][i]
-		secondary += matrix[i][n-1-i]
-	}
-	diff := primary - secondary
-	if diff < 0 {
-		return -diff
-	}
-	return diff
+	return 0
 }

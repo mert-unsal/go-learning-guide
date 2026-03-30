@@ -7,6 +7,5 @@ package stacks_queues
 // Target: O(n+m) time, O(n) space.
 
 func NextGreaterElement(nums1 []int, nums2 []int) []int {
-	// TODO: implement
 	return nil
 }

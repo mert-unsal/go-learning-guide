@@ -26,6 +26,5 @@ package strings_problems
 // CountSubstrings counts palindromic substrings.
 // Time: O(n²)  Space: O(1)
 func CountSubstrings(s string) int {
-	// TODO: implement
 	return 0
 }

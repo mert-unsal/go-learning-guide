@@ -6,6 +6,5 @@ package linked_list
 // Target: O(n) time, O(n) space.
 
 func CopyRandomList(head *RandomNode) *RandomNode {
-	// TODO: implement
 	return nil
 }

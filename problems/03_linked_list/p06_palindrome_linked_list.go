@@ -7,6 +7,5 @@ package linked_list
 // Target: O(n) time, O(1) space.
 
 func IsPalindrome(head *ListNode) bool {
-	// TODO: implement
 	return false
 }

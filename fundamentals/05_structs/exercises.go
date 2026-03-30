@@ -11,12 +11,12 @@ type ExRectangle struct {
 
 func (r ExRectangle) Area() float64 {
 	// TODO: Width * Height
-	return r.Width * r.Height
+	return 0
 }
 
 func (r ExRectangle) Perimeter() float64 {
 	// TODO: 2*(Width+Height)
-	return 2 * (r.Width + r.Height)
+	return 0
 }
 
 // Exercise 2:
@@ -29,11 +29,7 @@ type ExShape interface {
 // TotalArea sums areas of all shapes.
 func TotalArea(shapes []ExShape) float64 {
 	// TODO: iterate and sum
-	sum := 0.0
-	for _, shape := range shapes {
-		sum += shape.Area()
-	}
-	return sum
+	return 0
 }
 
 // Exercise 3:
@@ -45,21 +41,14 @@ type ExStack struct {
 
 func (s *ExStack) Push(val int) {
 	// TODO: append to items
-	s.Items = append(s.Items, val)
 }
 
 func (s *ExStack) Pop() (int, bool) {
 	// TODO: remove and return top
-	if len(s.Items) == 0 {
-		return 0, false
-	}
-	n := len(s.Items)
-	val := s.Items[n-1]
-	s.Items = s.Items[:n-1]
-	return val, true
+	return 0, false
 }
 
 func (s *ExStack) IsEmpty() bool {
 	// TODO: return len == 0
-	return len(s.Items) == 0
+	return false
 }

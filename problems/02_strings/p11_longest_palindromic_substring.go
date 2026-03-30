@@ -26,6 +26,5 @@ package strings_problems
 // LongestPalindrome returns the longest palindromic substring.
 // Time: O(n²)  Space: O(1)
 func LongestPalindrome(s string) string {
-	// TODO: implement
 	return ""
 }

@@ -5,4 +5,6 @@ package binary_search
 // Two binary searches: one for leftmost, one for rightmost.
 // Target: O(log n) time, O(1) space.
 
-func SearchRange(nums []int, target int) []int { return []int{-1, -1} }
+func SearchRange(nums []int, target int) []int {
+	return nil
+}

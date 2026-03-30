@@ -17,22 +17,5 @@ package arrays
 // ArrayManipulation returns the max value after all range-add operations.
 // Time: O(n + m)  Space: O(n)
 func ArrayManipulation(n int, queries [][]int) int64 {
-	diff := make([]int64, n+2) // 1-indexed, extra slot for n+1
-
-	for _, q := range queries {
-		a, b, v := q[0], q[1], int64(q[2])
-		diff[a] += v
-		if b+1 <= n {
-			diff[b+1] -= v
-		}
-	}
-
-	var maxVal, running int64
-	for i := 1; i <= n; i++ {
-		running += diff[i]
-		if running > maxVal {
-			maxVal = running
-		}
-	}
-	return maxVal
+	return 0
 }

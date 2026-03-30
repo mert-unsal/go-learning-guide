@@ -6,4 +6,6 @@ package sliding_window
 // Fixed-size sliding window. Track running sum.
 // Target: O(n) time, O(1) space.
 
-func FindMaxAverage(nums []int, k int) float64 { return 0 }
+func FindMaxAverage(nums []int, k int) float64 {
+	return 0
+}

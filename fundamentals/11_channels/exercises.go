@@ -2,8 +2,6 @@ package channels
 
 import (
 	"context"
-	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -17,7 +15,6 @@ import (
 // This is the basic "goroutine returns a value via channel" pattern.
 func SumAsync(nums []int, ch chan<- int) {
 	// TODO: compute sum, send it on ch
-	panic("not implemented")
 }
 
 // Exercise 2:
@@ -25,7 +22,7 @@ func SumAsync(nums []int, ch chan<- int) {
 // the integers 1..n then closes.
 func Generate(n int) <-chan int {
 	// TODO: create channel, launch goroutine to send 1..n, close channel
-	panic("not implemented")
+	return nil
 }
 
 // Exercise 3:
@@ -33,7 +30,7 @@ func Generate(n int) <-chan int {
 // The output channel closes when 'in' closes.
 func Square(in <-chan int) <-chan int {
 	// TODO: create output channel, range over in, send v*v, close output
-	panic("not implemented")
+	return nil
 }
 
 // Exercise 4:
@@ -41,7 +38,7 @@ func Square(in <-chan int) <-chan int {
 // Hint: use sync.WaitGroup inside.
 func Merge(a, b <-chan int) <-chan int {
 	// TODO: fan-in pattern — one goroutine per input, WaitGroup to close output
-	panic("not implemented")
+	return nil
 }
 
 // Exercise 5:
@@ -50,7 +47,7 @@ func Merge(a, b <-chan int) <-chan int {
 // Use select with time.After.
 func WithTimeout(ch <-chan int, maxWaitMs int) (int, bool) {
 	// TODO: select between ch receive and time.After timeout
-	panic("not implemented")
+	return 0, false
 }
 
 // ============================================================
@@ -69,37 +66,7 @@ func WithTimeout(ch <-chan int, maxWaitMs int) (int, bool) {
 //   - This is Go's idiomatic way to dynamically control select behavior
 //   - Interview favorite: "How do you merge N channels without WaitGroup?"
 func MergeN(channels ...<-chan int) <-chan int {
-	out := make(chan int)
-	go func() {
-		defer close(out)
-		alive := len(channels)
-		for alive > 0 {
-			// We can't use a dynamic select with variable cases in Go syntax,
-			// so we use reflect.Select for truly dynamic N channels.
-			// However, for this exercise, implement it using a polling approach:
-			// iterate over channels, try non-blocking receive, nil-out closed ones.
-			for i, ch := range channels {
-				if ch == nil {
-					continue
-				}
-				select {
-				case v, ok := <-ch:
-					if !ok {
-						channels[i] = nil
-						alive--
-					} else {
-						out <- v
-					}
-				default:
-					// not ready, skip
-				}
-			}
-			if alive > 0 {
-				time.Sleep(time.Microsecond) // avoid busy spin
-			}
-		}
-	}()
-	return out
+	return nil
 }
 
 // ============================================================
@@ -115,22 +82,7 @@ func MergeN(channels ...<-chan int) <-chan int {
 //   - Production use: limiting concurrent DB connections, HTTP requests, file handles
 //   - The buffer capacity IS the concurrency limit — elegant and zero-overhead
 func ProcessWithLimit(items []int, maxConcurrent int, fn func(int) int) []int {
-	results := make([]int, len(items))
-	sem := make(chan struct{}, maxConcurrent)
-	var wg sync.WaitGroup
-
-	for i, item := range items {
-		wg.Add(1)
-		sem <- struct{}{} // acquire — blocks when maxConcurrent goroutines are running
-		go func(idx, val int) {
-			defer wg.Done()
-			defer func() { <-sem }() // release
-			results[idx] = fn(val)
-		}(i, item)
-	}
-
-	wg.Wait()
-	return results
+	return nil
 }
 
 // ============================================================
@@ -145,12 +97,7 @@ func ProcessWithLimit(items []int, maxConcurrent int, fn func(int) int) []int {
 //   - Closed channel with empty buffer → returns zero value, ok=false
 //   - The test will verify both behaviors
 func SendAndClose(values []int, bufSize int) <-chan int {
-	ch := make(chan int, bufSize)
-	for _, v := range values {
-		ch <- v
-	}
-	close(ch)
-	return ch
+	return nil
 }
 
 // ============================================================
@@ -169,21 +116,11 @@ func SendAndClose(values []int, bufSize int) <-chan int {
 //   - Used in hot paths where blocking is unacceptable
 //   - The runtime short-circuits: polls once, returns default immediately if nothing ready
 func TrySend(ch chan<- int, val int) bool {
-	select {
-	case ch <- val:
-		return true
-	default:
-		return false
-	}
+	return false
 }
 
 func TryReceive(ch <-chan int) (int, bool) {
-	select {
-	case v := <-ch:
-		return v, true
-	default:
-		return 0, false
-	}
+	return 0, false
 }
 
 // ============================================================
@@ -201,20 +138,7 @@ func TryReceive(ch <-chan int) (int, bool) {
 //   - Use context for cancellation — the goroutine checks ctx.Done() in select
 //   - Test with runtime.NumGoroutine() before and after
 func SafeGenerator(ctx context.Context) <-chan int {
-	ch := make(chan int)
-	go func() {
-		defer close(ch)
-		i := 0
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case ch <- i:
-				i++
-			}
-		}
-	}()
-	return ch
+	return nil
 }
 
 // ============================================================
@@ -233,26 +157,7 @@ func SafeGenerator(ctx context.Context) <-chan int {
 //   - A single stage ignoring ctx.Done() can hold up graceful shutdown
 //   - This is a composable building block: orDone(ctx, stage1(stage2(input)))
 func OrDone(ctx context.Context, in <-chan int) <-chan int {
-	out := make(chan int)
-	go func() {
-		defer close(out)
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case v, ok := <-in:
-				if !ok {
-					return
-				}
-				select {
-				case out <- v:
-				case <-ctx.Done():
-					return
-				}
-			}
-		}
-	}()
-	return out
+	return nil
 }
 
 // ============================================================
@@ -266,32 +171,7 @@ func OrDone(ctx context.Context, in <-chan int) <-chan int {
 // AtomicCounter uses sync/atomic for lock-free increments.
 // Both return the final count after 'n' increments from 'workers' goroutines.
 func ChannelCounter(workers, incrementsPerWorker int) int {
-	ch := make(chan struct{}, 100)
-	done := make(chan int)
-
-	// Counter goroutine — serializes via channel
-	go func() {
-		count := 0
-		for range ch {
-			count++
-		}
-		done <- count
-	}()
-
-	var wg sync.WaitGroup
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < incrementsPerWorker; j++ {
-				ch <- struct{}{}
-			}
-		}()
-	}
-
-	wg.Wait()
-	close(ch)
-	return <-done
+	return 0
 }
 
 // ============================================================
@@ -328,23 +208,9 @@ func DualTimeoutWorker(ch <-chan int, process func(int) int, inactivity, deadlin
 	//   - On timer fire: inactivity timeout, return results
 	//   - On ctx.Done(): hard deadline hit, return results
 	//   - Don't forget: timer.Stop()/drain before Reset, defer cancel(), defer timer.Stop()
-	panic("not implemented")
+	return nil
 }
 
 func AtomicCounter(workers, incrementsPerWorker int) int64 {
-	var count int64
-	var wg sync.WaitGroup
-
-	for i := 0; i < workers; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < incrementsPerWorker; j++ {
-				atomic.AddInt64(&count, 1)
-			}
-		}()
-	}
-
-	wg.Wait()
-	return count
+	return 0
 }

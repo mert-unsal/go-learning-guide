@@ -61,6 +61,5 @@ package arrays
 // ContainsDuplicate returns true if the slice has any repeated element.
 // Time: O(n)  Space: O(n)
 func ContainsDuplicate(nums []int) bool {
-	// TODO: implement
 	return false
 }

@@ -8,6 +8,5 @@ package stacks_queues
 // Target: O(n log n) time, O(n) space.
 
 func CarFleet(target int, position []int, speed []int) int {
-	// TODO: implement
 	return 0
 }

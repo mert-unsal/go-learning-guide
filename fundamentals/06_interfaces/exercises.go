@@ -1,7 +1,6 @@
 package interfaces
 
 import (
-	"fmt"
 	"reflect"
 )
 
@@ -22,17 +21,14 @@ type ExMovie struct {
 }
 
 func (b ExBook) String() string {
-	return fmt.Sprintf("%q by %s", b.Title, b.Author)
+	return ""
 }
 
 func (m ExMovie) String() string {
-	return fmt.Sprintf("%s (%d)", m.Title, m.Year)
+	return ""
 }
 
 func PrintAll(items []ExStringer) {
-	for _, v := range items {
-		v.String()
-	}
 }
 
 // ExWriter Exercise 2:
@@ -45,32 +41,17 @@ type ExBufferWriter struct {
 }
 
 func (bw *ExBufferWriter) Write(data string) error {
-	bw.Buffer = append(bw.Buffer, data)
 	return nil
 }
 
 func WriteAll(w ExWriter, items []string) error {
-	for _, item := range items {
-		if err := w.Write(item); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
 // Exercise 3:
 // Type switch — describe what kind of value is passed.
 func Describe(i interface{}) string {
-	switch v := i.(type) {
-	case int:
-		return fmt.Sprintf("int: %d", v)
-	case string:
-		return fmt.Sprintf("string: %s", v)
-	case bool:
-		return fmt.Sprintf("bool: %t", v)
-	default:
-		return "unknown"
-	}
+	return ""
 }
 
 // ============================================================
@@ -107,7 +88,7 @@ type Product struct {
 }
 
 func (p *Product) Label() string {
-	return "Product: " + p.Name
+	return ""
 }
 
 // Exercise 4a: SafeGetLabel — Guard 1 (fix at source)
@@ -118,10 +99,7 @@ func (p *Product) Label() string {
 // Hint: the trap is doing `var p *Product; return p` — that returns
 // iface{tab: *itab, data: nil} which is NOT nil.
 func SafeGetLabel(name string) Labeler {
-	if len(name) == 0 {
-		return nil
-	}
-	return &Product{Name: name}
+	return nil
 }
 
 // Exercise 4b: SafeCallLabeler — Guard 2 (type assertion guard)
@@ -132,11 +110,7 @@ func SafeGetLabel(name string) Labeler {
 //
 // Use a type assertion to extract *Product, then check if the pointer is nil.
 func SafeCallLabeler(l Labeler) string {
-	product, found := l.(*Product)
-	if !found || product == nil {
-		return "no labeler"
-	}
-	return product.Label()
+	return ""
 }
 
 // Exercise 4c: IsTrulyNil — Guard 3 (reflect-based, for unknown types)
@@ -155,16 +129,7 @@ func SafeCallLabeler(l Labeler) string {
 var _ = reflect.ValueOf // keep import alive
 func IsTrulyNil(i interface{}) bool {
 	// TODO: implement
-	if i == nil {
-		return true
-	}
-	v := reflect.ValueOf(i)
-	switch v.Kind() {
-	case reflect.Ptr, reflect.Func, reflect.Map, reflect.Slice, reflect.Chan:
-		return v.IsNil()
-	default:
-		return false
-	}
+	return false
 }
 
 // ============================================================
@@ -217,13 +182,12 @@ type Thermometer struct {
 // TODO: implement Reading() with value receiver
 func (t Thermometer) Reading() float64 {
 	// TODO: return t.Temp
-	return t.Temp
+	return 0
 }
 
 // TODO: implement Calibrate() with pointer receiver
 func (t *Thermometer) Calibrate(offset float64) {
 	// TODO: add offset to t.Temp
-	t.Temp += offset
 }
 
 // ReadAndCalibrate Exercise 5b: ReadAndCalibrate
@@ -236,10 +200,7 @@ func (t *Thermometer) Calibrate(offset float64) {
 //	Or must you pass &Thermometer{Temp: 20.0}?
 func ReadAndCalibrate(s Sensor, offset float64) (before, after float64) {
 	// TODO: implement
-	reading := s.Reading()
-	s.Calibrate(offset)
-	newReading := s.Reading()
-	return reading, newReading
+	return
 }
 
 // Displayer is an interface with only a value-receiver method.
@@ -257,7 +218,7 @@ type Celsius float64
 // Hint: use fmt.Sprintf("%.1f°C", float64(c))
 func (c Celsius) Display() string {
 	// TODO: implement
-	return fmt.Sprintf("%.1f°C", float64(c))
+	return ""
 }
 
 // Kelvin uses a POINTER receiver for Display.
@@ -269,7 +230,7 @@ type Kelvin float64
 // Hint: use fmt.Sprintf("%.1fK", float64(*k))
 func (k *Kelvin) Display() string {
 	// TODO: implement
-	return fmt.Sprintf("%.1fK", float64(*k))
+	return ""
 }
 
 // Exercise 5c: CollectDisplayers
@@ -286,6 +247,5 @@ func (k *Kelvin) Display() string {
 //	Remember: you can't take the address of a converted literal directly.
 func CollectDisplayers() []Displayer {
 	// TODO: implement — return a []Displayer with Celsius and Kelvin values
-	kelvin := Kelvin(309.8)
-	return []Displayer{Celsius(36.6), &kelvin}
+	return nil
 }

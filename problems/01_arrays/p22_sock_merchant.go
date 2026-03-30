@@ -10,13 +10,5 @@ package arrays
 // SockMerchant returns the number of matching sock pairs.
 // Time: O(n)  Space: O(n)
 func SockMerchant(ar []int) int {
-	count := make(map[int]int)
-	pairs := 0
-	for _, sock := range ar {
-		count[sock]++
-		if count[sock]%2 == 0 {
-			pairs++
-		}
-	}
-	return pairs
+	return 0
 }

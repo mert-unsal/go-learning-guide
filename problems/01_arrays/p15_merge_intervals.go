@@ -74,6 +74,5 @@ package arrays
 // MergeIntervals merges overlapping intervals.
 // Time: O(n log n)  Space: O(n)
 func MergeIntervals(intervals [][]int) [][]int {
-	// TODO: implement
 	return nil
 }

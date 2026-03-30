@@ -5,4 +5,6 @@ package binary_search
 // Treat as single sorted array: index i → row i/n, col i%n.
 // Target: O(log(m*n)) time, O(1) space.
 
-func SearchMatrix(matrix [][]int, target int) bool { return false }
+func SearchMatrix(matrix [][]int, target int) bool {
+	return false
+}

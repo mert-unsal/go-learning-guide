@@ -1,7 +1,5 @@
 package arrays
 
-import "sort"
-
 // ============================================================
 // Mark and Toys — [E]
 // ============================================================
@@ -15,14 +13,5 @@ import "sort"
 // MaximumToys returns the maximum number of toys buyable within budget k.
 // Time: O(n log n)  Space: O(1)
 func MaximumToys(prices []int, k int) int {
-	sort.Ints(prices)
-	count := 0
-	for _, price := range prices {
-		if k < price {
-			break
-		}
-		k -= price
-		count++
-	}
-	return count
+	return 0
 }

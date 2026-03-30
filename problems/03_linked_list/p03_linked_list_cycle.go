@@ -23,6 +23,5 @@ package linked_list
 // HasCycle returns true if the list contains a cycle.
 // Time: O(n)  Space: O(1)
 func HasCycle(head *ListNode) bool {
-	// TODO: implement
 	return false
 }

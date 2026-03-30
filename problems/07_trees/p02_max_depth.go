@@ -5,4 +5,6 @@ package trees
 // depth = 1 + max(depth(left), depth(right)). Nil = 0.
 // Target: O(n) time, O(h) space.
 
-func MaxDepth(root *TreeNode) int { return 0 }
+func MaxDepth(root *TreeNode) int {
+	return 0
+}

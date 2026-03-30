@@ -6,4 +6,6 @@ package sliding_window
 // Sliding window with frequency maps. Expand right, shrink left when valid.
 // Target: O(|s|+|t|) time, O(|s|+|t|) space.
 
-func MinWindow(s string, t string) string { return "" }
+func MinWindow(s string, t string) string {
+	return ""
+}

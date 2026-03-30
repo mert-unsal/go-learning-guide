@@ -1,7 +1,5 @@
 package functions
 
-import "slices"
-
 // ============================================================
 // EXERCISES — 03 Functions
 // ============================================================
@@ -11,10 +9,7 @@ import "slices"
 // Return (0, 0) for an empty slice.
 func MinMax(nums []int) (min, max int) {
 	// TODO: implement with multiple return values
-	if len(nums) == 0 {
-		return 0, 0
-	}
-	return slices.Min(nums), slices.Max(nums)
+	return
 }
 
 // Exercise 2:
@@ -22,11 +17,7 @@ func MinMax(nums []int) (min, max int) {
 // Example: Sum(1, 2, 3) → 6
 func Sum(nums ...int) int {
 	// TODO: implement
-	sum := 0
-	for _, v := range nums {
-		sum += v
-	}
-	return sum
+	return 0
 }
 
 // Exercise 3:
@@ -35,11 +26,7 @@ func Sum(nums ...int) int {
 // Example: Apply([]int{1,2,3}, func(x int) int { return x*2 }) → [2,4,6]
 func Apply(nums []int, fn func(int) int) []int {
 	// TODO: implement (higher-order function)
-	result := make([]int, len(nums))
-	for i, v := range nums {
-		result[i] = fn(v)
-	}
-	return result
+	return nil
 }
 
 // Exercise 4:
@@ -48,8 +35,7 @@ func Apply(nums []int, fn func(int) int) []int {
 // Example: add5 := MakeAdder(5); add5(3) → 8
 func MakeAdder(n int) func(int) int {
 	// TODO: implement (closure)
-	sum := n
-	return func(x int) int { return sum + x }
+	return nil
 }
 
 // Exercise 5:
@@ -58,31 +44,15 @@ func MakeAdder(n int) func(int) int {
 // Then write a memoized version using a map.
 func Fibonacci(n int) int {
 	// TODO: implement recursive version
-	if n <= 0 {
-		return 0
-	} else if n == 1 {
-		return 1
-	} else {
-		return Fibonacci(n-1) + Fibonacci(n-2)
-	}
+	return 0
 }
 
 func FibonacciMemo(n int) int {
 	// TODO: implement with memoization (use a map inside or as parameter)
-	memo := make(map[int]int)
-	return fibMemo(n, memo)
+	return 0
 }
 
 func fibMemo(n int, memo map[int]int) int {
 	// TODO: implement
-	if n <= 0 {
-		return 0
-	} else if n == 1 {
-		return 1
-	}
-	if val, ok := memo[n]; ok {
-		return val
-	}
-	memo[n] = fibMemo(n-1, memo) + fibMemo(n-2, memo)
-	return memo[n]
+	return 0
 }

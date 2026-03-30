@@ -7,6 +7,5 @@ package stacks_queues
 // Target: O(n) time, O(n) space.
 
 func DailyTemperatures(temperatures []int) []int {
-	// TODO: implement
-	return make([]int, len(temperatures))
+	return nil
 }

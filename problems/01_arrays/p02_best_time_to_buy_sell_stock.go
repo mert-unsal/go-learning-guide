@@ -76,18 +76,5 @@ package arrays
 // MaxProfit returns the maximum profit achievable from one transaction.
 // Time: O(n)  Space: O(1)
 func MaxProfit(prices []int) int {
-	// TODO: implement
-	maxProfit := 0
-	if len(prices) == 0 {
-		return maxProfit
-	}
-	var minPrice = prices[0]
-	for _, price := range prices {
-		if price < minPrice {
-			minPrice = price
-		} else if price-minPrice > maxProfit {
-			maxProfit = price - minPrice
-		}
-	}
-	return maxProfit
+	return 0
 }

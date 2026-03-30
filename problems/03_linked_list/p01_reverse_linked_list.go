@@ -32,13 +32,11 @@ package linked_list
 // ReverseList reverses a linked list iteratively.
 // Time: O(n)  Space: O(1)
 func ReverseList(head *ListNode) *ListNode {
-	// TODO: implement
 	return nil
 }
 
 // ReverseListRecursive reverses a linked list recursively.
 // Time: O(n)  Space: O(n) — recursion stack
 func ReverseListRecursive(head *ListNode) *ListNode {
-	// TODO: implement
 	return nil
 }

@@ -9,7 +9,13 @@ type MinStack struct {
 	minStack []int
 }
 
-func (s *MinStack) Push(val int) { /* TODO */ }
-func (s *MinStack) Pop()         { /* TODO */ }
-func (s *MinStack) Top() int     { /* TODO */ return 0 }
-func (s *MinStack) GetMin() int  { /* TODO */ return 0 }
+func (s *MinStack) Push(val int) {
+}
+func (s *MinStack) Pop() {
+}
+func (s *MinStack) Top() int {
+	return 0
+}
+func (s *MinStack) GetMin() int {
+	return 0
+}

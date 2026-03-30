@@ -23,6 +23,5 @@ package linked_list
 // MergeTwoLists merges two sorted linked lists.
 // Time: O(n + m)  Space: O(1)
 func MergeTwoLists(list1 *ListNode, list2 *ListNode) *ListNode {
-	// TODO: implement
 	return nil
 }

@@ -22,6 +22,5 @@ package linked_list
 // RemoveNthFromEnd removes the nth node from the end.
 // Time: O(n)  Space: O(1)
 func RemoveNthFromEnd(head *ListNode, n int) *ListNode {
-	// TODO: implement
-	return head
+	return nil
 }

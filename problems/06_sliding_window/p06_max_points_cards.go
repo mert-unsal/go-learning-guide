@@ -5,4 +5,6 @@ package sliding_window
 // Key: total - minimum window of size (n-k).
 // Target: O(n) time, O(1) space.
 
-func MaxScore(cardPoints []int, k int) int { return 0 }
+func MaxScore(cardPoints []int, k int) int {
+	return 0
+}

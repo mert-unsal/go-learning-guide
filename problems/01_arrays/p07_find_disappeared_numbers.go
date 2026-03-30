@@ -1,7 +1,5 @@
 package arrays
 
-import "go-learning-guide/utils"
-
 // ! ============================================================
 // ! PROBLEM 7: Find All Numbers Disappeared in an Array
 // ! LeetCode #448 — EASY
@@ -56,18 +54,5 @@ import "go-learning-guide/utils"
 // FindDisappearedNumbers returns missing numbers using O(1) extra space.
 // Time: O(n)  Space: O(1) extra
 func FindDisappearedNumbers(nums []int) []int {
-	for _, v := range nums {
-		idx := utils.Abs(v) - 1 // get the target index
-		if nums[idx] > 0 {
-			nums[idx] = -nums[idx] // mark as visited
-		}
-	}
-
-	var result []int
-	for i, v := range nums {
-		if v > 0 {
-			result = append(result, i+1)
-		}
-	}
-	return result
+	return nil
 }

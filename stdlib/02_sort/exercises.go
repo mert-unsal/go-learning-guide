@@ -38,5 +38,5 @@ return 0
 // sort.Search(n, f) returns the smallest index i in [0,n) where f(i) is true.
 func BinarySearch(sorted []int, target int) int {
 // TODO: use sort.Search, verify sorted[i] == target
-return -1
+return 0
 }

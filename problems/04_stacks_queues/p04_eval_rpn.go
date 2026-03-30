@@ -6,6 +6,5 @@ package stacks_queues
 // Target: O(n) time, O(n) space.
 
 func EvalRPN(tokens []string) int {
-	// TODO: implement
 	return 0
 }

@@ -1,7 +1,5 @@
 package packages_modules
 
-import "fmt"
-
 // ============================================================
 // EXERCISES — 12 Packages & Modules
 // ============================================================
@@ -24,10 +22,7 @@ const unexportedValue = "I am unexported" //nolint
 // Capitalization IS the access modifier. This is enforced by the compiler.
 // Any identifier starting with a capital letter is exported (visible from other packages).
 func IsExported(name string) bool {
-	if len(name) == 0 {
-		return false
-	}
-	return name[0] >= 'A' && name[0] <= 'Z'
+	return false
 }
 
 // Exercise 2: init() order
@@ -38,12 +33,11 @@ var initLog []string
 func init() {
 	// This runs automatically when the package is imported.
 	// In real code: setup defaults, validate config, register drivers.
-	initLog = append(initLog, "packages_modules.init ran")
 }
 
 // GetInitLog returns the log of init calls (for testing).
 func GetInitLog() []string {
-	return initLog
+	return nil
 }
 
 // Exercise 3: Blank identifier _ to suppress unused import warnings.
@@ -56,7 +50,7 @@ func GetInitLog() []string {
 // image format decoders) that self-register via init().
 // Example: `import _ "github.com/lib/pq"` registers the PostgreSQL driver.
 func BlankImportPurpose() string {
-	return "runs init() functions of the package without using its exports"
+	return ""
 }
 
 // BuildTagPurpose explains what `go build -tags integration` does.
@@ -64,7 +58,7 @@ func BlankImportPurpose() string {
 // LESSON: Build tags (//go:build integration) let you selectively compile files.
 // Common uses: integration tests, OS-specific code, feature flags.
 func BuildTagPurpose() string {
-	return "includes files with //go:build integration at the top"
+	return ""
 }
 
 // Exercise 4:
@@ -74,5 +68,5 @@ func BuildTagPurpose() string {
 // The go.mod file defines the module root. Every sub-package's import path
 // is: moduleName + "/" + relative/path/to/package.
 func ModulePath(moduleName, subPackage string) string {
-	return fmt.Sprintf("%s/%s", moduleName, subPackage)
+	return ""
 }

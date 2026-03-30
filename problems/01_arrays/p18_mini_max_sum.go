@@ -1,7 +1,5 @@
 package arrays
 
-import "sort"
-
 // ============================================================
 // Mini-Max Sum — [E]
 // ============================================================
@@ -18,12 +16,5 @@ import "sort"
 // MiniMaxSum returns the minimum and maximum 4-element sums.
 // Time: O(n log n)  Space: O(1)
 func MiniMaxSum(arr []int) (minSum, maxSum int) {
-	sort.Ints(arr)
-	for i := 0; i < 4; i++ {
-		minSum += arr[i]
-	}
-	for i := 1; i < 5; i++ {
-		maxSum += arr[i]
-	}
-	return
+	return 0, 0
 }

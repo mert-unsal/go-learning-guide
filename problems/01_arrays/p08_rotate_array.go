@@ -68,17 +68,7 @@ package arrays
 // Rotate rotates the array to the right by k positions in-place.
 // Time: O(n)  Space: O(1)
 func Rotate(nums []int, k int) {
-	k %= len(nums)
-	if k == 0 {
-		return
-	}
-	reverse(nums, 0, len(nums)-1)
-	reverse(nums, 0, k-1)
-	reverse(nums, k, len(nums)-1)
 }
 
 func reverse(nums []int, left, right int) {
-	for i, j := left, right; i < j; i, j = i+1, j-1 {
-		nums[i], nums[j] = nums[j], nums[i]
-	}
 }

@@ -20,7 +20,7 @@ return nil
 // Return the result and nil, or 0 and the recovered error message as an error.
 func SafeDivideEx(a, b int) (result int, err error) {
 // TODO: defer a recover() that converts the panic to an error
-return a / b, nil
+return 0, nil
 }
 // Exercise 4:
 // Flatten takes a [][]int (2D slice) and returns a single []int with all values.

@@ -19,54 +19,18 @@ type LRUCache struct {
 }
 
 func NewLRUCache(capacity int) *LRUCache {
-	// TODO: implement — create head/tail sentinels, link them
-	var head = &lruNode{}
-	var tail = &lruNode{}
-	head.next = tail
-	tail.prev = head
-	return &LRUCache{
-		capacity: capacity,
-		cache:    make(map[int]*lruNode),
-		head:     head, tail: tail,
-	}
+	return nil
 }
 
 func (c *LRUCache) Get(key int) int {
-	// TODO: implement
-	if localLruNode, ok := c.cache[key]; ok {
-		c.remove(localLruNode)
-		c.addToFront(localLruNode)
-		return localLruNode.val
-	}
-	return -1
+	return 0
 }
 
 func (c *LRUCache) Put(key, value int) {
-	// TODO: implement
-	if localLruNode, ok := c.cache[key]; ok {
-		c.cache[key].val = value
-		c.remove(localLruNode)
-		c.addToFront(localLruNode)
-	} else {
-		newLruNode := &lruNode{key: key, val: value}
-		c.addToFront(newLruNode)
-		c.cache[key] = newLruNode
-	}
-
-	if len(c.cache) > c.capacity {
-		delete(c.cache, c.tail.prev.key)
-		c.remove(c.tail.prev)
-	}
 }
 
 func (c *LRUCache) remove(node *lruNode) {
-	node.prev.next = node.next
-	node.next.prev = node.prev
 }
 
 func (c *LRUCache) addToFront(node *lruNode) {
-	node.prev = c.head
-	node.next = c.head.next
-	c.head.next.prev = node
-	c.head.next = node
 }

@@ -6,4 +6,6 @@ package binary_search
 // Key: one half is always sorted. Check if target is in the sorted half.
 // Target: O(log n) time, O(1) space.
 
-func Search(nums []int, target int) int { return -1 }
+func Search(nums []int, target int) int {
+	return 0
+}

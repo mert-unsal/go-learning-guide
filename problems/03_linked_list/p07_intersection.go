@@ -7,6 +7,5 @@ package linked_list
 // Target: O(m+n) time, O(1) space.
 
 func GetIntersectionNode(headA, headB *ListNode) *ListNode {
-	// TODO: implement
 	return nil
 }

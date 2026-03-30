@@ -7,6 +7,5 @@ package stacks_queues
 // Target: O(n) time, O(n) space.
 
 func LargestRectangleArea(heights []int) int {
-	// TODO: implement
 	return 0
 }

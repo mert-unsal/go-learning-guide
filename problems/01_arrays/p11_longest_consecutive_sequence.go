@@ -73,6 +73,5 @@ package arrays
 // LongestConsecutive returns the length of the longest consecutive sequence.
 // Time: O(n)  Space: O(n)
 func LongestConsecutive(nums []int) int {
-	// TODO: implement
 	return 0
 }

@@ -33,6 +33,5 @@ package strings_problems
 // MyAtoi converts string to 32-bit integer following LeetCode rules.
 // Time: O(n)  Space: O(1)
 func MyAtoi(s string) int {
-	// TODO: implement
 	return 0
 }

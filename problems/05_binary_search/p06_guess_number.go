@@ -5,4 +5,6 @@ package binary_search
 // Binary search between 1 and n.
 // Target: O(log n) time, O(1) space.
 
-func GuessNumber(n int, guessFn func(int) int) int { return 0 }
+func GuessNumber(n int, guessFn func(int) int) int {
+	return 0
+}

@@ -5,4 +5,6 @@ package binary_search
 // Example: [-1,0,3,5,9,12], target=9 → 4
 // Target: O(log n) time, O(1) space.
 
-func BinarySearch(nums []int, target int) int { return -1 }
+func BinarySearch(nums []int, target int) int {
+	return 0
+}

@@ -23,12 +23,10 @@ package strings_problems
 
 // Encode encodes a list of strings to a single string.
 func Encode(strs []string) string {
-	// TODO: implement
 	return ""
 }
 
 // Decode decodes the encoded string back to a list of strings.
 func Decode(s string) []string {
-	// TODO: implement
 	return nil
 }
