@@ -1,7 +1,5 @@
 # Go Under the Hood
 
-> **By Mert Unsal** — Senior Software Engineer
-
 A structured, hands-on Go curriculum with **runtime-level deep dives**. No boilerplate explanations, no trivial information — only details worth mentioning.
 
 This repository covers Go language fundamentals, runtime internals, algorithm patterns, 200+ coding problems, and production engineering practices.
@@ -13,8 +11,8 @@ This repository covers Go language fundamentals, runtime internals, algorithm pa
 ```
 go-learning-guide/
 ├── learnings/       ← 📖 Go Under the Hood — 21 deep-dive chapters (start here)
-├── fundamentals/    ← Go language core — concepts, exercises, tests
-├── stdlib/          ← Standard library deep-dives (7 packages, 37 exercises)
+├── cmd/concepts/    ← 🎯 Runnable concept demonstrations (go run)
+├── exercises/       ← ✏️ Exercises & tests (fundamentals + stdlib)
 ├── problems/        ← 200+ coding problems across 14 categories
 ├── practical/       ← Real-world Go: Docker, debugging, config, performance
 ├── tools/           ← md2pdf — generates the companion PDF book
@@ -50,9 +48,23 @@ python tools/md2pdf.py --config tools/book_config.json
 
 ## 🏗️ Hands-On Tracks
 
-### Fundamentals (`fundamentals/`)
+### Concept Demonstrations (`cmd/concepts/`)
 
-Each package contains `concepts.go` (annotated examples), `exercises.go` (implement these), and tests.
+Runnable programs demonstrating Go concepts — each is a standalone `package main`:
+
+```bash
+go run cmd/concepts/basics/01-variables/main.go
+go run cmd/concepts/channels/11-worker-pool-backpressure/main.go
+go run cmd/concepts/stdlib/01-strings-strconv/main.go
+```
+
+76+ demonstrations covering: basics, control-flow, functions, pointers, structs, interfaces, error-handling, goroutines, channels, maps, arrays-slices, packages-modules, stdlib, and debugging.
+
+### Exercises (`exercises/`)
+
+#### Fundamentals (`exercises/fundamentals/`)
+
+Each package contains `exercises.go` (implement these) and tests.
 
 | # | Package | Topics |
 |---|---------|--------|
@@ -69,7 +81,7 @@ Each package contains `concepts.go` (annotated examples), `exercises.go` (implem
 | 11 | `channels` | Buffered/unbuffered, select, patterns |
 | 12 | `packages_modules` | Visibility, init order, go.mod, build tags |
 
-### Standard Library (`stdlib/`)
+#### Standard Library (`exercises/stdlib/`)
 
 | # | Package | Topics |
 |---|---------|--------|

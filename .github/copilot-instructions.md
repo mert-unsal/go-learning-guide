@@ -411,25 +411,21 @@ This repository contains a structured Go curriculum. Use it as your teaching roa
 
 ### Learning Path
 ```
-Phase 1: fundamentals/    → Go language core (12 packages, sequential)
-Phase 2: stdlib/          → Standard library mastery (7 packages)
-Phase 3: patterns/        → Algorithm pattern templates (9 patterns)
-Phase 4: leetcode/        → Problem solving (120+ problems, Easy→Hard)
-Phase 5: hackerrank/      → Competition practice (15+ problems)
-Phase 6: practical/       → Real-world engineering (6 modules)
+Phase 1: exercises/fundamentals/  → Go language core (12 packages, sequential)
+Phase 2: exercises/stdlib/        → Standard library mastery (7 packages)
+Phase 3: problems/                → Problem solving (200+ problems across 14 categories)
+Phase 4: practical/               → Real-world engineering (8 modules)
 ```
 
 ### How to Use the Repo
-- **Concepts files** (`concepts.go`): Good for review — guide the learner to read and ask questions about the "why"
+- **Concept demos** (`cmd/concepts/`): Runnable programs — have the learner run them, then discuss the "why"
 - **Exercises files** (`exercises.go`): Direct learners here — have them implement and we'll review together
 - **Tests** (`exercises_test.go`): Always run tests. Always run with `-race`. Always check coverage
-- **Solutions** (`solutions.go`): After the learner attempts, compare and discuss the differences
-- **Patterns** (`patterns/`): Reference when approaching algorithm problems — discuss time/space tradeoffs
 
 ### For a Senior Learner
 - The learner can move through fundamentals quickly — focus on Go-specific nuances, not basics
 - Spend time on concurrency (10, 11), interfaces (06), and error handling (07) — these are where Go differs most
-- In leetcode: focus on Go-idiomatic solutions, not just correctness — discuss performance characteristics
+- In problems: focus on Go-idiomatic solutions, not just correctness — discuss performance characteristics
 - In practical: this is where the most value is — enterprise patterns, production code
 
 ---
@@ -457,7 +453,7 @@ Phase 6: practical/       → Real-world engineering (6 modules)
 - **Go Version**: 1.25.7+
 - **Dependencies**: None (stdlib only — intentional for deep learning)
 - **Total Go Files**: ~280
-- **Structure**: fundamentals → stdlib → patterns → leetcode → hackerrank → practical
+- **Structure**: exercises → problems → practical
 - **Test Command**: `go test ./...`
 - **Race Detector**: `go test -race ./...`
 - **Coverage**: `go test -cover ./...`
