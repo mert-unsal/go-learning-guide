@@ -124,13 +124,13 @@ func init() {
 // ============================================================
 //
 // Standard library:   import "fmt"
-// This module:        import "gointerviewprep/utils"
+// This module:        import "go-learning-guide/utils"
 // Third party:        import "github.com/stretchr/testify/assert"
 //
 // Import aliases (avoid name conflicts or long paths):
 //   import (
 //       "fmt"
-//       myfmt "gointerviewprep/utils"   // use as myfmt.Something()
+//       myfmt "go-learning-guide/utils"   // use as myfmt.Something()
 //       _ "database/driver"              // blank import: only runs init(), no direct use
 //   )
 //
@@ -208,9 +208,9 @@ func main() {
 	// --- Imports ---
 	fmt.Printf("\n%s▸ Import types%s\n", cyan+bold, reset)
 	fmt.Printf("  %s✔ Standard lib:%s    import \"fmt\"\n", green, reset)
-	fmt.Printf("  %s✔ This module:%s     import \"gointerviewprep/utils\"\n", green, reset)
+	fmt.Printf("  %s✔ This module:%s     import \"go-learning-guide/utils\"\n", green, reset)
 	fmt.Printf("  %s✔ Third party:%s     import \"github.com/stretchr/testify\"\n", green, reset)
-	fmt.Printf("  %s✔ Alias:%s           import myfmt \"gointerviewprep/utils\"\n", green, reset)
+	fmt.Printf("  %s✔ Alias:%s           import myfmt \"go-learning-guide/utils\"\n", green, reset)
 	fmt.Printf("  %s✔ Blank import:%s    import _ \"database/driver\"  (only runs init())\n", green, reset)
 	fmt.Printf("  %s⚠ Dot import:%s      import . \"math\"  (avoid in production!)%s\n", yellow, reset, reset)
 

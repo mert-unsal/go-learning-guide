@@ -48,7 +48,7 @@ Open `exercises.go` and implement each function:
 
 ## 🧪 Run Tests
 
-> ⚠️ **Important:** These commands must be run from the **project root** (`go-interview-prep/`), not from inside this folder.
+> ⚠️ **Important:** These commands must be run from the **project root** (`go-learning-guide/`), not from inside this folder.
 > If you are inside `01_basics/`, run `cd ../..` first to go back to the root.
 
 ### Run all tests for this module (from project root):
@@ -107,7 +107,7 @@ go test . -v -run TestDirectionName
     ✅ DirectionName(2) = "South"
     ✅ DirectionName(3) = "West"
 --- PASS: TestDirectionName (0.00s)
-ok      gointerviewprep/fundamentals/01_basics
+ok      go-learning-guide/fundamentals/01_basics
 ```
 
 ---

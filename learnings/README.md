@@ -81,7 +81,7 @@ debugging and enterprise patterns.
 
 ## How to Use These Documents
 
-1. **Interview prep**: Read Parts I–III. These cover the most common Go interview questions at senior level.
+1. **Deep dive**: Read Parts I–III. These cover the most common Go topics at senior level.
 2. **System design**: Read Parts V–VI. Understanding the scheduler and GC is critical for high-throughput services.
 3. **Production readiness**: Read Parts VII–VIII. Debugging tools + pitfalls will save you in production.
 4. **Quick reference**: Every doc ends with a Quick Reference Card — use them as cheat sheets.

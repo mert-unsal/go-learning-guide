@@ -453,7 +453,7 @@ Phase 6: practical/       → Real-world engineering (6 modules)
 
 ## Repository Context
 
-- **Module**: `gointerviewprep`
+- **Module**: `go-learning-guide`
 - **Go Version**: 1.25.7+
 - **Dependencies**: None (stdlib only — intentional for deep learning)
 - **Total Go Files**: ~280

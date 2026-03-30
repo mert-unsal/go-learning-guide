@@ -11,9 +11,8 @@ This repository covers Go language fundamentals, runtime internals, algorithm pa
 ## 📁 Project Structure
 
 ```
-go-interview-prep/
+go-learning-guide/
 ├── learnings/       ← 📖 Go Under the Hood — 21 deep-dive chapters (start here)
-├── system_design/   ← 🏗️ System Design interview prep (Order Management, GCP, Terraform)
 ├── fundamentals/    ← Go language core — concepts, exercises, tests
 ├── stdlib/          ← Standard library deep-dives (7 packages, 37 exercises)
 ├── patterns/        ← Algorithm pattern templates (9 patterns)
@@ -155,9 +154,9 @@ GODEBUG=gctrace=1 ./app                    # GC trace
 ## 🔧 Setup
 
 ```bash
-cd go-interview-prep
+cd go-learning-guide
 go build ./...        # verify everything compiles
 go test ./...         # run all tests
 ```
 
-> **Go version:** 1.25.7+ | **Module:** `gointerviewprep` | **Dependencies:** stdlib only
+> **Go version:** 1.25.7+ | **Module:** `go-learning-guide` | **Dependencies:** stdlib only

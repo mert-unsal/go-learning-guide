@@ -1,6 +1,6 @@
 package arrays
 
-import "gointerviewprep/utils"
+import "go-learning-guide/utils"
 
 // ! ============================================================
 // ! PROBLEM 7: Find All Numbers Disappeared in an Array
