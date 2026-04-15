@@ -53,6 +53,7 @@ Channels are not queues. The GMP scheduler is the key to understanding everythin
 | 2.1 | [10 — GMP Scheduler](learnings/10_goroutines_gmp_scheduler.md), [11 — Goroutine Stacks](learnings/11_goroutine_stacks_growth.md) | `goroutines/*` | `fundamentals/10_goroutines` |
 | 2.2 | [12 — Channels & hchan](learnings/12_channels_hchan_select.md) | `channels/*` (16 demos!) | `fundamentals/11_channels` |
 | 2.3 | [19 — Context Masterclass](learnings/19_context_interface_masterclass.md) | — | `stdlib/08_context` |
+| 2.4 | [25 — sync Primitives](learnings/25_sync_primitives_under_the_hood.md) | — | `stdlib/09_sync` |
 
 ### Phase 3 — Standard Library & Tooling
 
@@ -115,11 +116,11 @@ and enterprise architecture — the knowledge that separates "writes Go" from
 
 ```
 go-learning-guide/
-├── learnings/          ← 📖 24 deep-dive chapters (Go Under the Hood series)
+├── learnings/          ← 📖 25 deep-dive chapters (Go Under the Hood series)
 ├── cmd/concepts/       ← 🎯 67 runnable demos (go run each one)
 ├── exercises/
 │   ├── fundamentals/   ← ✏️ 13 packages — language core exercises
-│   └── stdlib/         ← ✏️ 8 packages — standard library exercises
+│   └── stdlib/         ← ✏️ 9 packages — standard library exercises
 ├── problems/           ← 🧩 200+ coding problems across 14 categories
 ├── tools/              ← 🔧 md2pdf — generates the companion PDF book
 └── utils/              ← 📦 Shared helpers (ListNode, TreeNode, etc.)
@@ -152,7 +153,7 @@ them pass.
 
 ## 📖 Go Under the Hood — Full Chapter List
 
-The [`learnings/`](learnings/) directory contains **24 chapters** organized into
+The [`learnings/`](learnings/) directory contains **25 chapters** organized into
 9 parts. Each chapter includes runtime source references, ASCII memory diagrams,
 performance cost tables, and a quick reference card.
 
