@@ -79,6 +79,7 @@ debugging and enterprise patterns.
 | 21 | [Zero Values, mallocgc, sync.Pool & duffzero](./21_zero_values_mallocgc_syncpool_duffzero.md) | Zeroing pipeline, `mallocgc` allocation paths, `mspan.needzero`, `duffzero` assembly, `sync.Pool` violation |
 | 22 | [Control Flow Under the Hood](./22_control_flow_under_the_hood.md) | Defer internals (3 implementations), range compiler rewrites (6 types), switch dispatch, Go 1.22 loop variable change |
 | 23 | [io.Reader/Writer Deep Dive](./23_io_reader_writer_deep_dive.md) | One-method contract, decorator pattern, LimitReader/MultiReader/TeeReader/Pipe, io.Copy 3 paths, sendfile(2), bufio internals, zero-copy |
+| 24 | [encoding/json Under the Hood](./24_encoding_json_under_the_hood.md) | Reflect-driven encoding, encoder cache, struct tags, Decoder vs Unmarshal, custom marshalers, RawMessage, json.Number precision |
 
 ---
 
