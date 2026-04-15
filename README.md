@@ -34,7 +34,7 @@ differ from Java/C#/Python under the hood.
 | Step | Read (learnings/) | Run (cmd/concepts/) | Implement (exercises/) |
 |------|-------------------|---------------------|----------------------|
 | 1.1 | [04 — Variables & Pointers](learnings/04_variables_pointers_declarations.md) | `basics/01-variables` | `fundamentals/01_basics` |
-| 1.2 | — | `control-flow/*` | `fundamentals/02_control_flow` |
+| 1.2 | [22 — Control Flow Under the Hood](learnings/22_control_flow_under_the_hood.md) | `control-flow/*` | `fundamentals/02_control_flow` |
 | 1.3 | [05 — Closures & funcval](learnings/05_closures_funcval_and_capture.md) | `functions/*` | `fundamentals/03_functions` |
 | 1.4 | [04 — Pointers deep dive](learnings/04_variables_pointers_declarations.md) | `pointers/*` | `fundamentals/04_pointers` |
 | 1.5 | [06 — Interfaces & iface/eface](learnings/06_interfaces_iface_eface_nil_trap.md) | `structs/*`, `interfaces/*` | `fundamentals/05_structs` then `06_interfaces` |
@@ -152,7 +152,7 @@ them pass.
 
 ## 📖 Go Under the Hood — Full Chapter List
 
-The [`learnings/`](learnings/) directory contains **21 chapters** organized into
+The [`learnings/`](learnings/) directory contains **22 chapters** organized into
 9 parts. Each chapter includes runtime source references, ASCII memory diagrams,
 performance cost tables, and a quick reference card.
 
@@ -168,7 +168,7 @@ performance cost tables, and a quick reference card.
 | VI — Runtime & Performance | 13 | GC, escape analysis, `GOGC`/`GOMEMLIMIT`, pdqsort |
 | VII — Testing & Debugging | 14-15 | Testing internals, pprof, `go tool trace`, Delve |
 | VIII — Design & Architecture | 16-18 | Design philosophy, middleware pattern, enterprise patterns |
-| IX — Cross-Cutting | 19-21 | Context, Go toolchain, zero values & `mallocgc` |
+| IX — Cross-Cutting | 19-22 | Context, Go toolchain, zero values & `mallocgc`, control flow internals |
 
 A **PDF version** can be generated with:
 ```bash

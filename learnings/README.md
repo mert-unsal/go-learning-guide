@@ -77,6 +77,7 @@ debugging and enterprise patterns.
 | 19 | [Context: The Interface Design Masterclass](./19_context_interface_masterclass.md) | 4 methods, cancelCtx/timerCtx/valueCtx chain, decorator pattern, production gotchas |
 | 20 | [Practical Go Toolchain](./20_practical_go_toolchain.md) | Go modules, go build, cross-compilation, Docker multi-stage, config/env patterns, cheatsheet |
 | 21 | [Zero Values, mallocgc, sync.Pool & duffzero](./21_zero_values_mallocgc_syncpool_duffzero.md) | Zeroing pipeline, `mallocgc` allocation paths, `mspan.needzero`, `duffzero` assembly, `sync.Pool` violation |
+| 22 | [Control Flow Under the Hood](./22_control_flow_under_the_hood.md) | Defer internals (3 implementations), range compiler rewrites (6 types), switch dispatch, Go 1.22 loop variable change |
 
 ---
 
