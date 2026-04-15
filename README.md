@@ -1,104 +1,85 @@
 # Go Under the Hood
 
-A structured, hands-on Go curriculum with **runtime-level deep dives**. No boilerplate explanations, no trivial information — only details worth mentioning.
+A structured, hands-on Go curriculum for **senior engineers**. Runtime-level deep
+dives, 100+ exercises with TDD tests, 200+ coding problems, and 67 runnable demos.
 
-This repository covers Go language fundamentals, runtime internals, algorithm patterns, 200+ coding problems, and production engineering practices.
+No boilerplate explanations. No trivial information. Every topic goes under the hood:
+what the compiler and runtime actually do, why the Go team designed it that way,
+and what breaks at scale.
 
----
-
-## 📁 Project Structure
-
-```
-go-learning-guide/
-├── learnings/       ← 📖 Go Under the Hood — 21 deep-dive chapters (start here)
-├── cmd/concepts/    ← 🎯 Runnable concept demonstrations (go run)
-├── exercises/       ← ✏️ Exercises & tests (fundamentals + stdlib)
-├── problems/        ← 200+ coding problems across 14 categories
-├── practical/       ← Real-world Go: Docker, debugging, config, performance
-├── tools/           ← md2pdf — generates the companion PDF book
-└── utils/           ← Shared helpers (ListNode, TreeNode, etc.)
-```
+> **Audience:** Engineers with 5+ years of experience transitioning to or deepening
+> mastery in Go. You know what a pointer is. You want to know how Go's escape
+> analysis decides whether it lives on the stack or the heap.
 
 ---
 
-## 📖 Go Under the Hood — Deep Dive Series
+## 🗺️ Learning Path
 
-The [`learnings/`](learnings/) folder contains **20 chapters** organized into 8 parts — runtime source code references, ASCII memory diagrams, escape analysis traces, and production gotchas.
+This repo is designed to be followed in order. Each phase builds on the previous
+one. Within each phase, **read the deep dive first**, then **run the demo**, then
+**implement the exercises** (make the failing tests pass).
 
-**[→ Full Table of Contents](learnings/README.md)**
-
-| Part | Chapters | Focus |
-|------|----------|-------|
-| I — Data Structures | 01-03 | Slices, Maps, Strings — memory layout & runtime internals |
-| II — Functions & Variables | 04-07 | Closures, pointers, `funcval`, capture-by-reference, Go 1.22 changes |
-| III — Type System | 08-10 | `iface`/`eface`, `itab` dispatch, `any` boxing, context internals |
-| IV — Error Handling | 11-12 | Error chains, `%w` wrapping, `errgroup`, panic recovery |
-| V — Concurrency | 13-15 | GMP scheduler, contiguous stacks, `hchan`, select algorithm |
-| VI — Runtime & Performance | 16-17 | GC, escape analysis, `GOGC`/`GOMEMLIMIT`, pdqsort |
-| VII — Testing & Debugging | 18-19 | Testing internals, pprof, `go tool trace`, Delve |
-| VIII — Production | 20 | Enterprise pitfalls, library comparisons, graceful shutdown |
-
-A **PDF version** (Go_Under_the_Hood.pdf) can be generated with:
-```bash
-pip install markdown pymupdf
-python tools/md2pdf.py --config tools/book_config.json
+```
+ Phase 1    Language Core         Read → Watch → Implement → Test
+ Phase 2    Concurrency           The #1 mental model shift from other languages
+ Phase 3    Standard Library      io, encoding, testing — the Go way
+ Phase 4    Problem Solving       200+ problems, solved idiomatically in Go
 ```
 
----
+### Phase 1 — Language Core
 
-## 🏗️ Hands-On Tracks
+Learn Go's data structures, type system, and value semantics. Focus on how they
+differ from Java/C#/Python under the hood.
 
-### Concept Demonstrations (`cmd/concepts/`)
+| Step | Read (learnings/) | Run (cmd/concepts/) | Implement (exercises/) |
+|------|-------------------|---------------------|----------------------|
+| 1.1 | [04 — Variables & Pointers](learnings/04_variables_pointers_declarations.md) | `basics/01-variables` | `fundamentals/01_basics` |
+| 1.2 | — | `control-flow/*` | `fundamentals/02_control_flow` |
+| 1.3 | [05 — Closures & funcval](learnings/05_closures_funcval_and_capture.md) | `functions/*` | `fundamentals/03_functions` |
+| 1.4 | [04 — Pointers deep dive](learnings/04_variables_pointers_declarations.md) | `pointers/*` | `fundamentals/04_pointers` |
+| 1.5 | [06 — Interfaces & iface/eface](learnings/06_interfaces_iface_eface_nil_trap.md) | `structs/*`, `interfaces/*` | `fundamentals/05_structs` then `06_interfaces` |
+| 1.6 | [08 — Error Chains](learnings/08_error_chains_wrapping_strategy.md), [09 — errgroup](learnings/09_concurrent_errors_errgroup.md) | `error-handling/*` | `fundamentals/07_error_handling` |
+| 1.7 | [01 — Slices: Three-Word Header](learnings/01_slices_three_word_header.md) | `arrays-slices/*` | `fundamentals/08_arrays_slices` |
+| 1.8 | [02 — Maps: Buckets & Growth](learnings/02_maps_buckets_and_growth.md) | `maps/*` | `fundamentals/09_maps` |
+| 1.9 | [03 — Strings: Immutability](learnings/03_strings_immutability_and_boxing.md) | — | — |
 
-Runnable programs demonstrating Go concepts — each is a standalone `package main`:
+### Phase 2 — Concurrency
 
-```bash
-go run cmd/concepts/basics/01-variables/main.go
-go run cmd/concepts/channels/11-worker-pool-backpressure/main.go
-go run cmd/concepts/stdlib/01-strings-strconv/main.go
-```
+This is where Go diverges most from your background. Goroutines are not threads.
+Channels are not queues. The GMP scheduler is the key to understanding everything.
 
-76+ demonstrations covering: basics, control-flow, functions, pointers, structs, interfaces, error-handling, goroutines, channels, maps, arrays-slices, packages-modules, stdlib, and debugging.
+| Step | Read (learnings/) | Run (cmd/concepts/) | Implement (exercises/) |
+|------|-------------------|---------------------|----------------------|
+| 2.1 | [10 — GMP Scheduler](learnings/10_goroutines_gmp_scheduler.md), [11 — Goroutine Stacks](learnings/11_goroutine_stacks_growth.md) | `goroutines/*` | `fundamentals/10_goroutines` |
+| 2.2 | [12 — Channels & hchan](learnings/12_channels_hchan_select.md) | `channels/*` (16 demos!) | `fundamentals/11_channels` |
+| 2.3 | [19 — Context Masterclass](learnings/19_context_interface_masterclass.md) | — | — |
 
-### Exercises (`exercises/`)
+### Phase 3 — Standard Library & Tooling
 
-#### Fundamentals (`exercises/fundamentals/`)
+Master the patterns that make Go code idiomatic: `io.Reader`/`io.Writer`, struct
+tags, table-driven tests, and the build toolchain.
 
-Each package contains `exercises.go` (implement these) and tests.
+| Step | Read (learnings/) | Run (cmd/concepts/) | Implement (exercises/) |
+|------|-------------------|---------------------|----------------------|
+| 3.1 | [03 — Strings](learnings/03_strings_immutability_and_boxing.md) | `stdlib/01-strings-strconv` | `stdlib/01_strings_strconv` |
+| 3.2 | [13 — Memory & Sorting](learnings/13_memory_gc_escape_sorting.md) | — | `stdlib/02_sort` |
+| 3.3 | — | — | `stdlib/03_builtins` |
+| 3.4 | — | — | `stdlib/04_io_files` |
+| 3.5 | — | — | `stdlib/05_encoding_json` |
+| 3.6 | — | — | `stdlib/06_math` |
+| 3.7 | [14 — Testing Internals](learnings/14_testing_internals.md) | — | `stdlib/07_testing` |
+| 3.8 | [12 — Packages & Modules](learnings/20_practical_go_toolchain.md) | `packages-modules/*` | `fundamentals/12_packages_modules` |
 
-| # | Package | Topics |
-|---|---------|--------|
-| 01 | `basics` | Variables, constants, types, zero values, fmt |
-| 02 | `control_flow` | if/else, switch, for loops, defer |
-| 03 | `functions` | Signatures, variadic, closures, multiple returns |
-| 04 | `pointers` | Address-of, dereferencing, nil, pointer receivers |
-| 05 | `structs` | Definition, embedding, tags, methods |
-| 06 | `interfaces` | Implicit impl, empty interface, type assertion |
-| 07 | `error_handling` | error type, custom errors, panic/recover |
-| 08 | `arrays_slices` | Arrays vs slices, append, copy, 2D slices |
-| 09 | `maps` | CRUD, existence check, maps of slices |
-| 10 | `goroutines` | go keyword, WaitGroup, race conditions, Mutex |
-| 11 | `channels` | Buffered/unbuffered, select, patterns |
-| 12 | `packages_modules` | Visibility, init order, go.mod, build tags |
+### Phase 4 — Problem Solving in Go
 
-#### Standard Library (`exercises/stdlib/`)
-
-| # | Package | Topics |
-|---|---------|--------|
-| 01 | `strings_strconv` | strings.Builder, strconv, unicode |
-| 02 | `sort` | sort.Slice, sort.Search, custom Less |
-| 03 | `builtins` | make, new, append, copy, len/cap, delete, panic/recover |
-| 04 | `io_files` | os.ReadFile/WriteFile, bufio.Scanner, io.Reader/Writer |
-| 05 | `encoding_json` | json.Marshal/Unmarshal, struct tags, streaming |
-| 06 | `math` | math, rand, big numbers |
-| 07 | `testing` | Table-driven tests, subtests, benchmarks |
-
-### Coding Problems (`problems/`) — 200+ Problems
+200+ problems across 14 categories. Each problem is a stub with hints — implement
+the function, run the test, make it pass. Focus on **idiomatic Go**, not just
+correctness.
 
 | # | Category | Count | Key Problems |
 |---|----------|:-----:|-------------|
-| 01 | Arrays | 25 | Two Sum, Max Subarray, Array Manipulation, Almost Sorted |
-| 02 | Strings | 18 | Valid Anagram, Group Anagrams, Encryption, Sherlock Valid String |
+| 01 | Arrays | 25 | Two Sum, Max Subarray, Array Manipulation |
+| 02 | Strings | 18 | Valid Anagram, Group Anagrams, Sherlock Valid String |
 | 03 | Linked List | 14 | Reverse, Merge Two, Detect Cycle |
 | 04 | Stacks & Queues | 10 | Valid Parens, Min Stack, Largest Rectangle |
 | 05 | Binary Search | 11 | Search Rotated, Climbing Leaderboard |
@@ -112,18 +93,88 @@ Each package contains `exercises.go` (implement these) and tests.
 | 13 | Bit Manipulation | 9 | Single Number, Counting Bits |
 | 14 | Heap | 7 | Top K Frequent, Merge K Lists |
 
-### Practical Engineering (`practical/`)
+### Bonus — Deep Dives for Production Mastery
 
-| # | Topic | What You Learn |
-|---|-------|---------------|
-| 01 | Dependency Management | go get, go mod tidy, versioning, workspaces |
-| 02 | Build & Deploy | Cross-compilation, ldflags, version injection |
-| 03 | Docker | Multi-stage builds, docker-compose, hot reload |
-| 04 | Debugging | Delve, pprof, race detector, slog |
-| 05 | Config | os.Getenv, JSON/YAML config, 12-factor |
-| 06 | Concurrency Patterns | Worker pool, graceful shutdown |
-| 07 | Performance Tuning | Escape analysis, sync.Pool, struct padding, GC pressure |
-| 08 | Error Recovery | defer/recover, retry with backoff, context-aware retry |
+Read these after completing Phases 1-3. They cover runtime internals, debugging,
+and enterprise architecture — the knowledge that separates "writes Go" from
+"engineers production Go systems."
+
+| Chapter | Topic | When to Read |
+|---------|-------|-------------|
+| [07 — any Type & Boxing](learnings/07_any_type_boxing_and_cost.md) | `convT` family, `staticuint64s`, generics vs `any` | After interfaces (1.5) |
+| [13 — Memory, GC & Escape Analysis](learnings/13_memory_gc_escape_sorting.md) | Stack vs heap, tri-color GC, `GOGC`/`GOMEMLIMIT` | After concurrency (Phase 2) |
+| [15 — Debugging & Profiling](learnings/15_debugging_profiling.md) | pprof, `go tool trace`, Delve, `GODEBUG` | When debugging real code |
+| [16 — Go Design Philosophy](learnings/16_go_design_philosophy.md) | How immutability, interfaces, CSP form one system | When you want the "why" |
+| [17 — Middleware Pattern](learnings/17_middleware_pattern.md) | Function types, `HandlerFunc`, closure capture | Before building HTTP services |
+| [18 — Production Patterns](learnings/18_production_patterns_enterprise.md) | Top 15 pitfalls, DI, graceful shutdown, Docker | Before deploying to production |
+| [21 — Zero Values & mallocgc](learnings/21_zero_values_mallocgc_syncpool_duffzero.md) | Zeroing pipeline, `sync.Pool`, `duffzero` assembly | For runtime internals mastery |
+
+---
+
+## 📁 Repository Structure
+
+```
+go-learning-guide/
+├── learnings/          ← 📖 21 deep-dive chapters (Go Under the Hood series)
+├── cmd/concepts/       ← 🎯 67 runnable demos (go run each one)
+├── exercises/
+│   ├── fundamentals/   ← ✏️ 12 packages — language core exercises
+│   └── stdlib/         ← ✏️ 7 packages — standard library exercises
+├── problems/           ← 🧩 200+ coding problems across 14 categories
+├── tools/              ← 🔧 md2pdf — generates the companion PDF book
+└── utils/              ← 📦 Shared helpers (ListNode, TreeNode, etc.)
+```
+
+## 📐 How Exercises Work
+
+Every exercise follows the TDD pattern: **the tests are the spec**.
+
+1. Open `exercises.go` — you'll see stub functions that return zero values
+2. Read the function signature, comments, and the corresponding test file
+3. Implement the function to make the tests pass
+4. Run with the race detector — always
+
+```bash
+# Run one package
+go test -race -v ./exercises/fundamentals/06_interfaces/
+
+# Run all exercises
+go test -race ./exercises/...
+
+# Run all problems
+go test -race ./problems/...
+```
+
+All tests will **FAIL** on a fresh clone. That's by design. Your job is to make
+them pass.
+
+---
+
+## 📖 Go Under the Hood — Full Chapter List
+
+The [`learnings/`](learnings/) directory contains **21 chapters** organized into
+9 parts. Each chapter includes runtime source references, ASCII memory diagrams,
+performance cost tables, and a quick reference card.
+
+**[→ Full Table of Contents](learnings/README.md)**
+
+| Part | Chapters | Focus |
+|------|----------|-------|
+| I — Data Structures | 01-03 | Slices, Maps, Strings — memory layout & runtime internals |
+| II — Language Mechanics | 04-05 | Variables, pointers, closures, `funcval`, capture semantics |
+| III — Type System | 06-07 | `iface`/`eface`, `itab` dispatch, `any` boxing cost |
+| IV — Error Handling | 08-09 | Error chains, `%w` wrapping, `errgroup`, panic recovery |
+| V — Concurrency | 10-12 | GMP scheduler, goroutine stacks, `hchan`, select algorithm |
+| VI — Runtime & Performance | 13 | GC, escape analysis, `GOGC`/`GOMEMLIMIT`, pdqsort |
+| VII — Testing & Debugging | 14-15 | Testing internals, pprof, `go tool trace`, Delve |
+| VIII — Design & Architecture | 16-18 | Design philosophy, middleware pattern, enterprise patterns |
+| IX — Cross-Cutting | 19-21 | Context, Go toolchain, zero values & `mallocgc` |
+
+A **PDF version** can be generated with:
+```bash
+pip install markdown pymupdf
+python tools/md2pdf.py --config tools/book_config.json
+```
 
 ---
 
@@ -131,7 +182,7 @@ Each package contains `exercises.go` (implement these) and tests.
 
 ```bash
 go test ./...                              # run everything
-go test -race ./...                        # with race detector (mandatory)
+go test -race ./...                        # with race detector (MANDATORY)
 go test -cover ./...                       # with coverage
 go test -v -run TestName ./path/           # single test, verbose
 go test -bench=. -benchmem ./path/         # benchmarks + allocations
@@ -141,10 +192,12 @@ go test -bench=. -benchmem ./path/         # benchmarks + allocations
 
 ```bash
 go build -gcflags='-m' ./path/             # escape analysis
+go build -gcflags='-m -m' ./path/          # verbose escape analysis with reasons
 go build -gcflags='-S' ./path/             # assembly output
 go test -cpuprofile=cpu.out -bench=.       # CPU profile
 go tool pprof cpu.out                      # analyze: top, list, web
 GODEBUG=gctrace=1 ./app                    # GC trace
+GODEBUG=schedtrace=1000 ./app              # scheduler state every second
 ```
 
 ---
@@ -152,9 +205,10 @@ GODEBUG=gctrace=1 ./app                    # GC trace
 ## 🔧 Setup
 
 ```bash
+git clone https://github.com/mert-unsal/go-learning-guide.git
 cd go-learning-guide
 go build ./...        # verify everything compiles
-go test ./...         # run all tests
+go test ./...         # all tests FAIL — that's correct, you implement them
 ```
 
-> **Go version:** 1.25.7+ | **Module:** `go-learning-guide` | **Dependencies:** stdlib only
+> **Go version:** 1.24+ | **Module:** `go-learning-guide` | **Dependencies:** stdlib only
