@@ -41,7 +41,7 @@ differ from Java/C#/Python under the hood.
 | 1.6 | [08 — Error Chains](learnings/08_error_chains_wrapping_strategy.md), [09 — errgroup](learnings/09_concurrent_errors_errgroup.md) | `error-handling/*` | `fundamentals/07_error_handling` |
 | 1.7 | [01 — Slices: Three-Word Header](learnings/01_slices_three_word_header.md) | `arrays-slices/*` | `fundamentals/08_arrays_slices` |
 | 1.8 | [02 — Maps: Buckets & Growth](learnings/02_maps_buckets_and_growth.md) | `maps/*` | `fundamentals/09_maps` |
-| 1.9 | [03 — Strings: Immutability](learnings/03_strings_immutability_and_boxing.md) | — | — |
+| 1.9 | [03 — Strings: Immutability](learnings/03_strings_immutability_and_boxing.md) | `stdlib/01-strings-strconv` | `fundamentals/13_strings` |
 
 ### Phase 2 — Concurrency
 
@@ -118,7 +118,7 @@ go-learning-guide/
 ├── learnings/          ← 📖 22 deep-dive chapters (Go Under the Hood series)
 ├── cmd/concepts/       ← 🎯 67 runnable demos (go run each one)
 ├── exercises/
-│   ├── fundamentals/   ← ✏️ 12 packages — language core exercises
+│   ├── fundamentals/   ← ✏️ 13 packages — language core exercises
 │   └── stdlib/         ← ✏️ 7 packages — standard library exercises
 ├── problems/           ← 🧩 200+ coding problems across 14 categories
 ├── tools/              ← 🔧 md2pdf — generates the companion PDF book
