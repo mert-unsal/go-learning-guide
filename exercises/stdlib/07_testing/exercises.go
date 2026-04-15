@@ -1,41 +1,118 @@
 package testing_pkg
+
+import (
+"errors"
+"fmt"
+"sort"
+"strings"
+)
+
 // ============================================================
-// EXERCISES â€” 07 testing
+// EXERCISES -- 07 testing
 // ============================================================
-// This package teaches Go testing patterns by BEING tested.
-// All functions below have known, testable behaviors.
-// Exercise 1:
-// Add returns the sum of a and b.
-// The test demonstrates the TABLE-DRIVEN pattern with t.Run subtests.
+// 12 exercises teaching Go testing patterns BY example.
+// Each exercise function is designed to demonstrate a specific
+// testing technique in the companion test file.
+
+// Exercise 1: Add -- table-driven tests with t.Run subtests
+
 func AddEx(a, b int) int {
-// TODO: return a + b
 return 0
 }
-// Exercise 2:
-// Divide returns a/b and an error if b==0.
-// The test demonstrates testing BOTH the happy path AND error cases.
+
+// Exercise 2: Divide -- testing error paths
+// Return a/b, or an error if b == 0.
+
 func DivideEx(a, b float64) (float64, error) {
-// TODO: return error if b==0, else a/b
 return 0, nil
 }
-// Exercise 3:
-// Max returns the largest value in nums. Panics if nums is empty.
-// The test demonstrates testing PANIC behavior with recover.
+
+// Exercise 3: Max -- testing panic behavior with recover
+// Return the largest element. Panic if slice is empty.
+
 func MaxEx(nums []int) int {
-// TODO: panic if empty, else find max
 return 0
 }
-// Exercise 4:
-// Contains reports whether target exists in s.
-// The test demonstrates a BENCHMARK using b.N.
+
+// Exercise 4: Contains -- benchmarking with b.N
+// Linear search: return true if target exists in s.
+
 func ContainsEx(s []int, target int) bool {
-// TODO: linear search
 return false
 }
-// Exercise 5:
-// FizzBuzz returns the FizzBuzz string for n.
-// The test demonstrates a PARALLEL subtest with t.Parallel().
+
+// Exercise 5: FizzBuzz -- parallel subtests with t.Parallel()
+// Return "FizzBuzz" (div 15), "Fizz" (div 3), "Buzz" (div 5), or strconv.Itoa(n).
+
 func FizzBuzzEx(n int) string {
-// TODO: "FizzBuzz", "Fizz", "Buzz", or strconv.Itoa(n)
 return ""
 }
+
+// Exercise 6: Reverse -- testing with golden values
+// Reverse a string. Handle multi-byte runes correctly.
+
+func ReverseEx(s string) string {
+return ""
+}
+
+// Exercise 7: IsSorted -- test helper function pattern
+// Return true if the slice is sorted in ascending order.
+
+func IsSortedEx(nums []int) bool {
+return false
+}
+
+// Exercise 8: ParseKeyValue -- testing error types with errors.As
+// Parse "key=value" string. Return a ParseError if format is invalid.
+
+type ParseError struct {
+Input   string
+Message string
+}
+
+func (e *ParseError) Error() string {
+return fmt.Sprintf("parse %q: %s", e.Input, e.Message)
+}
+
+func ParseKeyValue(s string) (key, value string, err error) {
+return "", "", nil
+}
+
+// Exercise 9: SortStrings -- testing with comparison (go-cmp style)
+// Return a sorted copy of the input slice. Do NOT modify the original.
+
+func SortStringsEx(input []string) []string {
+return nil
+}
+
+// Exercise 10: Retry -- testing time-dependent behavior
+// Call fn up to maxAttempts times. Return nil on first success,
+// or the last error if all attempts fail. Sleep between retries
+// is injected via the sleep function parameter (testable!).
+
+func Retry(maxAttempts int, sleep func(), fn func() error) error {
+return nil
+}
+
+// Exercise 11: HTTPStatusText -- testing with map-based test cases
+// Return the standard HTTP status text for a code.
+// Return "" for unknown codes.
+
+func HTTPStatusText(code int) string {
+return ""
+}
+
+// Exercise 12: Transform -- testing with function injection
+// Apply fn to each element of input, return new slice.
+
+func Transform(input []string, fn func(string) string) []string {
+return nil
+}
+
+// Keep imports used
+var (
+_ = errors.New
+_ = fmt.Sprintf
+_ = sort.Strings
+_ = strings.Split
+)
