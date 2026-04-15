@@ -70,6 +70,7 @@ tags, table-driven tests, and the build toolchain.
 | 3.6 | — | — | `stdlib/06_math` |
 | 3.7 | [14 — Testing Internals](learnings/14_testing_internals.md) | — | `stdlib/07_testing` |
 | 3.8 | [12 — Packages & Modules](learnings/20_practical_go_toolchain.md) | `packages-modules/*` | `fundamentals/12_packages_modules` |
+| 3.9 | [27 — net/http Under the Hood](learnings/27_net_http_under_the_hood.md) | — | `stdlib/10_net_http` |
 
 ### Phase 4 — Advanced Topics
 
@@ -161,7 +162,7 @@ them pass.
 
 ## 📖 Go Under the Hood — Full Chapter List
 
-The [`learnings/`](learnings/) directory contains **26 chapters** organized into
+The [`learnings/`](learnings/) directory contains **27 chapters** organized into
 10 parts. Each chapter includes runtime source references, ASCII memory diagrams,
 performance cost tables, and a quick reference card.
 
@@ -178,7 +179,7 @@ performance cost tables, and a quick reference card.
 | VII — Testing & Debugging | 14-15 | Testing internals, pprof, `go tool trace`, Delve |
 | VIII — Design & Architecture | 16-18 | Design philosophy, middleware pattern, enterprise patterns |
 | IX — Cross-Cutting | 19-22 | Context, Go toolchain, zero values & `mallocgc`, control flow internals |
-| X — Advanced Topics | 23-26 | io.Reader/Writer, encoding/json, sync primitives, generics internals |
+| X — Advanced Topics | 23-27 | io.Reader/Writer, encoding/json, sync primitives, generics, net/http internals |
 
 A **PDF version** can be generated with:
 ```bash
