@@ -115,7 +115,7 @@ and enterprise architecture — the knowledge that separates "writes Go" from
 
 ```
 go-learning-guide/
-├── learnings/          ← 📖 21 deep-dive chapters (Go Under the Hood series)
+├── learnings/          ← 📖 22 deep-dive chapters (Go Under the Hood series)
 ├── cmd/concepts/       ← 🎯 67 runnable demos (go run each one)
 ├── exercises/
 │   ├── fundamentals/   ← ✏️ 12 packages — language core exercises
