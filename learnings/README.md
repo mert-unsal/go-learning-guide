@@ -81,6 +81,7 @@ debugging and enterprise patterns.
 | 23 | [io.Reader/Writer Deep Dive](./23_io_reader_writer_deep_dive.md) | One-method contract, decorator pattern, LimitReader/MultiReader/TeeReader/Pipe, io.Copy 3 paths, sendfile(2), bufio internals, zero-copy |
 | 24 | [encoding/json Under the Hood](./24_encoding_json_under_the_hood.md) | Reflect-driven encoding, encoder cache, struct tags, Decoder vs Unmarshal, custom marshalers, RawMessage, json.Number precision |
 | 25 | [sync Primitives Under the Hood](./25_sync_primitives_under_the_hood.md) | Mutex spinning/starvation, RWMutex, WaitGroup, Once fast/slow path, Pool per-P cache, sync.Map dual-store, Cond, atomics |
+| 26 | [Generics Under the Hood](./26_generics_under_the_hood.md) | GC shape stenciling, dictionary passing, constraints, type inference, when NOT to use generics, Java/C#/Rust comparison |
 
 ---
 

@@ -71,7 +71,15 @@ tags, table-driven tests, and the build toolchain.
 | 3.7 | [14 — Testing Internals](learnings/14_testing_internals.md) | — | `stdlib/07_testing` |
 | 3.8 | [12 — Packages & Modules](learnings/20_practical_go_toolchain.md) | `packages-modules/*` | `fundamentals/12_packages_modules` |
 
-### Phase 4 — Problem Solving in Go
+### Phase 4 — Advanced Topics
+
+Deep dives into generics, escape analysis, and advanced concurrency patterns.
+
+| Step | Read (learnings/) | Implement (exercises/) |
+|------|-------------------|----------------------|
+| 4.1 | [26 — Generics Under the Hood](learnings/26_generics_under_the_hood.md) | `advanced/01_generics` |
+
+### Phase 5 — Problem Solving in Go
 
 200+ problems across 14 categories. Each problem is a stub with hints — implement
 the function, run the test, make it pass. Focus on **idiomatic Go**, not just
@@ -153,8 +161,8 @@ them pass.
 
 ## 📖 Go Under the Hood — Full Chapter List
 
-The [`learnings/`](learnings/) directory contains **25 chapters** organized into
-9 parts. Each chapter includes runtime source references, ASCII memory diagrams,
+The [`learnings/`](learnings/) directory contains **26 chapters** organized into
+10 parts. Each chapter includes runtime source references, ASCII memory diagrams,
 performance cost tables, and a quick reference card.
 
 **[→ Full Table of Contents](learnings/README.md)**
@@ -170,6 +178,7 @@ performance cost tables, and a quick reference card.
 | VII — Testing & Debugging | 14-15 | Testing internals, pprof, `go tool trace`, Delve |
 | VIII — Design & Architecture | 16-18 | Design philosophy, middleware pattern, enterprise patterns |
 | IX — Cross-Cutting | 19-22 | Context, Go toolchain, zero values & `mallocgc`, control flow internals |
+| X — Advanced Topics | 23-26 | io.Reader/Writer, encoding/json, sync primitives, generics internals |
 
 A **PDF version** can be generated with:
 ```bash
