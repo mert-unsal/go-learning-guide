@@ -910,7 +910,7 @@ case <-time.After(delay):
 
 Go makes you write these patterns yourself — ~10-20 lines each. No framework needed. The code **is** the documentation. Every engineer on the team can read the retry logic, understand the backoff formula, and modify it without learning a framework's annotation magic.
 
-> See [Chapter 8](./08_error_chains_wrapping_sentinel.md) for error wrapping fundamentals and [Chapter 9](./09_concurrent_errors_errgroup.md) for concurrent error handling.
+> See [Chapter 8](./08_error_chains_wrapping_strategy.md) for error wrapping fundamentals and [Chapter 9](./09_concurrent_errors_errgroup.md) for concurrent error handling.
 
 ---
 
@@ -943,7 +943,7 @@ Go makes you write these patterns yourself — ~10-20 lines each. No framework n
 
 ## Related Chapters
 
-- [Chapter 8 — Error Chains & Wrapping](./08_error_chains_wrapping_sentinel.md) — error wrapping, sentinel errors, `errors.Is`/`errors.As`
+- [Chapter 8 — Error Chains & Wrapping](./08_error_chains_wrapping_strategy.md) — error wrapping, sentinel errors, `errors.Is`/`errors.As`
 - [Chapter 9 — Concurrent Errors & errgroup](./09_concurrent_errors_errgroup.md) — error handling across goroutines
 - [Chapter 12 — Channels, hchan & Select](./12_channels_hchan_select.md) — channel internals powering worker pools
 - [Chapter 13 — Memory, GC & Escape Analysis](./13_memory_gc_escape_sorting.md) — build flags for escape analysis (`-gcflags="-m"`)
