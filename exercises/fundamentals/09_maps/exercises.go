@@ -3,6 +3,19 @@ package maps
 // ============================================================
 // EXERCISES — 09 Maps
 // ============================================================
+//
+// Go maps are hash tables backed by runtime.hmap: bucket arrays,
+// tophash optimization, load factor 6.5, incremental evacuation.
+//
+// These exercises test your understanding of:
+//   - Basic map patterns: frequency, grouping, seen-set (§1-6)
+//   - Go-specific map behavior: nil safety, comma-ok, iteration order (§7-12)
+//
+// Exercises 1-6:  Map algorithms — frequency, grouping, sets
+// Exercises 7-12: Go map internals — nil maps, comma-ok, merge, invert
+//
+// Deep dive: learnings/02_maps_buckets_and_growth.md
+// ============================================================
 
 // Exercise 1:
 // CharFrequency counts the frequency of each character in a string.
@@ -65,3 +78,96 @@ func WordCount(sentence string) map[string]int {
 	// TODO: split sentence into words, count each
 	return nil
 }
+
+// ── Go Map Internals — Exercises 7-12 ──
+
+// Exercise 7:
+// NilMapRead safely reads a key from a map that might be nil.
+// Returns the value and whether the key exists (comma-ok pattern).
+//
+// KEY INSIGHT: Reading from a nil map is safe — returns zero value.
+// WRITING to a nil map panics! This is a common Go gotcha.
+//
+//   var m map[string]int  // nil
+//   v := m["key"]         // v = 0, no panic
+//   m["key"] = 1          // PANIC: assignment to entry in nil map
+//
+// The comma-ok pattern distinguishes "key missing" from "key exists with zero value":
+//   v, ok := m["key"]     // ok=false means key missing, ok=true means key exists
+func NilMapRead(m map[string]int, key string) (value int, exists bool) {
+	// TODO: use comma-ok pattern: v, ok := m[key]
+	return 0, false
+}
+
+// Exercise 8:
+// InvertMap swaps keys and values. Since multiple keys may map to the
+// same value, the result is map[int][]string.
+//
+// LESSON: Map inversion is a common transform. When values aren't unique,
+// the inverted map must hold slices. append(nil, x) works — no need to
+// pre-initialize the slice.
+//
+// Example: {"a":1, "b":2, "c":1} → {1:["a","c"], 2:["b"]}
+func InvertMap(m map[string]int) map[int][]string {
+	// TODO: for each k,v → append k to result[v]
+	return nil
+}
+
+// Exercise 9:
+// MergeMaps merges b into a, using the resolve function for key collisions.
+// Returns a new map (does not modify a or b).
+//
+// LESSON: Go maps don't have a built-in merge. You iterate and decide.
+// The resolve function receives (valueFromA, valueFromB) and returns the winner.
+//
+// Example: MergeMaps({"x":1}, {"x":2, "y":3}, func(a,b int) int { return a+b })
+//          → {"x":3, "y":3}
+func MergeMaps(a, b map[string]int, resolve func(int, int) int) map[string]int {
+	// TODO: copy a into result, then merge b using resolve for collisions
+	return nil
+}
+
+// Exercise 10:
+// SetDifference returns keys that are in set a but NOT in set b.
+// Both maps represent sets (the bool value doesn't matter — only key existence).
+// Return the result sorted alphabetically.
+//
+// LESSON: map[T]bool is the idiomatic Go "set". Some use map[T]struct{}
+// for zero-byte values, but map[T]bool is more readable.
+// Checking membership: if set[key] { ... } — clean and idiomatic.
+//
+// Example: SetDifference({"go":true, "java":true, "python":true},
+//                        {"java":true}) → ["go", "python"]
+func SetDifference(a, b map[string]bool) []string {
+	// TODO: iterate a, skip keys in b, collect and sort the rest
+	return nil
+}
+
+// Exercise 11:
+// UniqueValues returns all unique values from a map, sorted.
+//
+// LESSON: Extracting values requires iteration (no built-in Values() method).
+// Use a set (map[int]bool) to deduplicate, then sort for deterministic output.
+// Map iteration order is RANDOM in Go — you must sort for consistent results.
+//
+// Example: UniqueValues({"a":3, "b":1, "c":3, "d":2}) → [1, 2, 3]
+func UniqueValues(m map[string]int) []int {
+	// TODO: collect values into a set, convert to slice, sort
+	return nil
+}
+
+// Exercise 12:
+// MapEqual reports whether two maps have the same keys and values.
+//
+// KEY INSIGHT: Go maps cannot be compared with == (compile error, except nil).
+// You must compare manually: same length, then check each key-value pair.
+//
+// This is why maps.Equal exists in Go 1.21+ (golang.org/x/exp/maps before that).
+// Implement it manually to understand the check.
+//
+// Example: MapEqual({"a":1, "b":2}, {"b":2, "a":1}) → true
+func MapEqual(a, b map[string]int) bool {
+	// TODO: check length, then iterate a and verify each key exists in b with same value
+	return false
+}
+

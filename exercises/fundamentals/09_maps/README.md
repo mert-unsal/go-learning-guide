@@ -1,117 +1,71 @@
 # 📦 Module 09 — Maps
 
-> **Topics covered:** Map creation · Iteration · Existence checks · Frequency counting · Grouping · Anagram detection
+> **Topics covered:** hash tables · nil map safety · comma-ok pattern · map-as-set · iteration randomness · merge patterns
+>
+> **Deep dive:** [Chapter 02 — Maps: Buckets, Growth & the Never-Shrink Truth](../../../learnings/02_maps_buckets_and_growth.md)
 
 ---
 
 ## 🗺️ Learning Path
 
 ```
-1. Read concepts.go        ← Theory with runnable examples
-2. Open exercises.go       ← Implement the TODO functions yourself
-3. Run the tests below     ← Instant feedback on your code
-4. Stuck? Open solutions.go ← Only after you have tried!
+1. Read learnings/02_maps_buckets_and_growth.md   ← How runtime.hmap works under the hood
+2. Run cmd/concepts/maps/*                        ← See map behavior in action
+3. Open exercises.go                               ← Implement the 12 exercises
+4. Run go test -race -v ./...                      ← Make them all pass
 ```
 
 ---
 
 ## 📚 What You Will Learn
 
-| Concept | Where |
-|---------|-------|
-| `make(map[K]V)` and map literals | `concepts.go` |
-| Safe existence check `v, ok := m[key]` | Exercise 3 — `SafeGet` in 07 |
-| Iterating with `for range` | Exercise 1 — `CharFrequency` |
-| Grouping data with maps | Exercise 2 — `GroupByFirstChar` |
-| Frequency counting | Exercise 3 — `TopTwoFrequent` |
-| Using a map as a "seen" set | Exercise 5 — `FirstDuplicate` |
-| Word counting | Exercise 6 — `WordCount` |
+| Concept | Exercise | Under the Hood |
+|---------|----------|---------------|
+| Frequency counting with maps | Ex 1 | Zero value of int is 0 → `m[key]++` works on new keys |
+| Map of slices (grouping) | Ex 2 | `append(nil, x)` works — nil slice is valid |
+| Two-pass frequency scan | Ex 3 | Build frequency map, then scan for top-N |
+| Anagram detection | Ex 4 | Count up / count down pattern |
+| Map as "seen" set | Ex 5 | `map[T]bool` vs `map[T]struct{}` tradeoff |
+| Word frequency | Ex 6 | `strings.Fields` vs `strings.Split` |
+| **Nil map safety** | Ex 7 | Reading nil map = safe. Writing = **panic** |
+| **Map inversion** | Ex 8 | Multiple keys → same value → `map[V][]K` |
+| **Merge with collision resolution** | Ex 9 | No built-in merge — iterate and decide |
+| **Set difference** | Ex 10 | `map[T]bool` as set, `if b[key]` for membership |
+| **Unique values + sort** | Ex 11 | Map iteration order is **random** — sort for determinism |
+| **Map equality** | Ex 12 | Maps can't use `==` — must check manually |
 
 ---
 
 ## ✏️ Exercises
 
-Open `exercises.go` and implement each function:
-
 | # | Function | What to implement |
 |---|----------|------------------|
-| 1 | `CharFrequency(s string) map[rune]int` | Count each character in a string |
-| 2 | `GroupByFirstChar(words []string) map[byte][]string` | Group words by first letter |
-| 3 | `TopTwoFrequent(nums []int) []int` | Find the two most frequent numbers |
-| 4 | `IsAnagram(s, t string) bool` | Check if two strings are anagrams |
-| 5 | `FirstDuplicate(nums []int) int` | Find the first number that appears twice |
-| 6 | `WordCount(sentence string) map[string]int` | Count occurrences of each word |
+| 1 | `CharFrequency(s)` | Count each character in a string |
+| 2 | `GroupByFirstChar(words)` | Group words by first letter |
+| 3 | `TopTwoFrequent(nums)` | Find the two most frequent numbers |
+| 4 | `IsAnagram(s, t)` | Check if two strings are anagrams |
+| 5 | `FirstDuplicate(nums)` | First number that appears twice |
+| 6 | `WordCount(sentence)` | Count word occurrences |
+| 7 | `NilMapRead(m, key)` | **Comma-ok on nil map** |
+| 8 | `InvertMap(m)` | **Swap keys and values** |
+| 9 | `MergeMaps(a, b, resolve)` | **Merge with collision function** |
+| 10 | `SetDifference(a, b)` | **Keys in a but not in b** |
+| 11 | `UniqueValues(m)` | **Deduplicate and sort values** |
+| 12 | `MapEqual(a, b)` | **Manual equality (no == for maps)** |
 
 ---
 
 ## 🧪 Run Tests
 
-> ⚠️ The `./exercises/fundamentals/...` paths work from the **project root** only.  
-> If you are inside this folder, use `go test . -v` instead.
-
-### From project root:
 ```bash
-go test ./exercises/fundamentals/09_maps/... -v
+go test -race -v ./exercises/fundamentals/09_maps/
 ```
-
-### From inside this folder:
-```bash
-go test . -v
-```
-
-### Run a single test (from inside this folder):
-```bash
-go test . -v -run TestCharFrequency
-go test . -v -run TestGroupByFirstChar
-go test . -v -run TestTopTwoFrequent
-go test . -v -run TestIsAnagram
-go test . -v -run TestFirstDuplicate
-go test . -v -run TestWordCount
-```
-
----
-
-## 💡 Key Hints
-
-<details>
-<summary>Exercise 1 — CharFrequency hint</summary>
-
-`for range` on a string gives `(index, rune)` pairs:
-```go
-freq := make(map[rune]int)
-for _, ch := range s {
-    freq[ch]++   // safe — zero value of int is 0
-}
-return freq
-```
-</details>
-
-<details>
-<summary>Exercise 4 — IsAnagram hint</summary>
-
-Count chars in `s`, subtract for `t`, check everything is zero:
-```go
-counts := make(map[rune]int)
-for _, ch := range s { counts[ch]++ }
-for _, ch := range t { counts[ch]-- }
-for _, v := range counts {
-    if v != 0 { return false }
-}
-return true
-```
-</details>
-
-<details>
-<summary>Important: Map zero value</summary>
-
-If you access a key that doesn't exist, Go returns the **zero value** (0 for int, "" for string). This means `m[key]++` works even for new keys — no need to check if the key exists first!
-</details>
 
 ---
 
 ## ✅ Done? Next Step
 
 ```bash
-go test ./exercises/fundamentals/10_goroutines/... -v
+go test -race -v ./exercises/fundamentals/10_goroutines/
 ```
 
