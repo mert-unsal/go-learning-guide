@@ -79,6 +79,9 @@ Deep dives into generics, escape analysis, and advanced concurrency patterns.
 | Step | Read (learnings/) | Implement (exercises/) |
 |------|-------------------|----------------------|
 | 4.1 | [26 — Generics Under the Hood](learnings/26_generics_under_the_hood.md) | `advanced/01_generics` |
+| 4.2 | [13 — Memory & Escape Analysis](learnings/13_memory_gc_escape_sorting.md) | `advanced/02_escape_analysis` |
+| 4.3 | [10](learnings/10_goroutines_gmp_scheduler.md), [12](learnings/12_channels_hchan_select.md), [25](learnings/25_sync_primitives_under_the_hood.md) | `advanced/03_concurrency_patterns` |
+| 4.4 | [27 — net/http Under the Hood](learnings/27_net_http_under_the_hood.md) | `advanced/04_middleware` |
 
 ### Phase 5 — Problem Solving in Go
 
