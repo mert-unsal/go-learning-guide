@@ -1,33 +1,37 @@
 # 📦 Module 02 — Control Flow
 
-> **Topics covered:** if/else · switch · for loops · range · defer · break/continue
+> **Topics covered:** defer internals · range rewrites · switch dispatch · labeled breaks · Go 1.22 changes
+>
+> **Deep dive:** [Chapter 22 — Control Flow Under the Hood](../../../learnings/22_control_flow_under_the_hood.md)
 
 ---
 
 ## 🗺️ Learning Path
 
 ```
-1. Read concepts.go        ← Theory with runnable examples
-2. Open exercises.go       ← Implement the TODO functions yourself
-3. Run the tests below     ← Instant feedback on your code
-4. Stuck? Open solutions.go ← Only after you have tried!
+1. Read learnings/22_control_flow_under_the_hood.md    ← How the compiler transforms your code
+2. Run cmd/concepts/control-flow/*                     ← See it in action
+3. Open exercises.go                                   ← Implement the 12 exercises
+4. Run go test -race -v ./...                          ← Make them all pass
 ```
 
 ---
 
 ## 📚 What You Will Learn
 
-| Concept | Where |
-|---------|-------|
-| `if / else if / else` | `concepts.go` |
-| `switch` (no fallthrough by default) | `concepts.go` + Exercise 1 |
-| `for` loop (the only loop in Go!) | `concepts.go` + Exercise 2 |
-| `for range` over strings/slices | `concepts.go` + Exercise 3 |
-| Early return & `break` inside loops | Exercise 4 |
-| `defer` — LIFO execution order | `concepts.go` + Exercise 5 |
-| `defer` — arguments evaluated at defer time | `concepts.go` → `DemonstrateDefereArgumentEvaluation()` |
-| `defer` — can modify named return values | `concepts.go` → `deferWithNamedReturn()` |
-| `defer` — loop gotcha & the fix | `concepts.go` → `deferInLoop()` |
+| Concept | Exercise | Under the Hood |
+|---------|----------|---------------|
+| `switch` (no fallthrough by default) | Ex 1 | Jump table vs linear scan |
+| `for` loop (the only loop in Go) | Ex 2 | Bounds check elimination |
+| `for range` over strings | Ex 3, 9 | Rune decoding, byte offset vs rune index |
+| Early return & `break` inside loops | Ex 4 | — |
+| `defer` — LIFO execution order | Ex 5 | `_defer` linked list on `runtime.g` |
+| `defer` — named return modification | Ex 6 | Return value set → defer runs → caller gets it |
+| `defer` — argument evaluation timing | Ex 7 | Args evaluated at defer-time, not execution-time |
+| `range` — value copy semantics | Ex 8 | Compiler rewrites `v := slice[i]` (copy) |
+| Labeled break for nested loops | Ex 10 | `break outer` exits the named loop |
+| Type switch | Ex 11 | Pointer comparison on `_type` descriptor |
+| `range` over integer (Go 1.22+) | Ex 12 | Rewrites to `for i := 0; i < n; i++` |
 
 ---
 
@@ -37,129 +41,32 @@ Open `exercises.go` and implement each function:
 
 | # | Function | What to implement |
 |---|----------|------------------|
-| 1 | `FizzBuzzSwitch(n int) string` | Classic FizzBuzz — must use `switch`, not `if/else` |
-| 2 | `SumTo(n int) int` | Sum integers 1..n using a `for` loop |
-| 3 | `CountVowels(s string) int` | Count vowels a,e,i,o,u using `for range` (case-insensitive) |
-| 4 | `IsPrime(n int) bool` | Return true if n is prime — use early `return` inside loop |
-| 5 | `DeferOrder() []string` | Return `["third","second","first"]` — demonstrates defer LIFO |
+| 1 | `FizzBuzzSwitch(n)` | Classic FizzBuzz using `switch` |
+| 2 | `SumTo(n)` | Sum 1..n with a `for` loop |
+| 3 | `CountVowels(s)` | Count vowels using `for range` |
+| 4 | `IsPrime(n)` | Primality check with early return |
+| 5 | `DeferOrder()` | Predict LIFO defer execution order |
+| 6 | `DeferModifyReturn(n)` | **Named return + defer modification** |
+| 7 | `DeferArgCapture()` | **Defer argument evaluation timing** |
+| 8 | `DoubleScores(players)` | **Range value copy trap** — modify originals |
+| 9 | `RuneValues(s)` | **Range over string** — runes not bytes |
+| 10 | `FindInMatrix(matrix, target)` | **Labeled break** in nested loops |
+| 11 | `TypeDescribe(v)` | **Type switch** on interface values |
+| 12 | `Squares(n)` | **Range over int** (Go 1.22+) |
 
 ---
 
 ## 🧪 Run Tests
 
-> ⚠️ **Important:** The `./exercises/fundamentals/...` paths work from the **project root** only.  
-> If you are inside this folder, use `go test . -v` instead.
-
-### From project root:
 ```bash
-go test ./exercises/fundamentals/02_control_flow/... -v
+go test -race -v ./exercises/fundamentals/02_control_flow/
 ```
-
-### From inside this folder:
-```bash
-go test . -v
-```
-
-### Run a single test (from project root):
-```bash
-go test ./exercises/fundamentals/02_control_flow/... -v -run TestFizzBuzzSwitch
-go test ./exercises/fundamentals/02_control_flow/... -v -run TestSumTo
-go test ./exercises/fundamentals/02_control_flow/... -v -run TestCountVowels
-go test ./exercises/fundamentals/02_control_flow/... -v -run TestIsPrime
-go test ./exercises/fundamentals/02_control_flow/... -v -run TestDeferOrder
-```
-
-### From inside this folder:
-```bash
-go test . -v -run TestFizzBuzzSwitch
-```
-
----
-
-## 💡 Key Hints
-
-<details>
-<summary>Exercise 1 — FizzBuzz with switch hint</summary>
-
-Go's `switch` can take an expression:
-```go
-switch {
-case n%15 == 0:
-    return "FizzBuzz"
-case n%3 == 0:
-    return "Fizz"
-// ...
-}
-```
-</details>
-
-<details>
-<summary>Exercise 3 — CountVowels hint</summary>
-
-`for range` over a string gives you runes. Lowercase it first:
-```go
-for _, ch := range strings.ToLower(s) {
-    // ch is a rune
-}
-```
-</details>
-
-<details>
-<summary>Exercise 4 — IsPrime hint</summary>
-
-Check divisors from 2 up to √n. If any divide evenly, it's not prime:
-```go
-for i := 2; i*i <= n; i++ {
-    if n%i == 0 { return false }
-}
-```
-</details>
-
-<details>
-<summary>Exercise 5 — Defer LIFO hint</summary>
-
-Defers execute in **reverse order** (last-in, first-out). The answer is simply:
-```go
-return []string{"third", "second", "first"}
-```
-
-📌 **Bonus — Interview traps to know (see `concepts.go`):**
-
-**Trap 1 — Arguments are captured at defer time:**
-```go
-x := 10
-defer fmt.Println("x =", x) // captures x=10 RIGHT NOW
-x = 99
-// Output: "x = 10", not 99 !
-```
-
-**Trap 2 — Defer can modify named return values:**
-```go
-func foo() (result string) {
-    defer func() { result = "changed" }()
-    return "original" // gets overwritten — final return is "changed"
-}
-```
-
-**Trap 3 — Never defer inside a loop for resources:**
-```go
-for i := range files {
-    defer file.Close() // BAD: all close at end of function, not each iteration
-}
-// FIX: wrap in an anonymous function:
-for i := range files {
-    func() {
-        defer file.Close() // closes after each anonymous call
-    }()
-}
-```
-</details>
 
 ---
 
 ## ✅ Done? Next Step
 
 ```bash
-go test ./exercises/fundamentals/03_functions/... -v
+go test -race -v ./exercises/fundamentals/03_functions/
 ```
 
