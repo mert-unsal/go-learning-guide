@@ -64,7 +64,7 @@ tags, table-driven tests, and the build toolchain.
 | 3.1 | [03 — Strings](learnings/03_strings_immutability_and_boxing.md) | `stdlib/01-strings-strconv` | `stdlib/01_strings_strconv` |
 | 3.2 | [13 — Memory & Sorting](learnings/13_memory_gc_escape_sorting.md) | — | `stdlib/02_sort` |
 | 3.3 | — | — | `stdlib/03_builtins` |
-| 3.4 | — | — | `stdlib/04_io_files` |
+| 3.4 | [23 — io.Reader/Writer Deep Dive](learnings/23_io_reader_writer_deep_dive.md) | — | `stdlib/04_io_files` |
 | 3.5 | — | — | `stdlib/05_encoding_json` |
 | 3.6 | — | — | `stdlib/06_math` |
 | 3.7 | [14 — Testing Internals](learnings/14_testing_internals.md) | — | `stdlib/07_testing` |
@@ -115,7 +115,7 @@ and enterprise architecture — the knowledge that separates "writes Go" from
 
 ```
 go-learning-guide/
-├── learnings/          ← 📖 22 deep-dive chapters (Go Under the Hood series)
+├── learnings/          ← 📖 23 deep-dive chapters (Go Under the Hood series)
 ├── cmd/concepts/       ← 🎯 67 runnable demos (go run each one)
 ├── exercises/
 │   ├── fundamentals/   ← ✏️ 13 packages — language core exercises
@@ -152,7 +152,7 @@ them pass.
 
 ## 📖 Go Under the Hood — Full Chapter List
 
-The [`learnings/`](learnings/) directory contains **22 chapters** organized into
+The [`learnings/`](learnings/) directory contains **23 chapters** organized into
 9 parts. Each chapter includes runtime source references, ASCII memory diagrams,
 performance cost tables, and a quick reference card.
 
