@@ -7,7 +7,7 @@ import (
 )
 
 func TestHypotenuse(t *testing.T) {
-	got := HypotenuseSolution(3, 4)
+	got := Hypotenuse(3, 4)
 	if math.Abs(got-5.0) > 1e-9 {
 		t.Errorf("Hypotenuse(3,4) = %f, want 5", got)
 	}
@@ -22,7 +22,7 @@ func TestIsPowerOfTwo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("IsPowerOfTwo(%d)", tt.n), func(t *testing.T) {
-			if got := IsPowerOfTwoSolution(tt.n); got != tt.want {
+			if got := IsPowerOfTwo(tt.n); got != tt.want {
 				t.Errorf("IsPowerOfTwo(%d) = %v, want %v", tt.n, got, tt.want)
 			}
 		})
@@ -36,17 +36,17 @@ func TestClampEx(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("Clamp(%v,%v,%v)", tt.v, tt.lo, tt.hi), func(t *testing.T) {
-			if got := ClampExSolution(tt.v, tt.lo, tt.hi); got != tt.want {
+			if got := ClampEx(tt.v, tt.lo, tt.hi); got != tt.want {
 				t.Errorf("Clamp(%v,%v,%v) = %v, want %v", tt.v, tt.lo, tt.hi, got, tt.want)
 			}
 		})
 	}
 }
 func TestRoundToN(t *testing.T) {
-	if got := RoundToNSolution(3.14159, 2); math.Abs(got-3.14) > 1e-9 {
+	if got := RoundToN(3.14159, 2); math.Abs(got-3.14) > 1e-9 {
 		t.Errorf("RoundToN(3.14159, 2) = %f, want 3.14", got)
 	}
-	if got := RoundToNSolution(2.5, 0); math.Abs(got-3.0) > 1e-9 {
+	if got := RoundToN(2.5, 0); math.Abs(got-3.0) > 1e-9 {
 		t.Errorf("RoundToN(2.5, 0) = %f, want 3", got)
 	}
 }
@@ -56,7 +56,7 @@ func TestGCD(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("GCD(%d,%d)", tt.a, tt.b), func(t *testing.T) {
-			if got := GCDSolution(tt.a, tt.b); got != tt.want {
+			if got := GCD(tt.a, tt.b); got != tt.want {
 				t.Errorf("GCD(%d,%d) = %d, want %d", tt.a, tt.b, got, tt.want)
 			}
 		})
@@ -68,7 +68,7 @@ func TestLCM(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("LCM(%d,%d)", tt.a, tt.b), func(t *testing.T) {
-			if got := LCMSolution(tt.a, tt.b); got != tt.want {
+			if got := LCM(tt.a, tt.b); got != tt.want {
 				t.Errorf("LCM(%d,%d) = %d, want %d", tt.a, tt.b, got, tt.want)
 			}
 		})

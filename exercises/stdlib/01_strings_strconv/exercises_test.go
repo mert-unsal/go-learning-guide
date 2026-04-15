@@ -19,7 +19,7 @@ func TestIsPalindromeEx(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("IsPalindrome(%q)", tt.s), func(t *testing.T) {
-			if got := IsPalindromeExSolution(tt.s); got != tt.want {
+			if got := IsPalindromeEx(tt.s); got != tt.want {
 				t.Errorf("IsPalindrome(%q) = %v, want %v", tt.s, got, tt.want)
 			}
 		})
@@ -33,7 +33,7 @@ func TestReverseWords(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("ReverseWords(%q)", tt.s), func(t *testing.T) {
-			if got := ReverseWordsSolution(tt.s); got != tt.want {
+			if got := ReverseWords(tt.s); got != tt.want {
 				t.Errorf("ReverseWords(%q) = %q, want %q", tt.s, got, tt.want)
 			}
 		})
@@ -50,7 +50,7 @@ func TestCountOccurrences(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("CountOccurrences(%q,%q)", tt.s, tt.sub), func(t *testing.T) {
-			if got := CountOccurrencesSolution(tt.s, tt.sub); got != tt.want {
+			if got := CountOccurrences(tt.s, tt.sub); got != tt.want {
 				t.Errorf("CountOccurrences(%q,%q) = %d, want %d", tt.s, tt.sub, got, tt.want)
 			}
 		})
@@ -64,14 +64,14 @@ func TestTitleCase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("TitleCase(%q)", tt.s), func(t *testing.T) {
-			if got := TitleCaseSolution(tt.s); got != tt.want {
+			if got := TitleCase(tt.s); got != tt.want {
 				t.Errorf("TitleCase(%q) = %q, want %q", tt.s, got, tt.want)
 			}
 		})
 	}
 }
 func TestParseCSVLine(t *testing.T) {
-	got := ParseCSVLineSolution("alice, 30 , engineer")
+	got := ParseCSVLine("alice, 30 , engineer")
 	want := []string{"alice", "30", "engineer"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("ParseCSVLine = %v, want %v", got, want)
@@ -89,18 +89,18 @@ func TestIntToBase(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("IntToBase(%d,%d)", tt.n, tt.base), func(t *testing.T) {
-			if got := IntToBaseSolution(tt.n, tt.base); got != tt.want {
+			if got := IntToBase(tt.n, tt.base); got != tt.want {
 				t.Errorf("IntToBase(%d,%d) = %q, want %q", tt.n, tt.base, got, tt.want)
 			}
 		})
 	}
 }
 func TestParseInts(t *testing.T) {
-	got, err := ParseIntsSolution([]string{"1", "2", "3"})
+	got, err := ParseInts([]string{"1", "2", "3"})
 	if err != nil || !reflect.DeepEqual(got, []int{1, 2, 3}) {
 		t.Errorf("ParseInts ok case: got %v err %v", got, err)
 	}
-	_, err = ParseIntsSolution([]string{"1", "abc", "3"})
+	_, err = ParseInts([]string{"1", "abc", "3"})
 	if err == nil {
 		t.Error("ParseInts should error on non-integer string")
 	}
