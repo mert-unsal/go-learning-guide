@@ -162,7 +162,7 @@ them pass.
 
 ## 📖 Go Under the Hood — Full Chapter List
 
-The [`learnings/`](learnings/) directory contains **27 chapters** organized into
+The [`learnings/`](learnings/) directory contains **28 chapters** organized into
 10 parts. Each chapter includes runtime source references, ASCII memory diagrams,
 performance cost tables, and a quick reference card.
 
@@ -179,7 +179,7 @@ performance cost tables, and a quick reference card.
 | VII — Testing & Debugging | 14-15 | Testing internals, pprof, `go tool trace`, Delve |
 | VIII — Design & Architecture | 16-18 | Design philosophy, middleware pattern, enterprise patterns |
 | IX — Cross-Cutting | 19-22 | Context, Go toolchain, zero values & `mallocgc`, control flow internals |
-| X — Advanced Topics | 23-27 | io.Reader/Writer, encoding/json, sync primitives, generics, net/http internals |
+| X — Advanced Topics | 23-28 | io.Reader/Writer, encoding/json, sync primitives, generics, net/http, reflect |
 
 A **PDF version** can be generated with:
 ```bash

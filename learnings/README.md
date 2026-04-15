@@ -83,6 +83,7 @@ debugging and enterprise patterns.
 | 25 | [sync Primitives Under the Hood](./25_sync_primitives_under_the_hood.md) | Mutex spinning/starvation, RWMutex, WaitGroup, Once fast/slow path, Pool per-P cache, sync.Map dual-store, Cond, atomics |
 | 26 | [Generics Under the Hood](./26_generics_under_the_hood.md) | GC shape stenciling, dictionary passing, constraints, type inference, when NOT to use generics, Java/C#/Rust comparison |
 | 27 | [net/http Under the Hood](./27_net_http_under_the_hood.md) | Server internals, ServeMux 1.22, Handler chain, middleware pattern, httptest, timeouts, graceful shutdown |
+| 28 | [reflect Under the Hood](./28_reflect_under_the_hood.md) | Three laws, TypeOf/ValueOf, struct tags, settability, nil trap, performance cost, when to use |
 
 ---
 
