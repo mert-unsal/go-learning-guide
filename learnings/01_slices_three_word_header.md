@@ -915,3 +915,14 @@ TOOLS
 > capacity is exceeded. Pre-allocate to avoid growslice, nil-out deleted pointer
 > elements to avoid leaks, and use the full slice expression `s[a:b:b]` to prevent
 > accidental mutation of shared data.
+
+---
+
+## Further Reading
+
+- [runtime/slice.go](https://cs.opensource.google/go/go/+/master:src/runtime/slice.go) — Runtime source for `makeslice`, `growslice`, and the slice growth algorithm
+- [Go Slices: usage and internals](https://go.dev/blog/slices-intro) — Official blog post covering slice headers, internals, and the `append` mechanic
+- [Go Slices: usage and internals (original)](https://go.dev/blog/slices) — Andrew Gerrand's original walkthrough of slice design and common patterns
+- [Go Spec — Slice types](https://go.dev/ref/spec#Slice_types) — Language specification for slice type semantics, indexing, and slicing expressions
+- [runtime/malloc.go](https://cs.opensource.google/go/go/+/master:src/runtime/malloc.go) — Memory allocator internals including `roundupsize` and size class rounding
+- [CL 347823 — growslice rewrite](https://github.com/golang/go/commit/2dda92ff6f9f07eeb110ecbf0fc2d7a0ddd27f9d) — The commit that changed the slice growth formula in Go 1.18

@@ -1631,3 +1631,13 @@ operations simultaneously. Understanding three things covers every select use ca
   │    for + select - default  = EFFICIENT event loop (sleeps when idle)│
   └──────────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Further Reading
+
+- [runtime/chan.go](https://cs.opensource.google/go/go/+/master:src/runtime/chan.go) — `hchan` struct, `chansend`, `chanrecv`, and close implementation
+- [runtime/select.go](https://cs.opensource.google/go/go/+/master:src/runtime/select.go) — `selectgo` implementation including random case ordering and lock sorting
+- [Go spec — Channel types](https://go.dev/ref/spec#Channel_types) — language specification for channel direction, send/receive operators, and nil semantics
+- [Go spec — Select statements](https://go.dev/ref/spec#Select_statements) — formal semantics of select including evaluation order and blocking rules
+- [runtime/runtime2.go — sudog](https://cs.opensource.google/go/go/+/master:src/runtime/runtime2.go) — `sudog` struct definition used for goroutine parking on channels

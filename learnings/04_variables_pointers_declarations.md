@@ -461,3 +461,13 @@ GOLDEN RULE
   Use * only when you mean "give me everything at this address"
   Use & only when you mean "give me the address of this thing"
 ```
+
+---
+
+## Further Reading
+
+- [Go Spec — Declarations and scope](https://go.dev/ref/spec#Declarations_and_scope) — Language specification for variable declarations, short variable declarations, and scoping rules
+- [Go Spec — Address operators](https://go.dev/ref/spec#Address_operators) — Spec rules for `&` (address-of) and `*` (dereference), including addressability requirements
+- [Go Spec — Method sets](https://go.dev/ref/spec#Method_sets) — How method sets determine which methods are callable on values vs pointers
+- [Effective Go — Pointers vs. Values](https://go.dev/doc/effective_go#pointers_vs_values) — Official guidance on when to use pointer vs value receivers
+- [A Tour of Go — Basics](https://go.dev/tour/basics) — Interactive tour covering variables, types, and short declarations

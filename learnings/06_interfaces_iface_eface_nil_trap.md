@@ -1599,3 +1599,13 @@ TOOLS
 > It's `nil` only when **both** words are zero. The compiler verifies types;
 > the runtime dispatches methods. This is why interface calls can't be inlined.
 
+---
+
+## Further Reading
+
+- [runtime/iface.go](https://cs.opensource.google/go/go/+/master:src/runtime/iface.go) — Runtime source for `iface`, `eface`, `itab` caching, type assertions, and `convT` boxing functions
+- [The Laws of Reflection](https://go.dev/blog/laws-of-reflection) — Official blog post covering interface representation, the `(value, type)` pair model, and `reflect` internals
+- [Go Spec — Interface types](https://go.dev/ref/spec#Interface_types) — Language specification for interface definitions, method sets, and implicit satisfaction
+- [Go Wiki — InterfaceSlice](https://go.dev/wiki/InterfaceSlice) — Why you can't assign `[]T` to `[]interface{}` and the memory layout reasons behind it
+- [runtime/type.go](https://cs.opensource.google/go/go/+/master:src/runtime/type.go) — Runtime type descriptors (`_type` struct) used by interfaces for dispatch and comparison
+- [Go Spec — Method sets](https://go.dev/ref/spec#Method_sets) — Rules for which methods belong to `T` vs `*T` and how this affects interface satisfaction

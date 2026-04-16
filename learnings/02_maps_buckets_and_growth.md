@@ -1143,3 +1143,13 @@ go build -gcflags='-m'         # escape analysis for map values
 > A map is a `*hmap` pointer to a hash table of 8-slot buckets, using tophash bytes for
 > fast rejection and incremental evacuation for growth — it never shrinks, randomizes
 > iteration by design, and kills your process on concurrent read/write.
+
+---
+
+## Further Reading
+
+- [runtime/map.go](https://cs.opensource.google/go/go/+/master:src/runtime/map.go) — Runtime source for `hmap`, `bmap`, `mapaccess1`, `mapassign`, and evacuation logic
+- [Go maps in action](https://go.dev/blog/maps) — Official blog post on map usage patterns, iteration, and concurrency considerations
+- [Go Spec — Map types](https://go.dev/ref/spec#Map_types) — Language specification for map types, key requirements, and zero-value behavior
+- [runtime/map_faststr.go](https://cs.opensource.google/go/go/+/master:src/runtime/map_faststr.go) — Specialized fast-path map implementations for string keys
+- [Issue #21031 — sync.Map design](https://github.com/golang/go/issues/21031) — Proposal and discussion behind `sync.Map` for concurrent map access patterns

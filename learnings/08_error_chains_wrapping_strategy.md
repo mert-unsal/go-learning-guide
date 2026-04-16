@@ -1261,3 +1261,13 @@ go test -race ./...             # race detector: always run
 > define API contracts checked by value, custom types carry structured data extracted by
 > type, and production code wraps at every layer, translates at boundaries, and logs once
 > at the top.
+
+---
+
+## Further Reading
+
+- [Working with Errors in Go 1.13](https://go.dev/blog/go1.13-errors) — Official blog post introducing `errors.Is`, `errors.As`, `%w` wrapping, and the `Unwrap` interface
+- [Error handling and Go](https://go.dev/blog/error-handling-and-go) — Rob Pike's original blog post on Go's error philosophy and the `error` interface design
+- [errors package source](https://cs.opensource.google/go/go/+/master:src/errors/) — Standard library source for `errors.New`, `errors.Is`, `errors.As`, `errors.Join`, and `Unwrap`
+- [fmt/errors.go](https://cs.opensource.google/go/go/+/master:src/fmt/errors.go) — Source for `fmt.Errorf` with `%w` support, including `wrapError` and `wrapErrors` structs
+- [Errors are values](https://go.dev/blog/errors-are-values) — Rob Pike's blog post on treating errors as programmable values rather than exception-like constructs

@@ -573,3 +573,14 @@ TOOLS
 > for load balancing, async preemption via SIGURG, and an integrated network
 > poller — enabling millions of goroutines on a handful of threads with
 > ~200ns context switches.
+
+---
+
+## Further Reading
+
+- [runtime/proc.go](https://cs.opensource.google/go/go/+/master:src/runtime/proc.go) — Core scheduler source: `schedule()`, `findrunnable()`, work stealing, and the `sysmon` thread
+- [Scalable Go Scheduler Design Doc](https://docs.google.com/document/d/1TTj4T2JO42uD5ID9e89oa0sLKhJYD0Y_kqxDv3I3XMw) — Dmitry Vyukov's original design document for the G-M-P scheduler model
+- [runtime/runtime2.go](https://cs.opensource.google/go/go/+/master:src/runtime/runtime2.go) — Runtime definitions for the `g`, `m`, and `p` structs with all key fields
+- [Issue #24543 — Non-cooperative preemption](https://github.com/golang/go/issues/24543) — Proposal for asynchronous preemption via SIGURG signals (implemented in Go 1.14)
+- [runtime/netpoll.go](https://cs.opensource.google/go/go/+/master:src/runtime/netpoll.go) — Integrated network poller abstraction over epoll/kqueue/IOCP
+- [Go's work-stealing scheduler](https://go.dev/src/runtime/proc.go) — The `stealWork` and `runqsteal` functions implementing the work-stealing algorithm

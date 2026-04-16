@@ -949,3 +949,13 @@ Go makes you write these patterns yourself — ~10-20 lines each. No framework n
 - [Chapter 13 — Memory, GC & Escape Analysis](./13_memory_gc_escape_sorting.md) — build flags for escape analysis (`-gcflags="-m"`)
 - [Chapter 15 — Debugging & Profiling](./15_debugging_profiling.md) — pprof, dlv, GODEBUG
 - [Chapter 18 — Production Patterns](./18_production_patterns_enterprise.md) — graceful shutdown, middleware, observability
+
+---
+
+## Further Reading
+
+- [cmd/go source](https://cs.opensource.google/go/go/+/master:src/cmd/go/) — the `go` command implementation: build pipeline, module resolution, and test runner
+- [Using Go Modules](https://go.dev/blog/using-go-modules) — official blog series on `go.mod`, `go.sum`, versioning, and migration from GOPATH
+- [Go Modules Reference](https://go.dev/ref/mod) — comprehensive specification for module paths, version selection (MVS), `go.sum`, and `GOPROXY`
+- [Go command documentation](https://pkg.go.dev/cmd/go) — full reference for `go build`, `go test`, `go vet`, `go generate`, and all subcommands
+- [internal/ directory convention](https://go.dev/doc/go1.4#internalpackages) — Go 1.4 release notes explaining compiler-enforced package encapsulation

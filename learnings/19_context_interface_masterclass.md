@@ -388,3 +388,51 @@ specific struct. That's the entire lesson.
 **`context.WithoutCancel(parent)`** — creates a child that is NOT cancelled when parent is cancelled. Use case: cleanup operations that must complete even after request cancellation (e.g., audit logging, releasing resources).
 
 **`context.AfterFunc(ctx, func())`** — registers a function to run after ctx is done. Safer than spawning a goroutine with `go func() { <-ctx.Done(); cleanup() }()` because AfterFunc handles the goroutine lifecycle and returns a `stop` function to deregister the callback if it's no longer needed.
+
+---
+
+## Quick Reference Card
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│                 CONTEXT INTERFACE CHEAT SHEET                 │
+├───────────────────────────────────────────────────────────────┤
+│  4 Methods:                                                   │
+│    Deadline() (time.Time, bool)  — when cancelled             │
+│    Done() <-chan struct{}        — closed on cancel            │
+│    Err() error                   — why cancelled              │
+│    Value(key any) any            — request-scoped kv          │
+│                                                               │
+│  Constructors:                                                │
+│    context.Background()          root (production)            │
+│    context.TODO()                root (placeholder)           │
+│    WithCancel(parent)            manual cancel                │
+│    WithTimeout(parent, dur)      cancel after dur             │
+│    WithDeadline(parent, time)    cancel at time               │
+│    WithValue(parent, k, v)       attach one kv pair           │
+│                                                               │
+│  Internals (one sentence each):                               │
+│    emptyCtx  — zero-value root, all methods return nil        │
+│    cancelCtx — embeds parent + done chan + err                 │
+│    timerCtx  — wraps cancelCtx + timer + deadline             │
+│    valueCtx  — parent + one key/val, linked list walk         │
+│                                                               │
+│  Key Gotchas:                                                 │
+│    • Value() is O(n) linked-list walk — keep shallow          │
+│    • nil Done() channel blocks forever (emptyCtx)             │
+│    • Cancel propagates down only (parent → child)             │
+│    • Don't store context in structs — pass as arg             │
+│    • Interface nil trap: (*T)(nil) stored in                  │
+│      interface ≠ nil (iface has non-nil type)                 │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Further Reading
+
+- [context package source](https://cs.opensource.google/go/go/+/master:src/context/context.go) — `emptyCtx`, `cancelCtx`, `timerCtx`, `valueCtx` implementations and the decorator pattern
+- [Go Concurrency Patterns: Context](https://go.dev/blog/context) — official blog post on context design, cancellation propagation, and production usage
+- [Go spec — Interface types](https://go.dev/ref/spec#Interface_types) — formal definition of structural typing and interface satisfaction that makes the context pattern possible
+- [proposal #28728 — context.WithoutCancel](https://github.com/golang/go/issues/28728) — discussion and rationale for adding `WithoutCancel` in Go 1.21
+- [proposal #57928 — context.AfterFunc](https://github.com/golang/go/issues/57928) — design discussion for `AfterFunc` and safe post-cancellation callbacks

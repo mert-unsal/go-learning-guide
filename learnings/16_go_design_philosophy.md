@@ -524,3 +524,44 @@ This chapter will expand as we discover more connections:
 > *"A little copying is better than a little dependency."* — Go Proverbs
 >
 > *"The language spec is short for a reason. Read it."*
+
+---
+
+## Quick Reference Card
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│                GO DESIGN PHILOSOPHY CHEAT SHEET               │
+├───────────────────────────────────────────────────────────────┤
+│  Core Proverbs:                                               │
+│    "Clear is better than clever."                             │
+│    "The bigger the interface, the weaker                      │
+│     the abstraction."                                         │
+│    "Make the zero value useful."                              │
+│    "Errors are values."  — Rob Pike                           │
+│    "A little copying is better than                           │
+│     a little dependency."                                     │
+│    "Don't communicate by sharing memory;                      │
+│     share memory by communicating."                           │
+│                                                               │
+│  Key Principles:                                              │
+│    Composition > inheritance (embed, don't extend)            │
+│    Accept interfaces, return structs                          │
+│    Small interfaces (1-3 methods ideal)                       │
+│    Explicit error handling (no exceptions)                    │
+│    CSP concurrency (channels orchestrate)                     │
+│    gofmt — one style, zero debates                            │
+│    One loop keyword: for                                      │
+│    One binary — no runtime dependency                         │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Further Reading
+
+- [Go Proverbs](https://go-proverbs.github.io/) — Rob Pike's distilled design principles from GopherFest 2015
+- [Simplicity is Complicated](https://www.youtube.com/watch?v=rFejpH_tAHM) — Rob Pike's talk on why Go's simplicity is a deliberate engineering achievement
+- [Go at Google: Language Design in the Service of Software Engineering](https://go.dev/talks/2012/splash.article) — the original rationale for Go's design decisions
+- [Go FAQ](https://go.dev/doc/faq) — official answers to "why doesn't Go have X?" covering generics, exceptions, inheritance, and more
+- [The Go Programming Language Specification](https://go.dev/ref/spec) — the complete language spec (~50 pages) that defines every feature discussed in this chapter

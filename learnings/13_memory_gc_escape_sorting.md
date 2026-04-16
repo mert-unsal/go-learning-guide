@@ -940,3 +940,14 @@ SORTING — pdqsort  (slices.Sort / sort.Slice since Go 1.19)
 > every heap alloc you avoid is a direct throughput win; and `slices.Sort` uses
 > pdqsort to adaptively combine Quicksort, InsertionSort, and HeapSort for
 > guaranteed O(n log n) on any input pattern.
+
+---
+
+## Further Reading
+
+- [runtime/mgc.go](https://cs.opensource.google/go/go/+/master:src/runtime/mgc.go) — GC controller, pacing, GOGC/GOMEMLIMIT logic, and tri-color mark-sweep orchestration
+- [runtime/malloc.go](https://cs.opensource.google/go/go/+/master:src/runtime/malloc.go) — TCMalloc-inspired allocator: mcache, mcentral, mheap, and size classes
+- [Getting to Go: The Journey of Go's Garbage Collector](https://go.dev/blog/ismmkeynote) — Rick Hudson's talk on the evolution of Go's GC from STW to concurrent
+- [A Guide to the Go Garbage Collector](https://go.dev/doc/gc-guide) — official guide covering GOGC, GOMEMLIMIT, pacing, and optimization strategies
+- [runtime/mbarrier.go](https://cs.opensource.google/go/go/+/master:src/runtime/mbarrier.go) — hybrid write barrier (Dijkstra + Yuasa) protecting concurrent marking
+- [cmd/compile/internal/escape](https://cs.opensource.google/go/go/+/master:src/cmd/compile/internal/escape/) — escape analysis implementation in the Go compiler

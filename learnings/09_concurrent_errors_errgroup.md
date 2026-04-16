@@ -517,3 +517,45 @@ go func() {
 > Goroutines can't return errors — use channels or shared memory to communicate them back,
 > `sync.WaitGroup` to wait for completion, and `errgroup.Group` to combine both with
 > automatic context cancellation in production code.
+
+---
+
+## Quick Reference Card
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│                 CONCURRENT ERRORS CHEAT SHEET                 │
+├───────────────────────────────────────────────────────────────┤
+│  errgroup.Group API:                                          │
+│    g.Go(func() error)  launch goroutine, return err           │
+│    g.Wait() error      wait all, return first error           │
+│    g.SetLimit(n)       cap concurrent goroutines              │
+│    g.TryGo(f) bool     launch only if under limit             │
+│                                                               │
+│  errgroup.WithContext(ctx) → (*Group, context.Context)        │
+│    • derived ctx cancelled on FIRST error                     │
+│    • g.Wait() still waits for ALL goroutines                  │
+│                                                               │
+│  Common Patterns:                                             │
+│    Fan-out+limit : g.SetLimit(N); loop g.Go(...)              │
+│    Pipeline+ctx  : pass derived ctx into every g.Go           │
+│    Collect all   : WaitGroup + Mutex + errors.Join            │
+│                                                               │
+│  Key Gotchas:                                                 │
+│    • First error wins — later errors dropped                  │
+│    • Goroutines must check ctx to actually stop               │
+│    • Panic in goroutine kills the whole program               │
+│    • Always defer wg.Done() as first line                     │
+│    • Buffer channels ≥ sender count or deadlock               │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Further Reading
+
+- [golang.org/x/sync/errgroup](https://pkg.go.dev/golang.org/x/sync/errgroup) — Package documentation for `errgroup.Group`, `WithContext`, and `SetLimit`
+- [errgroup source code](https://cs.opensource.google/go/x/sync/+/master:errgroup/errgroup.go) — Implementation showing `sync.Once` for first-error capture and `context.CancelFunc` integration
+- [Go Concurrency Patterns: Pipelines and cancellation](https://go.dev/blog/pipelines) — Official blog post on channel pipelines, fan-out/fan-in, and cancellation propagation
+- [context package source](https://cs.opensource.google/go/go/+/master:src/context/context.go) — Standard library source for `context.WithCancel`, cancellation propagation, and the `Done()` channel
+- [Go Spec — Go statements](https://go.dev/ref/spec#Go_statements) — Language specification for `go` statement semantics and goroutine launch behavior

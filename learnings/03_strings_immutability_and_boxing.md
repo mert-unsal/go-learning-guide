@@ -1101,3 +1101,13 @@ TOOLS
 > slice without capacity. Every "modification" creates a new backing array. `len()`
 > counts bytes not characters. Use `strings.Builder` for concatenation, `[]rune` for
 > character access, and `strings.Clone` to detach substrings from large parents.
+
+---
+
+## Further Reading
+
+- [runtime/string.go](https://cs.opensource.google/go/go/+/master:src/runtime/string.go) — Runtime source for `stringStruct`, string-to-byte conversions, and concatenation internals
+- [Strings, bytes, runes and characters in Go](https://go.dev/blog/strings) — Official blog post on the relationship between bytes, runes, and UTF-8 encoding in Go
+- [Go Spec — String types](https://go.dev/ref/spec#String_types) — Language specification for string semantics, indexing, and immutability guarantees
+- [strings package source](https://cs.opensource.google/go/go/+/master:src/strings/builder.go) — `strings.Builder` implementation showing the `unsafe.String` zero-copy trick
+- [Go Spec — Conversions to and from a string type](https://go.dev/ref/spec#Conversions_to_and_from_a_string_type) — Spec rules for `string([]byte)`, `[]byte(string)`, and `[]rune(string)` conversions

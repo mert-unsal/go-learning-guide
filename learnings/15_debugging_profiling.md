@@ -965,3 +965,13 @@ RACE DETECTOR
 > profiling (CPU, memory, goroutines, contention), `go tool trace` for visual
 > timelines, `GODEBUG` for runtime diagnostics, `dlv` for interactive debugging,
 > and `goleak` for test-time leak detection. Your job is to use them.
+
+---
+
+## Further Reading
+
+- [Profiling Go Programs](https://go.dev/blog/pprof) — official blog post on using pprof to find CPU and memory bottlenecks
+- [runtime/pprof](https://pkg.go.dev/runtime/pprof) — package documentation for programmatic profiling from tests and applications
+- [net/http/pprof](https://pkg.go.dev/net/http/pprof) — HTTP endpoint registration for live production profiling
+- [Diagnostics](https://go.dev/doc/diagnostics) — official guide covering profiling, tracing, debugging, and runtime statistics
+- [runtime/trace](https://pkg.go.dev/runtime/trace) — execution tracer package for capturing goroutine scheduling, GC, and syscall timelines

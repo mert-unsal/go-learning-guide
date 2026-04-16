@@ -2122,3 +2122,13 @@ go build -gcflags='-m -m' ./... 2>&1 | grep 'escapes to heap'
 - [Go Proverbs](https://go-proverbs.github.io/) — Rob Pike's design philosophy
 - [Effective Go](https://go.dev/doc/effective_go) — official Go style guide
 - [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md) — enterprise patterns
+
+---
+
+## Further Reading
+
+- [Go Concurrency Patterns: Context](https://go.dev/blog/context) — official blog post on context propagation, cancellation, and request-scoped values
+- [os/signal — NotifyContext](https://cs.opensource.google/go/go/+/master:src/os/signal/signal.go) — source for signal-based context cancellation used in graceful shutdown
+- [log/slog package](https://pkg.go.dev/log/slog) — Go 1.21+ structured logging with handlers, groups, and `LogValuer` interface
+- [The Twelve-Factor App](https://12factor.net/) — methodology for building production services: config, logging, concurrency, and disposability
+- [net/http — Server.Shutdown](https://cs.opensource.google/go/go/+/master:src/net/http/server.go) — graceful shutdown implementation that drains in-flight requests

@@ -644,3 +644,13 @@ DETECTION TOOLS
   go build -gcflags='-m' ./...    # escape analysis
   staticcheck ./...               # SA6005 loop capture
 ```
+
+---
+
+## Further Reading
+
+- [Go Spec — Function literals](https://go.dev/ref/spec#Function_literals) — Language specification for closures, variable capture, and function literal semantics
+- [cmd/compile/internal/walk/closure.go](https://cs.opensource.google/go/go/+/master:src/cmd/compile/internal/walk/closure.go) — Compiler source showing how closures are transformed into `funcval` structs with captured variable pointers
+- [runtime/runtime2.go — funcval](https://cs.opensource.google/go/go/+/master:src/runtime/runtime2.go) — Runtime definition of the `funcval` struct that backs every function value
+- [Go blog — Go 1.22 loop variable change](https://go.dev/blog/loopvar-preview) — Official blog post on the loop variable capture fix in Go 1.22 for `range` loops
+- [Issue #60078 — Loop variable semantics](https://github.com/golang/go/issues/60078) — The proposal that changed `for range` loop variable semantics to per-iteration scoping

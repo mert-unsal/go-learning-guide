@@ -770,3 +770,47 @@ The middleware pattern is the **convergence point** of Go's core design decision
 > The middleware pattern is not clever. It's three features composing naturally.
 > That's the point — Go's simplicity isn't a limitation, it's a design decision
 > that makes patterns like this emerge without framework support.
+
+---
+
+## Quick Reference Card
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│                 MIDDLEWARE PATTERN CHEAT SHEET                 │
+├───────────────────────────────────────────────────────────────┤
+│  Core Types:                                                  │
+│    http.Handler     interface { ServeHTTP(w,r) }              │
+│    http.HandlerFunc adapter  (func → Handler)                 │
+│                                                               │
+│  Middleware Signature:                                        │
+│    func(http.Handler) http.Handler                            │
+│    outer wraps inner; outermost runs first                    │
+│                                                               │
+│  Chaining Order (request flow):                               │
+│    Logging → Auth → RateLimit → Handler                       │
+│    (first applied = outermost = runs first)                   │
+│                                                               │
+│  Common Middleware:                                            │
+│    Logging    — log method, path, duration                    │
+│    Auth       — validate token, set ctx value                 │
+│    Recovery   — defer/recover panics → 500                    │
+│    CORS       — set Access-Control-* headers                  │
+│    Timeout    — http.TimeoutHandler(h, d, msg)                │
+│                                                               │
+│  Stdlib Helpers:                                              │
+│    http.StripPrefix(p, h)    remove path prefix               │
+│    http.TimeoutHandler(h,d,m) deadline on handler             │
+│    http.MaxBytesHandler(h,n)  limit request body              │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Further Reading
+
+- [net/http/server.go](https://cs.opensource.google/go/go/+/master:src/net/http/server.go) — `Handler`, `HandlerFunc`, and `ServeMux` implementation in the stdlib
+- [Writing Web Applications](https://go.dev/doc/articles/wiki/) — official Go tutorial building a wiki with `net/http` from scratch
+- [net/http package documentation](https://pkg.go.dev/net/http) — complete reference for HTTP server, client, Handler interface, and middleware patterns
+- [justforfunc #11: Understanding Go's HandlerFunc](https://www.youtube.com/watch?v=uVmmDE7_ZLs) — Francesc Campoy's walkthrough of how HandlerFunc bridges functions and interfaces
+- [Go spec — Method sets](https://go.dev/ref/spec#Method_sets) — how method sets on function types enable interface satisfaction

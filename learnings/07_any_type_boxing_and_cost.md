@@ -904,3 +904,13 @@ $ go build -gcflags='-m' ./...
 >
 > But `any` says one thing clearly: **"I've traded compile-time safety for runtime
 > flexibility."** Make sure the trade is worth it.
+
+---
+
+## Further Reading
+
+- [runtime/iface.go — convT functions](https://cs.opensource.google/go/go/+/master:src/runtime/iface.go) — Runtime source for `convT`, `convT64`, `convTstring`, `staticuint64s`, and the full boxing machinery
+- [Go 1.18 Release Notes — any alias](https://go.dev/doc/go1.18#generics) — Official release notes introducing `any` as a built-in alias for `interface{}`
+- [Go Spec — Type assertions](https://go.dev/ref/spec#Type_assertions) — Language specification for type assertion syntax, the comma-ok pattern, and panic behavior
+- [Go Spec — Type switches](https://go.dev/ref/spec#Type_switches) — Language specification for `switch v := x.(type)` semantics and matching rules
+- [builtin/builtin.go — any definition](https://cs.opensource.google/go/go/+/master:src/builtin/builtin.go) — Source defining `type any = interface{}` and other built-in type aliases

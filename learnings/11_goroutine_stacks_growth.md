@@ -937,3 +937,13 @@ TOOLS
 > *"Goroutine stacks start small and grow as needed. This is central to Go's
 > concurrency model — cheap goroutines enable the CSP style."*
 > — Go runtime documentation
+
+---
+
+## Further Reading
+
+- [runtime/stack.go](https://cs.opensource.google/go/go/+/master:src/runtime/stack.go) — stack growth, shrinking, and pointer adjustment implementation
+- [Contiguous Stacks design document](https://docs.google.com/document/d/1wAaf1rYoM4nAvPhBJENS-1QP-74WoQkco_v-g2GAjC0/edit) — why Go switched from segmented to contiguous stacks in Go 1.4
+- [runtime/memmove_amd64.s](https://cs.opensource.google/go/go/+/master:src/runtime/memmove_amd64.s) — assembly implementation of the bulk memory copy used during stack growth
+- [runtime/runtime2.go](https://cs.opensource.google/go/go/+/master:src/runtime/runtime2.go) — goroutine `g` struct definition including stack bounds and stackguard
+- [Go 1.22 loop variable change](https://go.dev/blog/loopvar-preview) — how the loop variable scoping change fixed the most common closure bug

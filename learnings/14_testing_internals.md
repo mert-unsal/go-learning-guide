@@ -517,6 +517,44 @@ go tool trace trace.out
 
 ---
 
+## Quick Reference Card
+
+```text
+┌───────────────────────────────────────────────────────────────┐
+│                     GO TESTING CHEAT SHEET                    │
+├───────────────────────────────────────────────────────────────┤
+│  4 Gates (ALL must pass to be a test):                        │
+│    1. File ends with _test.go                                 │
+│    2. Func name starts with Test                              │
+│    3. Next char is uppercase or non-letter                    │
+│    4. Signature: func(t *testing.T) exactly                   │
+│                                                               │
+│  Key Flags:                                                   │
+│    -v           verbose output                                │
+│    -run REGEX   filter tests (/-separated subtests)           │
+│    -count N     repeat N times (disables caching)             │
+│    -race        enable race detector (mandatory CI)           │
+│    -cover       coverage analysis                             │
+│    -bench REGEX run benchmarks (-bench=.  for all)            │
+│    -fuzz REGEX  run fuzz targets                              │
+│                                                               │
+│  Subtests & Lifecycle:                                        │
+│    t.Run(name,f)  subtest in own goroutine                    │
+│    t.Parallel()   opt-in concurrent execution                 │
+│    t.Cleanup(f)   LIFO teardown (runs after test)             │
+│    t.Helper()     hide from error line numbers                │
+│                                                               │
+│  Benchmarks & Fuzz:                                           │
+│    b.N            auto-calibrated iteration count             │
+│    b.ResetTimer()  exclude setup from timing                  │
+│    f.Add(seeds...)  seed the fuzz corpus                      │
+│                                                               │
+│  Packages: pkg (white-box) vs pkg_test (black-box)            │
+└───────────────────────────────────────────────────────────────┘
+```
+
+---
+
 ## Further Reading
 
 - [`testing` package source](https://cs.opensource.google/go/go/+/master:src/testing/) — `testing.go`, `run_example.go`, `sub_test.go`
