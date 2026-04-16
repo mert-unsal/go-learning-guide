@@ -122,3 +122,11 @@ If it reports a race, your Mutex is missing somewhere.
 go test ./exercises/fundamentals/11_channels/... -v
 ```
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [10 — Goroutines & the GMP Scheduler](../../../learnings/10_goroutines_gmp_scheduler.md) — G/M/P model, goroutine states, work stealing, preemption, `GODEBUG=schedtrace`
+

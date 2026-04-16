@@ -102,3 +102,11 @@ The `&` in front of the struct literal creates it on the heap and returns a poin
 go test ./exercises/fundamentals/05_structs/... -v
 ```
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [04 — Variables, Pointers & Declarations](../../../learnings/04_variables_pointers_declarations.md) — pointer internals, auto-dereference, addressability, stack vs heap
+

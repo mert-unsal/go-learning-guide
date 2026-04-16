@@ -102,3 +102,12 @@ Unlike Java/C#, you never write `implements ExStringer`. If your type has the ri
 go test ./exercises/fundamentals/07_error_handling/... -v
 ```
 
+---
+
+## 📖 Companion Chapters
+
+For the deep-dive theory behind these exercises, read:
+
+- [06 — Interfaces & Embedding: iface, eface, itab](../../../learnings/06_interfaces_embedding_iface_eface_itab.md) — iface/eface internals, itab caching, implicit satisfaction
+- [07 — The `any` Type: From `interface{}` to `any`](../../../learnings/07_any_type_from_interface_to_any.md) — empty interface boxing, type assertions, type switches
+

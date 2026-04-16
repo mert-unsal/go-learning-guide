@@ -71,6 +71,7 @@ tags, table-driven tests, and the build toolchain.
 | 3.7 | [14 — Testing Internals](learnings/14_testing_internals.md) | — | `stdlib/07_testing` |
 | 3.8 | [12 — Packages & Modules](learnings/20_practical_go_toolchain.md) | `packages-modules/*` | `fundamentals/12_packages_modules` |
 | 3.9 | [27 — net/http Under the Hood](learnings/27_net_http_under_the_hood.md) | — | `stdlib/10_net_http` |
+| 3.10 | [28 — reflect Under the Hood](learnings/28_reflect_under_the_hood.md) | — | `stdlib/11_reflect` |
 
 ### Phase 4 — Advanced Topics
 
@@ -128,11 +129,12 @@ and enterprise architecture — the knowledge that separates "writes Go" from
 
 ```
 go-learning-guide/
-├── learnings/          ← 📖 25 deep-dive chapters (Go Under the Hood series)
+├── learnings/          ← 📖 28 deep-dive chapters (Go Under the Hood series)
 ├── cmd/concepts/       ← 🎯 67 runnable demos (go run each one)
 ├── exercises/
 │   ├── fundamentals/   ← ✏️ 13 packages — language core exercises
-│   └── stdlib/         ← ✏️ 9 packages — standard library exercises
+│   ├── stdlib/         ← ✏️ 11 packages — standard library exercises
+│   └── advanced/       ← ✏️ 4 packages — generics, escape analysis, concurrency, middleware
 ├── problems/           ← 🧩 200+ coding problems across 14 categories
 ├── tools/              ← 🔧 md2pdf — generates the companion PDF book
 └── utils/              ← 📦 Shared helpers (ListNode, TreeNode, etc.)

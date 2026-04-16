@@ -167,3 +167,11 @@ Or run from the project root:
 go test ./exercises/fundamentals/02_control_flow/... -v
 ```
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [04 — Variables, Pointers & Declarations](../../../learnings/04_variables_pointers_declarations.md) — `var` vs `:=`, type inference, zero values, addressability rules
+

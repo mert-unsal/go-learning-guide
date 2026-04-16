@@ -123,3 +123,11 @@ Remember: normalize `k = k % len(s)` first!
 go test ./exercises/fundamentals/09_maps/... -v
 ```
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [01 — Slices: The Three-Word Header](../../../learnings/01_slices_three_word_header.md) — slice header struct, growslice, backing array sharing, capacity traps
+

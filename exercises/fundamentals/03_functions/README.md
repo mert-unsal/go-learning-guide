@@ -121,3 +121,11 @@ return result
 go test ./exercises/fundamentals/04_pointers/... -v
 ```
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [05 — Closures & the funcval Trick](../../../learnings/05_closures_funcval_trick.md) — how closures capture variables, funcval struct, heap escapes, compiler optimizations
+

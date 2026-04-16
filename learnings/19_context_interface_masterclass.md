@@ -1,5 +1,18 @@
 # 12 — Context Interface Deep Dive
 
+## Table of Contents
+
+- [1. The Interface — Just 4 Methods](#1-the-interface--just-4-methods)
+- [2. The Concrete Implementations](#2-the-concrete-implementations-what-the-stdlib-actually-creates)
+- [3. How the Chain Works — Step by Step](#3-how-the-chain-works--step-by-step)
+- [4. What If Context Were a Struct?](#4-what-if-context-were-a-struct)
+- [5. The Design Pattern: Decorator / Wrapper](#5-the-design-pattern-decorator--wrapper)
+- [6. Summary — Why Context Must Be an Interface](#6-summary--why-context-must-be-an-interface)
+- [7. Production Gotchas](#7-production-gotchas)
+- [8. Mental Model — The Final Picture](#8-mental-model--the-final-picture)
+
+---
+
 ## Why `context.Context` Is the Best Example of Interfaces in Go
 
 > This document explains what `context.Context` is, why it's an interface (not a struct),

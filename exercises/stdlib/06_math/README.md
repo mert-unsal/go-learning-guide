@@ -22,3 +22,11 @@
 ```bash
 go test -race -v ./exercises/stdlib/06_math/
 ```
+
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [13 — Memory, GC, Escape Analysis & Sorting](../../../learnings/13_memory_gc_escape_sorting.md) — numeric precision, `math` package internals, sorting algorithms

@@ -6,6 +6,24 @@ Most languages need a test runner (JUnit, pytest, NUnit, Jest). Go doesn't — `
 
 ---
 
+## Table of Contents
+
+- [1. The Big Picture: No Magic, Just Code Generation](#1-the-big-picture-no-magic-just-code-generation)
+- [2. The Four Gates: How Test Functions Are Discovered](#2-the-four-gates-how-test-functions-are-discovered)
+- [3. The Generated `_testmain.go`](#3-the-generated-_testmaingo)
+- [4. The `_test.go` Compiler Boundary](#4-the-_testgo-compiler-boundary)
+- [5. Two Test Package Modes: White-Box vs Black-Box](#5-two-test-package-modes-white-box-vs-black-box)
+- [6. The `testing.T` Type: What It Actually Does](#6-the-testingt-type-what-it-actually-does)
+- [7. Subtests: The `t.Run()` Architecture](#7-subtests-the-trun-architecture)
+- [8. Benchmarks and Fuzz: Same Pattern, Different Gates](#8-benchmarks-and-fuzz-same-pattern-different-gates)
+- [9. Test Binary Flags: The Hidden CLI](#9-test-binary-flags-the-hidden-cli)
+- [10. Comparison with Other Languages](#10-comparison-with-other-languages)
+- [11. Production Testing Workflow](#11-production-testing-workflow)
+- [12. Key Takeaways](#12-key-takeaways)
+- [Further Reading](#further-reading)
+
+---
+
 ## 1. The Big Picture: No Magic, Just Code Generation
 
 When you run `go test ./mypackage/`, the toolchain:

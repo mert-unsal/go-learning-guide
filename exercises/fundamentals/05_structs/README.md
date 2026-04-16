@@ -105,3 +105,11 @@ In Go, interfaces are **implicit** — if `ExRectangle` has both `Area()` and `P
 go test ./exercises/fundamentals/06_interfaces/... -v
 ```
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [06 — Interfaces & Embedding: iface, eface, itab](../../../learnings/06_interfaces_embedding_iface_eface_itab.md) — struct layout, embedding mechanics, method sets, memory representation
+

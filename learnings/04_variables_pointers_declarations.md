@@ -4,6 +4,14 @@
 
 ---
 
+## Table of Contents
+
+- [Part 1 — Variable Declarations: `var` vs `:=`](#part-1--variable-declarations-var-vs-)
+- [Part 2 — Pointers: Auto-Dereference & Auto-Address](#part-2--pointers-auto-dereference--auto-address)
+- [Quick Reference Card](#quick-reference-card)
+
+---
+
 ## Part 1 — Variable Declarations: `var` vs `:=`
 
 ### The Three Forms

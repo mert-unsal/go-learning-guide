@@ -118,3 +118,11 @@ go test ./exercises/fundamentals/... -v
 | 🔧 Practical Go (Docker, config, deploy) | Browse `practical/` folder |
 | 📖 Stdlib deep-dive | Browse `exercises/stdlib/` folder |
 
+---
+
+## 📖 Companion Chapter
+
+For the deep-dive theory behind these exercises, read:
+
+- [20 — Go Toolchain & Module System](../../../learnings/20_go_toolchain_module_system.md) — `go build` pipeline, module resolution, `internal/` enforcement, `go.sum` verification
+

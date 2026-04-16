@@ -112,3 +112,12 @@ func Validate(name string) error {
 go test ./exercises/fundamentals/08_arrays_slices/... -v
 ```
 
+---
+
+## 📖 Companion Chapters
+
+For the deep-dive theory behind these exercises, read:
+
+- [08 — Error Handling: errors.Is, errors.As, Wrapping](../../../learnings/08_error_handling_is_as_wrapping.md) — error chains, sentinel errors, wrapping with `%w`
+- [09 — errgroup & Advanced Error Patterns](../../../learnings/09_errgroup_advanced_error_patterns.md) — concurrent error handling, errgroup, multi-error patterns
+
